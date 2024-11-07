@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "erkc"
+name = "erkc63"
 version = "0.1.0"
 description = ""
 authors = ["Sergey V. DUDANOV <sergey.dudanov@gmail.com>"]
@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.14"
-aiohttp = "^3.10.10"
+aiohttp = ">=3.10.0"
 beautifulsoup4 = ">=4.12.0"
 pypdf = {extras = ["image"], version = ">=4.2.0"}
 
