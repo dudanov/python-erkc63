@@ -61,13 +61,11 @@ class ErkcClient:
         login: str | None = None,
         password: str | None = None,
         *,
-        app_url: yarl.URL | None = None,
         session: aiohttp.ClientSession | None = None,
+        **kwargs,
     ) -> None:
-        self._cli = session or aiohttp.ClientSession()
-        self._cli._base_url = app_url or _BASE_URL
-        self._cli._raise_for_status = True
-        self._cli._timeout = aiohttp.ClientTimeout(5)
+        self._cli = session or aiohttp.ClientSession(**kwargs)
+        self._cli._base_url = _BASE_URL
         self._login = login
         self._password = password
         self._accounts = None
