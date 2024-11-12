@@ -326,11 +326,13 @@ class ErkcClient:
     async def meters_history(
         self,
         *,
-        start: dt.date = _MIN_DATE,
-        end: dt.date = _MAX_DATE,
+        start: dt.date | None = None,
+        end: dt.date | None = None,
         account: int | None = None,
     ) -> tuple[MeterInfoHistory, ...]:
         """Запрос счетчиков лицевого счета с историей показаний"""
+
+        start, end = start or _MIN_DATE, end or _MAX_DATE
 
         assert start <= end
 
@@ -370,14 +372,17 @@ class ErkcClient:
     async def accruals_history(
         self,
         *,
-        start: dt.date = _MIN_DATE,
-        end: dt.date = _MAX_DATE,
+        start: dt.date | None = None,
+        end: dt.date | None = None,
         account: int | None = None,
         include_details: bool = False,
     ) -> tuple[MonthAccrual, ...]:
         """Запрос начислений за заданный период"""
 
         account = self._account(account)
+        start, end = start or _MIN_DATE, end or _MAX_DATE
+
+        assert start <= end
 
         resp = await self._history("accruals", account, start, end)
 
@@ -402,11 +407,15 @@ class ErkcClient:
     async def payments_history(
         self,
         *,
-        start: dt.date = _MIN_DATE,
-        end: dt.date = _MAX_DATE,
+        start: dt.date | None = None,
+        end: dt.date | None = None,
         account: int | None = None,
     ) -> tuple[Payment, ...]:
         """Запрос истории платежей"""
+
+        start, end = start or _MIN_DATE, end or _MAX_DATE
+
+        assert start <= end
 
         resp = await self._history("payments", account, start, end)
         result = (Payment(date_attr(x), to_float(y), z) for x, y, z in resp)
