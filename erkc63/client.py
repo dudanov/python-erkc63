@@ -21,12 +21,13 @@ from .errors import (
     ParsingError,
     SessionRequired,
 )
-from .meters import MeterDescription, MeterValue, PublicMeterInfo, parse_meters
+from .meters import MeterInfoHistory, MeterValue, PublicMeterInfo, get_meters_from_page
 from .payment import Payment
 from .utils import (
+    data_attr,
+    date_attr,
     date_last_accrual,
     date_to_str,
-    get_data_attr,
     str_normalize,
     str_to_date,
     to_float,
@@ -34,7 +35,7 @@ from .utils import (
 
 _LOGGER = logging.getLogger(__name__)
 
-_MIN_DATE = dt.date(2019, 3, 1)
+_MIN_DATE = dt.date(2001, 1, 1)
 _MAX_DATE = dt.date(2099, 12, 31)
 
 _BASE_URL = yarl.URL("https://lk.erkc63.ru")
@@ -260,20 +261,23 @@ class ErkcClient:
         limit: int | None = None,
         include_details: bool = False,
     ) -> tuple[Accrual, ...]:
-        """Запрос квитанций за год в порядке увеличения даты"""
+        """Запрос квитанций за год"""
 
         account = self._account(account)
 
-        response: Sequence[Sequence[str]] = await self._ajax(
+        resp: Sequence[Sequence[str]] = await self._ajax(
             "getReceipts", account, year=year or date_last_accrual().year
         )
 
-        result: dict[dt.date, Accrual] = {}
+        db: dict[dt.date, Accrual] = {}
 
-        for data in response:
-            date = str_to_date(get_data_attr(data[0]))
+        for data in resp:
+            date = date_attr(data[0])
 
-            record = result.setdefault(
+            if limit and limit == len(db) and date not in db:
+                break
+
+            record = db.setdefault(
                 date,
                 Accrual(
                     account=account,
@@ -283,7 +287,7 @@ class ErkcClient:
                 ),
             )
 
-            id = get_data_attr(data[5])
+            id = data_attr(data[5])
 
             match data[3]:
                 case "общая":
@@ -293,13 +297,12 @@ class ErkcClient:
                 case _:
                     raise ParsingError
 
-        limit = limit or len(result)
-        res = tuple(result.values())[:limit][::-1]
+        result = tuple(db.values())
 
         if include_details:
-            await self.update_accruals(res)
+            await self.update_accruals(result)
 
-        return res
+        return result
 
     async def update_accrual(self, accrual: Accruals) -> None:
         """Обновление детализированных данных квитанции или начисления"""
@@ -326,38 +329,43 @@ class ErkcClient:
         start: dt.date = _MIN_DATE,
         end: dt.date = _MAX_DATE,
         account: int | None = None,
-    ) -> tuple[MeterDescription, ...]:
+    ) -> tuple[MeterInfoHistory, ...]:
         """Запрос счетчиков лицевого счета с историей показаний"""
 
-        db: dict[str, list[list[str]]] = {}
+        assert start <= end
 
-        response = await self._history("counters", account, start, end)
+        db: dict[tuple[str, str], list[MeterValue]] = {}
 
-        for row in response:
-            k, *v = row[1:]
-            db.setdefault(k, []).append(v)
+        while True:
+            history = await self._history("counters", account, start, end)
 
-        def _get(k: str, v: Sequence[Sequence[str]]):
-            name, serial = k.split(", счетчик №", 1)
+            # Лимит записей ответа сервера - 25. Контроль превышения на случай изменения API.
+            assert (num := len(history)) <= 25
 
-            values = []
-            for x in v:
-                if m := re.search(r"\d{2}\.\d{2}\.\d{2}", x[0]):
-                    values.append(
-                        MeterValue(
-                            dt.datetime.strptime(m.group(), "%d.%m.%y").date(),
-                            float(x[1]),
-                            float(x[2]),
-                            x[3],
-                        )
-                    )
+            # Возможен баг: если в один день число записей больше лимита,
+            # то сервер не сможет вернуть полный результат ни при каких условиях.
+            # Этот случай крайне маловероятен, но условие добавлено.
+            last_request = num < 25 or start == end
 
-                else:
-                    raise ParsingError
+            for _, key, date, value, consumption, source in history:
+                end = str_to_date(date[27:35])
 
-            return MeterDescription(name, serial, tuple(values))
+                # игнорируем записи без потребления
+                if not (consumption := float(consumption)):
+                    continue
 
-        return tuple(_get(k, v) for k, v in db.items())
+                value = MeterValue(end, float(value), consumption, source)
+
+                name, serial = key.split(", счетчик №", 1)
+                db.setdefault((name, serial), []).append(value)
+
+            if last_request:
+                break
+
+        # Исключаем дублирование записей из наложенных ответов и конвертируем в кортеж
+        return tuple(
+            MeterInfoHistory(*k, tuple(dict.fromkeys(v))) for k, v in db.items()
+        )
 
     async def accruals_history(
         self,
@@ -373,22 +381,23 @@ class ErkcClient:
 
         resp = await self._history("accruals", account, start, end)
 
-        result = tuple(
-            MonthAccrual(
-                account=account,
-                date=str_to_date(get_data_attr(x[0])),
-                saldo_in=to_float(x[1]),
-                summa=to_float(x[2]),
-                payment=to_float(x[3]),
-                saldo_out=to_float(x[4]),
-            )
-            for x in reversed(resp)
-        )
+        result = []
+
+        for date, *floats in resp:
+            floats: Any = map(to_float, floats)
+            accrual = MonthAccrual(account, date_attr(date), *floats)
+
+            # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
+            # при первом нулевом начислении прерываем цикл, так как далее все начисления тоже нулевые.
+            if not accrual.summa:
+                break
+
+            result.append(accrual)
 
         if include_details:
             await self.update_accruals(result)
 
-        return result
+        return tuple(result)
 
     async def payments_history(
         self,
@@ -400,15 +409,10 @@ class ErkcClient:
         """Запрос истории платежей"""
 
         resp = await self._history("payments", account, start, end)
+        result = (Payment(date_attr(x), to_float(y), z) for x, y, z in resp)
 
-        return tuple(
-            Payment(
-                date=str_to_date(get_data_attr(x[0])),
-                summa=to_float(x[1]),
-                provider=x[2],
-            )
-            for x in resp
-        )
+        # Ответ содержит нулевые платежи (внутренние перерасчеты). Применим фильтр.
+        return tuple(x for x in result if x.summa)
 
     async def account_info(self, account: int | None = None):
         """Запрос информации о лицевом счете"""
@@ -491,41 +495,43 @@ class ErkcClient:
     async def _set_meters_values(
         self,
         path: str,
-        values: Mapping[str, float],
+        values: Mapping[int, float],
     ) -> None:
+        if not values:
+            return
+
         async with self._get(path) as x:
             html = await x.text()
 
-        meters = parse_meters(html)
-
         data: dict[str, Any] = {}
+        meters = get_meters_from_page(html)
 
         # Если используем без авторизации - извлечем номер лицевого счета
         # из пути запроса и добавим в данные запроса
         if not path.startswith("/account"):
             data["ls"] = int(path.rsplit("/", 1)[-1])
 
-        for res, value in values.items():
-            if m := meters.get(res):
+        for id, value in values.items():
+            if m := meters.get(id):
                 if value > m.value:
-                    data[f"counters[{m.id}_0][value]"] = value
-                    data[f"counters[{m.id}_0][rawId]"] = m.id
-                    data[f"counters[{m.id}_0][tarif]"] = 0
+                    data[f"counters[{id}_0][value]"] = value
+                    data[f"counters[{id}_0][rawId]"] = id
+                    data[f"counters[{id}_0][tarif]"] = 0
 
                     continue
 
                 raise ValueError(
-                    f"Новое значение счетчика {res} должно быть выше текущего {m.value}."
+                    f"Новое значение счетчика {id} должно быть выше текущего {m.value}"
                 )
 
-            raise ValueError(f"Счетчик {res} не найден.")
+            raise ValueError(f"Счетчик {id} не найден")
 
         async with self._post(path, **data):
             pass
 
     async def meters_info(
         self, account: int | None = None
-    ) -> Mapping[str, PublicMeterInfo]:
+    ) -> Mapping[int, PublicMeterInfo]:
         """
         Запрос информации о приборах учета лицевого счета.
 
@@ -541,13 +547,13 @@ class ErkcClient:
         async with self._get(f"/account/{self._account(account)}/counters") as x:
             html = await x.text()
 
-        return parse_meters(html)
+        return get_meters_from_page(html)
 
     def _public_api(self):
         if self.authorized:
             raise ValueError("Публичный API функционирует без авторизации")
 
-    async def pub_meters_info(self, account: int) -> Mapping[str, PublicMeterInfo]:
+    async def pub_meters_info(self, account: int) -> Mapping[int, PublicMeterInfo]:
         """
         Запрос публичной информации о приборах учета по лицевому счету.
 
@@ -565,12 +571,12 @@ class ErkcClient:
         async with self._get(f"/counters/{account}") as x:
             html = await x.text()
 
-        return parse_meters(html)
+        return get_meters_from_page(html)
 
     async def pub_set_meters_values(
         self,
         account: int,
-        values: Mapping[str, float],
+        values: Mapping[int, float],
     ):
         """Отправка без авторизации новых показаний приборов учета"""
 

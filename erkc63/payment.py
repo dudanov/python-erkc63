@@ -2,7 +2,7 @@ import dataclasses as dc
 import datetime as dt
 
 
-@dc.dataclass
+@dc.dataclass(frozen=True)
 class Payment:
     """
     Платеж.
