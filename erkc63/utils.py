@@ -44,13 +44,17 @@ def str_to_date(_str: str) -> dt.date:
     return dt.datetime.strptime(_str, "%d.%m.%y").date()
 
 
-def get_data_attr(_str: str) -> str:
+def data_attr(_str: str) -> str:
     """Извлекает строку из атрибута данных тэга."""
 
     if m := re.search(r' data-\w+="([\w/.+=]+)"', _str):
         return m.group(1)
 
     raise ValueError
+
+
+def date_attr(_str: str) -> dt.date:
+    return str_to_date(data_attr(_str))
 
 
 def date_to_str(_date: dt.date) -> str:
