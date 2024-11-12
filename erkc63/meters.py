@@ -1,14 +1,5 @@
 import dataclasses as dc
 import datetime as dt
-import re
-from types import MappingProxyType
-from typing import cast
-
-from bs4 import BeautifulSoup, Tag
-
-from .utils import str_to_date
-
-_RE_RAWID = re.compile(r"rowId")
 
 
 @dc.dataclass(frozen=True)
@@ -56,39 +47,3 @@ class MeterInfoHistory(MeterInfo):
 
     history: tuple[MeterValue, ...]
     """Архив показаний"""
-
-
-def get_meters_from_page(html: str) -> MappingProxyType[int, PublicMeterInfo]:
-    """
-    Парсит HTML страницу с информацией по приборам учета.
-
-    Возвращает словарь `идентификатор - информация о приборе учета`.
-    """
-
-    result: dict[int, PublicMeterInfo] = {}
-
-    bs = BeautifulSoup(html, "html.parser")
-    form = cast(Tag, bs.find("form", id="sendCountersValues"))
-
-    for meter in form.find_all("div", class_="block-sch"):
-        meter = cast(Tag, meter)
-
-        name = cast(Tag, meter.find("span", class_="type"))
-
-        if not name.text:
-            continue
-
-        serial = cast(Tag, name.find_next("span"))
-        date = cast(Tag, meter.find(class_="block-note"))
-        value = cast(Tag, date.find_next_sibling())
-
-        name, serial = name.text, serial.text.rsplit("№", 1)[-1]
-        date = str_to_date(date.text.strip().removeprefix("от "))
-        value = float(value.text.strip())
-
-        id = cast(Tag, meter.find("input", {"name": _RE_RAWID}))
-        id = int(cast(str, id["value"]))
-
-        result[id] = PublicMeterInfo(name, serial, date, value)
-
-    return MappingProxyType(result)

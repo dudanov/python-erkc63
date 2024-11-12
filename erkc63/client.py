@@ -1,13 +1,9 @@
 import asyncio
-import dataclasses as dc
 import datetime as dt
-import itertools as it
 import logging
-import re
-from typing import Any, Coroutine, Iterable, Mapping, Sequence, cast
+from typing import Any, Coroutine, Iterable, Mapping, Sequence
 
 import aiohttp
-import bs4
 import yarl
 
 from .account import AccountInfo, PublicAccountInfo
@@ -21,7 +17,8 @@ from .errors import (
     ParsingError,
     SessionRequired,
 )
-from .meters import MeterInfoHistory, MeterValue, PublicMeterInfo, get_meters_from_page
+from .meters import MeterInfoHistory, MeterValue, PublicMeterInfo
+from .parsers import parse_account, parse_accounts, parse_meters, parse_token
 from .payment import Payment
 from .utils import (
     data_attr,
@@ -109,15 +106,8 @@ class ErkcClient:
     def _update_accounts(self, html: str):
         """Обновляет доступные клиенту лицевые счета"""
 
-        bs, ids = bs4.BeautifulSoup(html, "html.parser"), []
-        tag = cast(bs4.Tag, bs.find("div", {"id": "select_ls_dropdown"}))
-
-        for x in tag.find_all("a", {"href": re.compile(r"/\d+$")}):
-            ids.append(int(cast(bs4.Tag, x).text.rsplit("/", 1)[-1]))
-
-        _LOGGER.debug(f"Привязанные лицевые счета: {ids}")
-
-        self._accounts = tuple(ids)
+        self._accounts = parse_accounts(html)
+        _LOGGER.debug(f"Привязанные лицевые счета: {self._accounts}")
 
     @property
     def opened(self) -> bool:
@@ -172,9 +162,7 @@ class ErkcClient:
         async with self._get("/login") as x:
             html = await x.text()
 
-        bs = bs4.BeautifulSoup(html, "html.parser")
-        token = cast(bs4.Tag, bs.find("meta", {"name": "csrf-token"}))
-        self._token = cast(str, token["content"])
+        self._token = parse_token(html)
 
         _LOGGER.debug("Сессия открыта. Токен: %s", self._token)
 
@@ -423,7 +411,7 @@ class ErkcClient:
         # Ответ содержит нулевые платежи (внутренние перерасчеты). Применим фильтр.
         return tuple(x for x in result if x.summa)
 
-    async def account_info(self, account: int | None = None):
+    async def account_info(self, account: int | None = None) -> AccountInfo:
         """Запрос информации о лицевом счете"""
 
         account = self._account(account)
@@ -431,23 +419,7 @@ class ErkcClient:
         async with self._get(f"/account/{account}") as x:
             html = await x.text()
 
-        bs = bs4.BeautifulSoup(html, "html.parser")
-        wl = cast(bs4.Tag, bs.find("div", class_="widget-left"))
-
-        ws1 = cast(bs4.Tag, wl.find("div", class_="widget-section1"))
-        ws1 = cast(bs4.Tag, ws1.find_all("div", class_="text-col-left"))
-
-        ws2 = cast(bs4.Tag, wl.find("div", class_="widget-section2"))
-        ws2 = cast(list[bs4.Tag], ws2.find_all("div", class_="text-col-right"))
-
-        ws = (str_normalize(x.text) for x in it.chain(ws1, ws2))
-
-        def _cnv(k, v):
-            return k.type(v) if v != "-" else 0
-
-        data: Any = (_cnv(*x) for x in zip(dc.fields(AccountInfo), ws))
-
-        return AccountInfo(*data)
+        return parse_account(html)
 
     async def account_add(
         self,
@@ -513,7 +485,7 @@ class ErkcClient:
             html = await x.text()
 
         data: dict[str, Any] = {}
-        meters = get_meters_from_page(html)
+        meters = parse_meters(html)
 
         # Если используем без авторизации - извлечем номер лицевого счета
         # из пути запроса и добавим в данные запроса
@@ -556,7 +528,7 @@ class ErkcClient:
         async with self._get(f"/account/{self._account(account)}/counters") as x:
             html = await x.text()
 
-        return get_meters_from_page(html)
+        return parse_meters(html)
 
     def _public_api(self):
         if self.authorized:
@@ -580,7 +552,7 @@ class ErkcClient:
         async with self._get(f"/counters/{account}") as x:
             html = await x.text()
 
-        return get_meters_from_page(html)
+        return parse_meters(html)
 
     async def pub_set_meters_values(
         self,
