@@ -239,7 +239,13 @@ class ErkcClient:
             await self._cli.close()
 
     async def qr_codes(self, accrual: Accrual) -> QrCodes:
-        """Загрузка PDF версии квитанции (основной и пени)"""
+        """
+        Загружает PDF квитанции и извлекает QR коды оплаты.
+        Возвращает объект `QrCodes`.
+
+        Параметры:
+        - `accrual`: квитанция.
+        """
 
         async def _get_pdf(id: str | None) -> bytes | None:
             if id is None:
