@@ -379,13 +379,11 @@ class ErkcClient:
             # Лимит записей ответа сервера - 25. Контроль превышения на случай изменения API.
             assert (num := len(history)) <= 25
 
-            # Возможен баг: если в один день число записей больше лимита,
-            # то сервер не сможет вернуть полный результат ни при каких условиях.
-            # Этот случай крайне маловероятен, но условие добавлено.
-            last_request = num < 25 or start == end
+            # Множество для проверки содержания в ответе данных от одной даты.
+            unique_dates = set()
 
             for _, key, date, value, consumption, source in history:
-                end = str_to_date(date[27:35])
+                unique_dates.add(end := str_to_date(date[27:35]))
 
                 # игнорируем записи без потребления
                 if not (consumption := float(consumption)):
@@ -396,7 +394,10 @@ class ErkcClient:
                 name, serial = key.split(", счетчик №", 1)
                 db.setdefault((name, serial), []).append(value)
 
-            if last_request:
+            # Возможен баг: если в один день число записей больше лимита,
+            # то сервер не сможет вернуть полный результат ни при каких условиях.
+            # Этот случай крайне маловероятен, но условие добавлено.
+            if num < 25 or len(unique_dates) == 1:
                 break
 
         # Исключаем дублирование записей из наложенных ответов и конвертируем в кортеж
