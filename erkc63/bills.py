@@ -51,10 +51,7 @@ class QrCodes:
     _paid_scale: float
 
     def __init__(
-        self,
-        pdf_erkc: bytes | None,
-        pdf_peni: bytes | None,
-        paid_scale: float = 0.65,
+        self, pdf_erkc: bytes, pdf_peni: bytes, paid_scale: float = 0.65
     ) -> None:
         assert 0 < paid_scale <= 1
 

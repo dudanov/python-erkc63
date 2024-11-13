@@ -244,6 +244,7 @@ class ErkcClient:
 
         Параметры:
         - `accrual`: квитанция.
+        - `peni`: нужна квитанция пени.
         """
 
         if not (id := accrual.peni_id if peni else accrual.bill_id):
@@ -268,7 +269,8 @@ class ErkcClient:
         """
 
         result = await asyncio.gather(
-            self.download_pdf(accrual, False), self.download_pdf(accrual, True)
+            self.download_pdf(accrual, False),
+            self.download_pdf(accrual, True),
         )
 
         return QrCodes(*result)
