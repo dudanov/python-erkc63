@@ -238,6 +238,26 @@ class ErkcClient:
 
             await self._cli.close()
 
+    async def download_pdf(self, accrual: Accrual, peni: bool = False) -> bytes:
+        """
+        Загружает квитанцию в формате PDF. При неудаче возвращает пустые данные.
+
+        Параметры:
+        - `accrual`: квитанция.
+        """
+
+        if not (id := accrual.peni_id if peni else accrual.bill_id):
+            return b""
+
+        try:
+            json = await self._ajax("getReceipt", accrual.account, receiptId=id)
+
+        except Exception:
+            return b""
+
+        async with self._get(json["file"]) as x:
+            return await x.read()
+
     async def qr_codes(self, accrual: Accrual) -> QrCodes:
         """
         Загружает PDF квитанции и извлекает QR коды оплаты.
@@ -247,20 +267,11 @@ class ErkcClient:
         - `accrual`: квитанция.
         """
 
-        async def _get_pdf(id: str | None) -> bytes | None:
-            if id is None:
-                return
+        result = await asyncio.gather(
+            self.download_pdf(accrual, False), self.download_pdf(accrual, True)
+        )
 
-            try:
-                json = await self._ajax("getReceipt", accrual.account, receiptId=id)
-
-            except Exception:
-                return
-
-            async with self._get(json["file"]) as x:
-                return await x.read()
-
-        return QrCodes(await _get_pdf(accrual.bill_id), await _get_pdf(accrual.peni_id))
+        return QrCodes(*result)
 
     async def year_accruals(
         self,
