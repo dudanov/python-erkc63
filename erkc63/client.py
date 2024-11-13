@@ -407,7 +407,7 @@ class ErkcClient:
                     break
 
                 end -= dt.timedelta(days=1)
-                _LOGGER.warning("Применен обход бага.")
+                _LOGGER.warning("Применен обход.")
 
         # Исключаем дублирование записей из наложенных ответов и конвертируем в кортеж
         return tuple(
