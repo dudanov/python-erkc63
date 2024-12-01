@@ -7,7 +7,7 @@ from pypdf import PageObject, PdfReader
 
 QrSupported = Literal["erkc", "kapremont", "peni"]
 
-img = impresources.files() / "paid.png"
+img = impresources.files(".") / "paid.png"
 
 _PAID_LOGO = Image.open(img.read_bytes()).convert("RGBA")
 
