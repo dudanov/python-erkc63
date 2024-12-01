@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "erkc63"
-version = "0.2.4"
+version = "0.2.5"
 description = ""
 authors = ["Sergey V. DUDANOV <sergey.dudanov@gmail.com>"]
 readme = "README.md"
