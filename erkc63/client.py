@@ -35,7 +35,7 @@ _LOGGER = logging.getLogger(__name__)
 _MIN_DATE = dt.date(2018, 1, 1)
 _MAX_DATE = dt.date(2099, 12, 31)
 
-_BASE_URL = yarl.URL("https://lk.erkc63.ru")
+APP_URL = yarl.URL("https://lk.erkc63.ru")
 
 
 class ErkcClient:
@@ -60,7 +60,6 @@ class ErkcClient:
         password: str | None = None,
         *,
         session: aiohttp.ClientSession | None = None,
-        **kwargs,
     ) -> None:
         """
         Создает клиент личного кабинета ЕРКЦ.
@@ -69,12 +68,10 @@ class ErkcClient:
         - `login`: логин (электронная почта).
         - `password`: пароль.
         - `session`: готовый объект `aiohttp.ClientSession`.
-        - `kwargs`: дополнительные параметры при создании `aiohttp.ClientSession`,
         если он не указан в параметре `session`.
         """
 
-        self._cli = session or aiohttp.ClientSession(**kwargs)
-        self._cli._base_url = _BASE_URL
+        self._cli = session or aiohttp.ClientSession(base_url=APP_URL)
         self._login = login
         self._password = password
         self._accounts = None
@@ -122,7 +119,7 @@ class ErkcClient:
     def opened(self) -> bool:
         """Сессия открыта."""
 
-        return self._token is not None
+        return not (self._token is None or self._cli.closed)
 
     @property
     def authorized(self) -> bool:
@@ -157,8 +154,8 @@ class ErkcClient:
 
         raise AccountNotFound("Лицевой счет %d не привязан", account)
 
-    async def open(self) -> None:
-        """Открытие сессии."""
+    async def open(self, auth: bool = True) -> None:
+        """Открытие сессии"""
 
         if self._token:
             _LOGGER.warning("Сессия уже открыта. Токен: %s", self._token)
@@ -173,8 +170,13 @@ class ErkcClient:
 
         _LOGGER.debug("Сессия открыта. Токен: %s", self._token)
 
-        if self._login and self._password:
-            await self.login()
+        if not auth:
+            return
+
+        if not (self._login and self._password):
+            raise AuthorizationError("Не заданы параметры входа")
+
+        await self.login()
 
     async def login(
         self,
