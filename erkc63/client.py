@@ -126,16 +126,22 @@ class ErkcClient:
         _LOGGER.debug(f"Привязанные к личному кабинету лицевые счета: {self._accounts}")
 
     @property
+    def closed(self) -> bool:
+        """Коннектор клиента закрыт."""
+
+        return self._cli.closed
+
+    @property
     def opened(self) -> bool:
         """Сессия открыта."""
 
-        return not (self._cli.closed or self._token is None)
+        return not (self.closed or self._token is None)
 
     @property
     def authorized(self) -> bool:
         """Авторизация в аккаунте выполнена."""
 
-        return not (self._cli.closed or self._accounts is None)
+        return not (self.closed or self._accounts is None)
 
     @property
     def accounts(self) -> tuple[int, ...]:
