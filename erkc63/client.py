@@ -38,6 +38,16 @@ _MAX_DATE = dt.date(2099, 12, 31)
 APP_URL = yarl.URL("https://lk.erkc63.ru")
 
 
+def public_api(method):
+    async def _wrapper(self: "ErkcClient", *args, **kwargs):
+        if self.authorized:
+            raise AuthorizationRequired("Публичный API функционирует без авторизации")
+
+        return await method(self, *args, **kwargs)
+
+    return _wrapper
+
+
 class ErkcClient:
     """
     Клиент личного кабинета ЕРКЦ.
@@ -200,7 +210,7 @@ class ErkcClient:
         login, password = login or self._login, password or self._password
 
         if not (login and password):
-            raise ValueError("Не указаны логин и пароль")
+            raise AuthorizationError("Не заданы параметры входа")
 
         _LOGGER.debug("Вход в аккаунт %s", login)
 
@@ -641,10 +651,7 @@ class ErkcClient:
 
         return parse_meters(html)
 
-    def _public_api(self):
-        if self.authorized:
-            raise AuthorizationRequired("Публичный API функционирует без авторизации")
-
+    @public_api
     async def pub_meters_info(self, account: int) -> Mapping[int, PublicMeterInfo]:
         """
         Запрос публичной информации о приборах учета по лицевому счету.
@@ -661,18 +668,17 @@ class ErkcClient:
         - `account`: номер лицевого счета.
         """
 
-        self._public_api()
-
         async with self._get(f"/counters/{account}") as x:
             html = await x.text()
 
         return parse_meters(html)
 
+    @public_api
     async def pub_set_meters_values(
         self,
         account: int,
         values: Mapping[int, float],
-    ):
+    ) -> None:
         """
         Передача новых показаний приборов учета без авторизации.
 
@@ -681,10 +687,9 @@ class ErkcClient:
         - `values`: словарь `идентификатор прибора - новое показание`.
         """
 
-        self._public_api()
-
         await self._set_meters_values(f"/counters/{account}", values)
 
+    @public_api
     async def pub_account_info(self, account: int) -> PublicAccountInfo | None:
         """
         Запрос открытой информации по лицевому счету.
@@ -692,8 +697,6 @@ class ErkcClient:
         Параметры:
         - `account`: номер лицевого счета.
         """
-
-        self._public_api()
 
         async with self._get("/payment/checkLS", ls=account) as x:
             json: Mapping[str, Any] = await x.json()
@@ -708,6 +711,7 @@ class ErkcClient:
 
         _LOGGER.info("Лицевой счет %d не найден", account)
 
+    @public_api
     async def pub_accounts_info(
         self, *accounts: int
     ) -> Mapping[int, PublicAccountInfo]:
@@ -717,8 +721,6 @@ class ErkcClient:
         Параметры:
         - `accounts`: номера лицевых счетов.
         """
-
-        self._public_api()
 
         result = await asyncio.gather(*map(self.pub_account_info, accounts))
 
