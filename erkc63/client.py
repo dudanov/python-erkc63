@@ -236,7 +236,7 @@ class ErkcClient:
             async with self._get("/logout"):
                 self._accounts = None
 
-    async def close(self) -> None:
+    async def close(self, close_transport: bool = True) -> None:
         """Выход из аккаунта личного кабинета и закрытие сессии."""
 
         try:
@@ -248,7 +248,8 @@ class ErkcClient:
                 _LOGGER.debug("Закрытие сессии. Токен: %s", self._token)
                 self._token = None
 
-            await self._cli.close()
+            if close_transport:
+                await self._cli.close()
 
     async def download_pdf(self, accrual: Accrual, peni: bool = False) -> bytes:
         """
