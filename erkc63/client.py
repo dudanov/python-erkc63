@@ -129,13 +129,13 @@ class ErkcClient:
     def opened(self) -> bool:
         """Сессия открыта."""
 
-        return not (self._token is None or self._cli.closed)
+        return not (self._cli.closed or self._token is None)
 
     @property
     def authorized(self) -> bool:
         """Авторизация в аккаунте выполнена."""
 
-        return self._accounts is not None
+        return not (self._cli.closed or self._accounts is None)
 
     @property
     def accounts(self) -> tuple[int, ...]:
