@@ -1,6 +1,7 @@
 import asyncio
 import datetime as dt
 import logging
+import time
 from typing import Any, Coroutine, Iterable, Mapping, Sequence
 
 import aiohttp
@@ -34,14 +35,19 @@ _LOGGER = logging.getLogger(__name__)
 
 _MIN_DATE = dt.date(2018, 1, 1)
 _MAX_DATE = dt.date(2099, 12, 31)
+_SESSION_TIMEOUT = 300
 
 APP_URL = yarl.URL("https://lk.erkc63.ru")
 
 
 def auth_required(method):
     async def _wrapper(self: "ErkcClient", *args, **kwargs):
+        tm = self._session_timeout()
+
         if not self.authorized:
-            raise AuthorizationRequired("Требуется вход в личный кабинет")
+            await self.login()
+
+        self._time = tm
 
         return await method(self, *args, **kwargs)
 
@@ -80,6 +86,8 @@ class ErkcClient:
     """Токен сессии."""
     _accounts: tuple[int, ...] | None
     """Лицевые счета, привязанные к аккаунту."""
+    _time: float
+    """Время для отслеживания таймаута сессии"""
 
     def __init__(
         self,
@@ -103,6 +111,7 @@ class ErkcClient:
         self._password = password
         self._accounts = None
         self._token = None
+        self._time = time.monotonic()
 
     async def __aenter__(self):
         try:
@@ -116,6 +125,16 @@ class ErkcClient:
 
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         await self.close()
+
+    def _session_timeout(self) -> float:
+        if ((tm := time.monotonic()) - self._time) >= _SESSION_TIMEOUT:
+            self._token = None
+            self._accounts = None
+
+        else:
+            self._time = tm
+
+        return tm
 
     def _post(self, path: str, **data: Any):
         if self._token is None:
@@ -201,6 +220,7 @@ class ErkcClient:
         async with self._get("/login") as x:
             html = await x.text()
 
+        self._time = time.monotonic()
         self._token = parse_token(html)
 
         _LOGGER.debug("Сессия открыта. Токен: %s", self._token)
@@ -247,6 +267,7 @@ class ErkcClient:
 
             html = await x.text()
 
+        self._time = time.monotonic()
         self._update_accounts(html)
 
         # Сохраняем актуальную пару логин-пароль
