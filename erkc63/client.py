@@ -47,6 +47,7 @@ def auth_required(method):
 
     return _wrapper
 
+
 def public_api(method):
     async def _wrapper(self: "ErkcClient", *args, **kwargs):
         if self.authorized:
