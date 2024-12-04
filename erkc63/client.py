@@ -38,14 +38,30 @@ _MAX_DATE = dt.date(2099, 12, 31)
 APP_URL = yarl.URL("https://lk.erkc63.ru")
 
 
+def auth_required(method):
+    async def _wrapper(self: "ErkcClient", *args, **kwargs):
+        if not self.authorized:
+            raise AuthorizationRequired("Требуется вход в личный кабинет")
+
+        return await method(self, *args, **kwargs)
+
+    return _wrapper
+
 def public_api(method):
     async def _wrapper(self: "ErkcClient", *args, **kwargs):
         if self.authorized:
             raise AuthorizationRequired("Публичный API функционирует без авторизации")
 
+        if not self.opened:
+            raise SessionRequired("Требуется открытая сессия")
+
         return await method(self, *args, **kwargs)
 
     return _wrapper
+
+
+_SEMAPHORE = asyncio.Semaphore()
+"""Глобальный семафор выполнения ограничения сервера одной сессии на IP"""
 
 
 class ErkcClient:
@@ -177,6 +193,8 @@ class ErkcClient:
             _LOGGER.warning("Сессия уже открыта. Токен: %s", self._token)
             return
 
+        await _SEMAPHORE.acquire()
+
         _LOGGER.debug("Открытие новой сессии")
 
         async with self._get("/login") as x:
@@ -257,6 +275,9 @@ class ErkcClient:
             if close_transport:
                 await self._cli.close()
 
+            _SEMAPHORE.release()
+
+    @auth_required
     async def download_pdf(self, accrual: Accrual, peni: bool = False) -> bytes:
         """
         Загружает квитанцию в формате PDF. При неудаче возвращает пустые данные.
@@ -278,6 +299,7 @@ class ErkcClient:
         async with self._get(json["file"]) as x:
             return await x.read()
 
+    @auth_required
     async def qr_codes(self, accrual: Accrual) -> QrCodes:
         """
         Загружает PDF квитанции и извлекает QR коды оплаты.
@@ -294,6 +316,7 @@ class ErkcClient:
 
         return QrCodes(*result)
 
+    @auth_required
     async def year_accruals(
         self,
         year: int | None = None,
@@ -357,6 +380,7 @@ class ErkcClient:
 
         return result
 
+    @auth_required
     async def update_accrual(self, accrual: Accruals) -> None:
         """
         Обновление детализированных данных квитанции или начисления.
@@ -376,6 +400,7 @@ class ErkcClient:
             for x in resp
         }
 
+    @auth_required
     def update_accruals(self, accruals: Iterable[Accruals]):
         """
         Обновление детализированных данных квитанций или начислений.
@@ -386,6 +411,7 @@ class ErkcClient:
 
         return asyncio.gather(*map(self.update_accrual, accruals))
 
+    @auth_required
     async def meters_history(
         self,
         *,
@@ -452,6 +478,7 @@ class ErkcClient:
             MeterInfoHistory(*k, tuple(dict.fromkeys(v))) for k, v in db.items()
         )
 
+    @auth_required
     async def accruals_history(
         self,
         *,
@@ -499,6 +526,7 @@ class ErkcClient:
 
         return tuple(result)
 
+    @auth_required
     async def payments_history(
         self,
         *,
@@ -528,6 +556,7 @@ class ErkcClient:
         # Ответ содержит нулевые платежи (внутренние перерасчеты). Применим фильтр.
         return tuple(x for x in result if x.summa)
 
+    @auth_required
     async def account_info(self, account: int | None = None) -> AccountInfo:
         """
         Запрос информации о лицевом счете.
@@ -544,6 +573,7 @@ class ErkcClient:
 
         return parse_account(html)
 
+    @auth_required
     async def account_add(
         self,
         account: int | PublicAccountInfo,
@@ -581,6 +611,7 @@ class ErkcClient:
         if account not in self.accounts:
             raise AccountBindingError("Не удалось привязать лицевой счет %d", account)
 
+    @auth_required
     async def account_rm(self, account: int) -> None:
         """
         Отвязка лицевого счета от аккаунта личного кабинета.
@@ -638,6 +669,7 @@ class ErkcClient:
         async with self._post(path, **data):
             pass
 
+    @auth_required
     async def meters_info(
         self, account: int | None = None
     ) -> Mapping[int, PublicMeterInfo]:
