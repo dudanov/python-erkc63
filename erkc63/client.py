@@ -15,7 +15,6 @@ from .errors import (
     AuthorizationError,
     AuthorizationRequired,
     ParsingError,
-    SessionRequired,
 )
 from .meters import MeterInfoHistory, MeterValue, PublicMeterInfo
 from .parsers import parse_account, parse_accounts, parse_meters, parse_token
@@ -40,10 +39,10 @@ APP_URL = yarl.URL("https://lk.erkc63.ru")
 
 def auth_required(method):
     async def _wrapper(self: "ErkcClient", *args, **kwargs):
-        self._laravel_expires()
+        self._check_session()
 
         if not self.authorized:
-            await self.login()
+            await self.open()
 
         return await method(self, *args, **kwargs)
 
@@ -52,13 +51,13 @@ def auth_required(method):
 
 def public_api(method):
     async def _wrapper(self: "ErkcClient", *args, **kwargs):
-        self._laravel_expires()
+        self._check_session()
 
         if self.authorized:
             raise AuthorizationRequired("Публичный API функционирует без авторизации")
 
         if not self.opened:
-            raise SessionRequired("Требуется открытая сессия")
+            await self.open(auth=False)
 
         return await method(self, *args, **kwargs)
 
@@ -121,7 +120,7 @@ class ErkcClient:
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         await self.close()
 
-    def _laravel_expires(self):
+    def _check_session(self):
         """
         Выполняет проверку времени жизни сессии.
         Сбрасывает при ее истечении либо отсутствии куки.
@@ -143,9 +142,6 @@ class ErkcClient:
         self._accounts = None
 
     def _post(self, path: str, **data: Any):
-        if self._token is None:
-            raise SessionRequired("Запрос требует открытой сессии")
-
         data["_token"] = self._token
         return self._cli.post(path, data=data)
 
@@ -215,8 +211,9 @@ class ErkcClient:
     async def open(self, auth: bool = True) -> None:
         """Открытие сессии"""
 
+        self._check_session()
+
         if self._token:
-            _LOGGER.warning("Сессия уже открыта. Токен: %s", self._token)
             return
 
         await _SEMAPHORE.acquire()
@@ -253,14 +250,18 @@ class ErkcClient:
         - `password`: пароль.
         """
 
+        self._check_session()
+
         if self.authorized:
-            _LOGGER.warning("Клиент уже авторизован в аккаунте %s", self._login)
             return
 
         login, password = login or self._login, password or self._password
 
         if not (login and password):
             raise AuthorizationError("Не заданы параметры входа")
+
+        if not self.opened:
+            await self.open(auth=False)
 
         _LOGGER.debug("Вход в аккаунт %s", login)
 

@@ -22,9 +22,5 @@ class AuthorizationRequired(ApiError):
     pass
 
 
-class SessionRequired(ApiError):
-    pass
-
-
 class AccountNotFound(ApiError):
     pass

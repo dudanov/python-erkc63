@@ -7,7 +7,6 @@ from .errors import (
     AuthorizationRequired,
     ErkcError,
     ParsingError,
-    SessionRequired,
 )
 
 __all__ = [
@@ -20,5 +19,4 @@ __all__ = [
     "AccountBindingError",
     "AuthorizationRequired",
     "AccountNotFound",
-    "SessionRequired",
 ]
