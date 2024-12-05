@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 import datetime as dt
+import functools
 import logging
-from typing import Any, Coroutine, Iterable, Mapping, Sequence
+from typing import Any, Coroutine, Iterable, Mapping, Sequence, cast
 
 import aiohttp
 import yarl
@@ -37,50 +40,31 @@ _MAX_DATE = dt.date(2099, 12, 31)
 APP_URL = yarl.URL("https://lk.erkc63.ru")
 
 
-def api(*, session_required: bool = True, auth_required: bool = True):
-    def _inner(method):
-        async def _wrapper(self: "ErkcClient", *args, **kwargs):
-            self._check_session()
+def api(
+    func=None,
+    *,
+    session_required: bool = True,
+    auth_required: bool = True,
+):
+    if func is None:
+        return functools.partial(
+            api,
+            session_required=session_required,
+            auth_required=auth_required,
+        )
 
-            if not session_required:
-                return
+    @functools.wraps(func)
+    async def _wrapper(self: "ErkcClient", *args, **kwargs):
+        self._check_session()
 
+        if session_required:
             if not self.opened:
                 await self.open(auth=auth_required)
 
             if auth_required and not self.authorized:
                 await self.login()
 
-            return await method(self, *args, **kwargs)
-
-        return _wrapper
-
-    return _inner
-
-
-def auth_required(method):
-    async def _wrapper(self: "ErkcClient", *args, **kwargs):
-        self._check_session()
-
-        if not self.authorized:
-            await self.open()
-
-        return await method(self, *args, **kwargs)
-
-    return _wrapper
-
-
-def public_api(method):
-    async def _wrapper(self: "ErkcClient", *args, **kwargs):
-        self._check_session()
-
-        if self.authorized:
-            raise AuthorizationRequired("Публичный API функционирует без авторизации")
-
-        if not self.opened:
-            await self.open(auth=False)
-
-        return await method(self, *args, **kwargs)
+        return await func(self, *args, **kwargs)
 
     return _wrapper
 
@@ -147,9 +131,9 @@ class ErkcClient:
         Сбрасывает при ее истечении либо отсутствии куки.
         """
 
-        for x in self._cli.cookie_jar:
-            if x.key == "laravel_session":
-                expires = x["expires"]
+        for cookie in self._cli.cookie_jar:
+            if cookie.key == "laravel_session":
+                expires = cookie["expires"]
                 expires = dt.datetime.strptime(expires, "%a, %d-%b-%Y %H:%M:%S %Z")
                 expires = expires.replace(tzinfo=dt.UTC)
 
@@ -229,10 +213,9 @@ class ErkcClient:
 
         raise AccountNotFound("Лицевой счет %d не привязан", account)
 
+    @api(session_required=False)
     async def open(self, auth: bool = True) -> None:
         """Открытие сессии"""
-
-        self._check_session()
 
         if self._token:
             return
@@ -256,6 +239,7 @@ class ErkcClient:
 
         await self.login()
 
+    @api(auth_required=False)
     async def login(
         self,
         login: str | None = None,
@@ -271,8 +255,6 @@ class ErkcClient:
         - `password`: пароль.
         """
 
-        self._check_session()
-
         if self.authorized:
             return
 
@@ -280,9 +262,6 @@ class ErkcClient:
 
         if not (login and password):
             raise AuthorizationError("Не заданы параметры входа")
-
-        if not self.opened:
-            await self.open(auth=False)
 
         _LOGGER.debug("Вход в аккаунт %s", login)
 
@@ -299,6 +278,7 @@ class ErkcClient:
         # Сохраняем актуальную пару логин-пароль
         self._login, self._password = login, password
 
+    @api(session_required=False)
     async def logout(self) -> None:
         """Выход из аккаунта личного кабинета."""
 
@@ -308,6 +288,7 @@ class ErkcClient:
             async with self._get("/logout"):
                 self._accounts = None
 
+    @api(session_required=False)
     async def close(self, close_transport: bool = True) -> None:
         """Выход из аккаунта личного кабинета и закрытие сессии."""
 
@@ -325,7 +306,7 @@ class ErkcClient:
 
             _SEMAPHORE.release()
 
-    @auth_required
+    @api
     async def download_pdf(self, accrual: Accrual, peni: bool = False) -> bytes:
         """
         Загружает квитанцию в формате PDF. При неудаче возвращает пустые данные.
@@ -347,7 +328,7 @@ class ErkcClient:
         async with self._get(json["file"]) as x:
             return await x.read()
 
-    @auth_required
+    @api
     async def qr_codes(self, accrual: Accrual) -> QrCodes:
         """
         Загружает PDF квитанции и извлекает QR коды оплаты.
@@ -364,7 +345,7 @@ class ErkcClient:
 
         return QrCodes(*result)
 
-    @auth_required
+    @api
     async def year_accruals(
         self,
         year: int | None = None,
@@ -428,7 +409,7 @@ class ErkcClient:
 
         return result
 
-    @auth_required
+    @api
     async def update_accrual(self, accrual: Accruals) -> None:
         """
         Обновление детализированных данных квитанции или начисления.
@@ -448,7 +429,7 @@ class ErkcClient:
             for x in resp
         }
 
-    @auth_required
+    @api
     def update_accruals(self, accruals: Iterable[Accruals]):
         """
         Обновление детализированных данных квитанций или начислений.
@@ -459,7 +440,7 @@ class ErkcClient:
 
         return asyncio.gather(*map(self.update_accrual, accruals))
 
-    @auth_required
+    @api
     async def meters_history(
         self,
         *,
@@ -526,7 +507,7 @@ class ErkcClient:
             MeterInfoHistory(*k, tuple(dict.fromkeys(v))) for k, v in db.items()
         )
 
-    @auth_required
+    @api
     async def accruals_history(
         self,
         *,
@@ -574,7 +555,7 @@ class ErkcClient:
 
         return tuple(result)
 
-    @auth_required
+    @api
     async def payments_history(
         self,
         *,
@@ -604,7 +585,7 @@ class ErkcClient:
         # Ответ содержит нулевые платежи (внутренние перерасчеты). Применим фильтр.
         return tuple(x for x in result if x.summa)
 
-    @auth_required
+    @api
     async def account_info(self, account: int | None = None) -> AccountInfo:
         """
         Запрос информации о лицевом счете.
@@ -621,7 +602,7 @@ class ErkcClient:
 
         return parse_account(html)
 
-    @auth_required
+    @api
     async def account_add(
         self,
         account: int | PublicAccountInfo,
@@ -659,7 +640,7 @@ class ErkcClient:
         if account not in self.accounts:
             raise AccountBindingError("Не удалось привязать лицевой счет %d", account)
 
-    @auth_required
+    @api
     async def account_rm(self, account: int) -> None:
         """
         Отвязка лицевого счета от аккаунта личного кабинета.
@@ -717,7 +698,7 @@ class ErkcClient:
         async with self._post(path, **data):
             pass
 
-    @auth_required
+    @api
     async def meters_info(
         self, account: int | None = None
     ) -> Mapping[int, PublicMeterInfo]:
@@ -738,7 +719,7 @@ class ErkcClient:
 
         return parse_meters(html)
 
-    @public_api
+    @api(auth_required=False)
     async def pub_meters_info(self, account: int) -> Mapping[int, PublicMeterInfo]:
         """
         Запрос публичной информации о приборах учета по лицевому счету.
@@ -760,7 +741,7 @@ class ErkcClient:
 
         return parse_meters(html)
 
-    @public_api
+    @api(auth_required=False)
     async def pub_set_meters_values(
         self,
         account: int,
@@ -776,7 +757,7 @@ class ErkcClient:
 
         await self._set_meters_values(f"/counters/{account}", values)
 
-    @public_api
+    @api(auth_required=False)
     async def pub_account_info(self, account: int) -> PublicAccountInfo | None:
         """
         Запрос открытой информации по лицевому счету.
@@ -798,7 +779,7 @@ class ErkcClient:
 
         _LOGGER.info("Лицевой счет %d не найден", account)
 
-    @public_api
+    @api(auth_required=False)
     async def pub_accounts_info(
         self, *accounts: int
     ) -> Mapping[int, PublicAccountInfo]:
