@@ -1,7 +1,6 @@
 import asyncio
 import datetime as dt
 import logging
-import time
 from typing import Any, Coroutine, Iterable, Mapping, Sequence
 
 import aiohttp
@@ -35,19 +34,16 @@ _LOGGER = logging.getLogger(__name__)
 
 _MIN_DATE = dt.date(2018, 1, 1)
 _MAX_DATE = dt.date(2099, 12, 31)
-_SESSION_TIMEOUT = 300
 
 APP_URL = yarl.URL("https://lk.erkc63.ru")
 
 
 def auth_required(method):
     async def _wrapper(self: "ErkcClient", *args, **kwargs):
-        tm = self._session_timeout()
+        self._laravel_expires()
 
         if not self.authorized:
             await self.login()
-
-        self._time = tm
 
         return await method(self, *args, **kwargs)
 
@@ -56,6 +52,8 @@ def auth_required(method):
 
 def public_api(method):
     async def _wrapper(self: "ErkcClient", *args, **kwargs):
+        self._laravel_expires()
+
         if self.authorized:
             raise AuthorizationRequired("Публичный API функционирует без авторизации")
 
@@ -86,8 +84,6 @@ class ErkcClient:
     """Токен сессии."""
     _accounts: tuple[int, ...] | None
     """Лицевые счета, привязанные к аккаунту."""
-    _time: float
-    """Время для отслеживания таймаута сессии"""
 
     def __init__(
         self,
@@ -111,7 +107,6 @@ class ErkcClient:
         self._password = password
         self._accounts = None
         self._token = None
-        self._time = time.monotonic()
 
     async def __aenter__(self):
         try:
@@ -126,15 +121,26 @@ class ErkcClient:
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         await self.close()
 
-    def _session_timeout(self) -> float:
-        if ((tm := time.monotonic()) - self._time) >= _SESSION_TIMEOUT:
-            self._token = None
-            self._accounts = None
+    def _laravel_expires(self):
+        """
+        Выполняет проверку времени жизни сессии.
+        Сбрасывает при ее истечении либо отсутствии куки.
+        """
 
-        else:
-            self._time = tm
+        for x in self._cli.cookie_jar:
+            if x.key == "laravel_session":
+                expires = x["expires"]
+                expires = dt.datetime.strptime(expires, "%a, %d-%b-%Y %H:%M:%S %Z")
+                expires = expires.replace(tzinfo=dt.UTC)
 
-        return tm
+                if dt.datetime.now(dt.UTC).replace(microsecond=0) >= expires:
+                    break
+
+                return
+
+        # Сброс сессии
+        self._token = None
+        self._accounts = None
 
     def _post(self, path: str, **data: Any):
         if self._token is None:
@@ -220,7 +226,6 @@ class ErkcClient:
         async with self._get("/login") as x:
             html = await x.text()
 
-        self._time = time.monotonic()
         self._token = parse_token(html)
 
         _LOGGER.debug("Сессия открыта. Токен: %s", self._token)
@@ -267,7 +272,6 @@ class ErkcClient:
 
             html = await x.text()
 
-        self._time = time.monotonic()
         self._update_accounts(html)
 
         # Сохраняем актуальную пару логин-пароль
