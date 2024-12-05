@@ -37,22 +37,25 @@ _MAX_DATE = dt.date(2099, 12, 31)
 APP_URL = yarl.URL("https://lk.erkc63.ru")
 
 
-def api(method, *, session_required: bool = True, auth_required: bool = True):
-    async def _wrapper(self: "ErkcClient", *args, **kwargs):
-        self._check_session()
+def api(*, session_required: bool = True, auth_required: bool = True):
+    def _inner(method):
+        async def _wrapper(self: "ErkcClient", *args, **kwargs):
+            self._check_session()
 
-        if not session_required:
-            return
+            if not session_required:
+                return
 
-        if not self.opened:
-            await self.open(auth=auth_required)
+            if not self.opened:
+                await self.open(auth=auth_required)
 
-        if auth_required and not self.authorized:
-            await self.login()
+            if auth_required and not self.authorized:
+                await self.login()
 
-        return await method(self, *args, **kwargs)
+            return await method(self, *args, **kwargs)
 
-    return _wrapper
+        return _wrapper
+
+    return _inner
 
 
 def auth_required(method):
