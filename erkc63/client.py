@@ -75,13 +75,11 @@ def api(
     session_required: bool = True,
     auth_required: bool = True,
 ) -> ClientMethod | Callable[[ClientMethod], ClientMethod]:
+    """Декоратор методов API клиента"""
+
     def decorator(func: ClientMethod):
         @functools.wraps(func)
-        async def _wrapper(
-            self: "ErkcClient",
-            *args,
-            **kwargs,
-        ):
+        async def _wrapper(self: "ErkcClient", *args, **kwargs):
             self._check_session()
 
             if session_required:
