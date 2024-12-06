@@ -13,6 +13,7 @@ from typing import (
     Iterable,
     Mapping,
     ParamSpec,
+    Self,
     Sequence,
     TypeVar,
     overload,
@@ -57,7 +58,7 @@ APP_URL = yarl.URL("https://lk.erkc63.ru")
 P = ParamSpec("P")
 T = TypeVar("T")
 
-ClientMethod = Callable[Concatenate["ErkcClient", P], Awaitable[T]]
+ClientMethod = Callable[Concatenate["Self@ErkcClient", P], Awaitable[T]]
 
 
 @overload
