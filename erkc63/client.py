@@ -12,7 +12,9 @@ from typing import (
     Coroutine,
     Iterable,
     Mapping,
+    ParamSpec,
     Sequence,
+    TypeVar,
     overload,
 )
 
@@ -52,8 +54,10 @@ _MAX_DATE = dt.date(2099, 12, 31)
 
 APP_URL = yarl.URL("https://lk.erkc63.ru")
 
+P = ParamSpec("P")
+T = TypeVar("T")
 
-ClientMethod = Callable[Concatenate["ErkcClient", ...], Awaitable]
+ClientMethod = Callable[Concatenate["ErkcClient", P], Awaitable[T]]
 
 
 @overload
@@ -63,8 +67,9 @@ def api(func: ClientMethod, /) -> ClientMethod: ...
 @overload
 def api(
     *,
-    session_required: bool = True,
     auth_required: bool = True,
+    check_only: bool = False,
+    public: bool = False,
 ) -> Callable[[ClientMethod], ClientMethod]: ...
 
 
@@ -72,25 +77,31 @@ def api(
     func: ClientMethod | None = None,
     /,
     *,
-    session_required: bool = True,
     auth_required: bool = True,
+    check_only: bool = False,
+    public: bool = False,
 ) -> ClientMethod | Callable[[ClientMethod], ClientMethod]:
     """Декоратор методов API клиента"""
 
     def decorator(func: ClientMethod):
         @functools.wraps(func)
         async def _wrapper(self: "ErkcClient", *args, **kwargs):
+            nonlocal auth_required
+
             self._check_session()
 
-            if session_required:
-                if not auth_required and self.authorized:
-                    await self.close(close_transport=False)
+            if check_only:
+                return await func(self, *args, **kwargs)
 
-                if not self.opened:
-                    await self.open(auth=auth_required)
+            if public:
+                auth_required = False
+                await self.close(close_transport=False)
 
-                elif auth_required and not self.authorized:
-                    await self.login()
+            if not self.opened:
+                await self.open(auth=auth_required)
+
+            if auth_required and not self.authorized:
+                await self.open()
 
             return await func(self, *args, **kwargs)
 
@@ -242,11 +253,16 @@ class ErkcClient:
 
         raise AccountNotFound("Лицевой счет %d не привязан", account)
 
-    @api(session_required=False)
-    async def open(self, auth: bool = True) -> None:
+    @api(check_only=True)
+    async def open(
+        self,
+        login: str | None = None,
+        password: str | None = None,
+        auth: bool = True,
+    ) -> None:
         """Открытие сессии"""
 
-        if not self._token:
+        if not self.opened:
             await _SEMAPHORE.acquire()
 
             _LOGGER.debug("Открытие новой сессии")
@@ -258,31 +274,7 @@ class ErkcClient:
 
             _LOGGER.debug("Сессия открыта. Токен: %s", self._token)
 
-        if not auth:
-            return
-
-        if not (self._login and self._password):
-            raise AuthorizationError("Не заданы параметры входа")
-
-        await self.login()
-
-    @api(auth_required=False)
-    async def login(
-        self,
-        login: str | None = None,
-        password: str | None = None,
-    ) -> None:
-        """
-        Авторизация в аккаунте личного кабинета.
-
-        Логин и пароль могут быть заданы в качестве аргументов, либо при создании клиента.
-
-        Параметры:
-        - `login`: логин (электронная почта).
-        - `password`: пароль.
-        """
-
-        if self.authorized:
+        if not auth or self.authorized:
             return
 
         login, password = login or self._login, password or self._password
@@ -305,36 +297,28 @@ class ErkcClient:
         # Сохраняем актуальную пару логин-пароль
         self._login, self._password = login, password
 
-    @api(session_required=False)
-    async def logout(self) -> None:
-        """Выход из аккаунта личного кабинета."""
-
-        if self.authorized:
-            _LOGGER.debug("Выход из аккаунта %s", self._login)
-
-            async with self._get("/logout") as dd:
-                await dd.text()
-
-            self._accounts = None
-            self._token = None
-
-    @api(session_required=False)
+    @api(check_only=True)
     async def close(self, close_transport: bool = True) -> None:
         """Выход из аккаунта личного кабинета и закрытие сессии."""
 
         try:
             if self.authorized:
-                await self.logout()
+                _LOGGER.debug("Выход из аккаунта %s", self._login)
+
+                async with self._get("/logout") as x:
+                    await x.text()
+
+                self._reset()
 
         finally:
-            if self._token is not None:
-                _LOGGER.debug("Закрытие сессии. Токен: %s", self._token)
-                self._token = None
-
             if close_transport:
                 await self._cli.close()
 
             _SEMAPHORE.release()
+
+    def _reset(self):
+        self._token = None
+        self._accounts = None
 
     @api
     async def download_pdf(self, accrual: Accrual, peni: bool = False) -> bytes:
@@ -749,7 +733,7 @@ class ErkcClient:
 
         return parse_meters(html)
 
-    @api(auth_required=False)
+    @api(public=True)
     async def pub_meters_info(self, account: int) -> Mapping[int, PublicMeterInfo]:
         """
         Запрос публичной информации о приборах учета по лицевому счету.
@@ -771,7 +755,7 @@ class ErkcClient:
 
         return parse_meters(html)
 
-    @api(auth_required=False)
+    @api(public=True)
     async def pub_set_meters_values(
         self,
         account: int,
@@ -787,7 +771,7 @@ class ErkcClient:
 
         await self._set_meters_values(f"/counters/{account}", values)
 
-    @api(auth_required=False)
+    @api(public=True)
     async def pub_account_info(self, account: int) -> PublicAccountInfo | None:
         """
         Запрос открытой информации по лицевому счету.
@@ -809,7 +793,7 @@ class ErkcClient:
 
         _LOGGER.info("Лицевой счет %d не найден", account)
 
-    @api(auth_required=False)
+    @api(public=True)
     async def pub_accounts_info(
         self, *accounts: int
     ) -> Mapping[int, PublicAccountInfo]:
