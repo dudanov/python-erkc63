@@ -44,8 +44,6 @@ from .utils import (
 
 _LOGGER = logging.getLogger(__name__)
 
-ClientMethod = Callable[Concatenate["ErkcClient", ...], Awaitable]
-
 _SEMAPHORE = asyncio.Semaphore()
 """Глобальный семафор выполнения ограничения сервера одной сессии на IP"""
 
@@ -53,6 +51,9 @@ _MIN_DATE = dt.date(2018, 1, 1)
 _MAX_DATE = dt.date(2099, 12, 31)
 
 APP_URL = yarl.URL("https://lk.erkc63.ru")
+
+
+ClientMethod = Callable[Concatenate["ErkcClient", ...], Awaitable]
 
 
 @overload
