@@ -165,7 +165,7 @@ class ErkcClient:
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         await self.close()
 
-    def _check_session(self):
+    def _check_session(self) -> None:
         """
         Выполняет проверку времени жизни сессии.
         Сбрасывает при ее истечении либо отсутствии куки.
@@ -182,9 +182,7 @@ class ErkcClient:
 
                 return
 
-        # Сброс сессии
-        self._token = None
-        self._accounts = None
+        self._reset()
 
     def _post(self, path: str, **data: Any):
         data["_token"] = self._token
