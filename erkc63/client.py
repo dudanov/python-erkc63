@@ -4,7 +4,17 @@ import asyncio
 import datetime as dt
 import functools
 import logging
-from typing import Any, Coroutine, Iterable, Mapping, Sequence, cast
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Concatenate,
+    Coroutine,
+    Iterable,
+    Mapping,
+    Sequence,
+    overload,
+)
 
 import aiohttp
 import yarl
@@ -34,43 +44,63 @@ from .utils import (
 
 _LOGGER = logging.getLogger(__name__)
 
+ClientMethod = Callable[Concatenate["ErkcClient", ...], Awaitable]
+
+_SEMAPHORE = asyncio.Semaphore()
+"""Глобальный семафор выполнения ограничения сервера одной сессии на IP"""
+
 _MIN_DATE = dt.date(2018, 1, 1)
 _MAX_DATE = dt.date(2099, 12, 31)
 
 APP_URL = yarl.URL("https://lk.erkc63.ru")
 
 
+@overload
+def api(func: ClientMethod, /) -> ClientMethod: ...
+
+
+@overload
 def api(
-    func=None,
     *,
     session_required: bool = True,
     auth_required: bool = True,
-):
+) -> Callable[[ClientMethod], ClientMethod]: ...
+
+
+def api(
+    func: ClientMethod | None = None,
+    /,
+    *,
+    session_required: bool = True,
+    auth_required: bool = True,
+) -> ClientMethod | Callable[[ClientMethod], ClientMethod]:
+    def decorator(func: ClientMethod):
+        @functools.wraps(func)
+        async def _wrapper(
+            self: "ErkcClient",
+            *args,
+            **kwargs,
+        ):
+            self._check_session()
+
+            if session_required:
+                if not auth_required and self.authorized:
+                    await self.close(close_transport=False)
+
+                if not self.opened:
+                    await self.open(auth=auth_required)
+
+                elif auth_required and not self.authorized:
+                    await self.login()
+
+            return await func(self, *args, **kwargs)
+
+        return _wrapper
+
     if func is None:
-        return functools.partial(
-            api,
-            session_required=session_required,
-            auth_required=auth_required,
-        )
+        return decorator
 
-    @functools.wraps(func)
-    async def _wrapper(self: "ErkcClient", *args, **kwargs):
-        self._check_session()
-
-        if session_required:
-            if not self.opened:
-                await self.open(auth=auth_required)
-
-            if auth_required and not self.authorized:
-                await self.login()
-
-        return await func(self, *args, **kwargs)
-
-    return _wrapper
-
-
-_SEMAPHORE = asyncio.Semaphore()
-"""Глобальный семафор выполнения ограничения сервера одной сессии на IP"""
+    return decorator(func)
 
 
 class ErkcClient:
@@ -217,19 +247,17 @@ class ErkcClient:
     async def open(self, auth: bool = True) -> None:
         """Открытие сессии"""
 
-        if self._token:
-            return
+        if not self._token:
+            await _SEMAPHORE.acquire()
 
-        await _SEMAPHORE.acquire()
+            _LOGGER.debug("Открытие новой сессии")
 
-        _LOGGER.debug("Открытие новой сессии")
+            async with self._get("/login") as x:
+                html = await x.text()
 
-        async with self._get("/login") as x:
-            html = await x.text()
+            self._token = parse_token(html)
 
-        self._token = parse_token(html)
-
-        _LOGGER.debug("Сессия открыта. Токен: %s", self._token)
+            _LOGGER.debug("Сессия открыта. Токен: %s", self._token)
 
         if not auth:
             return
@@ -285,8 +313,11 @@ class ErkcClient:
         if self.authorized:
             _LOGGER.debug("Выход из аккаунта %s", self._login)
 
-            async with self._get("/logout"):
-                self._accounts = None
+            async with self._get("/logout") as dd:
+                await dd.text()
+
+            self._accounts = None
+            self._token = None
 
     @api(session_required=False)
     async def close(self, close_transport: bool = True) -> None:
