@@ -259,14 +259,10 @@ class ErkcClient:
         """Открытие сессии"""
 
         if not self.opened:
-            _LOGGER.debug("Открытие новой сессии")
-
             async with self._get("/login") as x:
                 html = await x.text()
 
             self._token = parse_token(html)
-
-            _LOGGER.debug("Сессия открыта. Токен: %s", self._token)
 
         if not auth or self.authorized:
             return
@@ -300,13 +296,16 @@ class ErkcClient:
                 _LOGGER.debug("Выход из аккаунта %s", self._login)
 
                 async with self._get("/logout") as x:
-                    await x.text()
+                    html = await x.text()
 
-                self._reset()
+                # выход из аккаунта выполняет редирект на страницу входа с новым ключом сессии
+                self._token = parse_token(html)
+                self._accounts = None
 
         finally:
             if close_transport:
                 await self._cli.close()
+                self._token = None
 
     def _reset(self):
         self._token = None
