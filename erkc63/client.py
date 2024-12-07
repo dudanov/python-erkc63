@@ -48,7 +48,6 @@ _LOGGER = logging.getLogger(__name__)
 
 _MIN_DATE = dt.date(2018, 1, 1)
 _MAX_DATE = dt.date(2099, 12, 31)
-_SESSION_TIME = 120 * 60
 
 _BASE_URL = yarl.URL("https://lk.erkc63.ru")
 
