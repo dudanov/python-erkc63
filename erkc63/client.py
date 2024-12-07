@@ -69,10 +69,10 @@ def api(
         @functools.wraps(func)
         async def _wrapper(self: "ErkcClient", *args, **kwargs):
             if public and self.authorized:
-                raise AuthorizationRequired("Метод не поддерживает аутентификацию")
+                raise AuthorizationRequired("Требуется выход из аккаунта")
 
             if auth_required and not self.authorized:
-                raise AuthorizationRequired("Метод требует авторизацию")
+                raise AuthorizationRequired("Требуется авторизация")
 
             return await func(self, *args, **kwargs)
 
@@ -255,10 +255,6 @@ class ErkcClient:
             if close_connector or self._close_connector:
                 await self._cli.close()
                 self._token = None
-
-    def _reset(self):
-        self._token = None
-        self._accounts = None
 
     @api(auth_required=True)
     async def download_pdf(self, accrual: Accrual, peni: bool = False) -> bytes:
