@@ -251,7 +251,10 @@ class ErkcClient:
                 self._accounts = None
 
         finally:
-            if close_connector or self._close_connector:
+            if close_connector is None:
+                close_connector = self._close_connector
+
+            if close_connector:
                 await self._cli.close()
                 self._token = None
 
