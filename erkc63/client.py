@@ -103,6 +103,7 @@ class ErkcClient:
         password: str | None = None,
         *,
         session: aiohttp.ClientSession | None = None,
+        close_connector: bool = True,
     ) -> None:
         """
         Создает клиент личного кабинета ЕРКЦ.
@@ -111,6 +112,7 @@ class ErkcClient:
         - `login`: логин (электронная почта).
         - `password`: пароль.
         - `session`: готовый объект `aiohttp.ClientSession`.
+        - `close_connector`: закрывать коннектор при закрытии сессии.
         если он не указан в параметре `session`.
         """
 
@@ -119,6 +121,7 @@ class ErkcClient:
         self._password = password
         self._accounts = None
         self._token = None
+        self._close_connector = close_connector
 
     async def __aenter__(self):
         try:
@@ -234,7 +237,7 @@ class ErkcClient:
         # Сохраняем актуальную пару логин-пароль
         self._login, self._password = login, password
 
-    async def close(self, close_transport: bool = True) -> None:
+    async def close(self, close_connector: bool | None = None) -> None:
         """Выход из аккаунта личного кабинета и закрытие сессии."""
 
         try:
@@ -249,7 +252,7 @@ class ErkcClient:
                 self._accounts = None
 
         finally:
-            if close_transport:
+            if close_connector or self._close_connector:
                 await self._cli.close()
                 self._token = None
 
