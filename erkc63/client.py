@@ -200,9 +200,11 @@ class ErkcClient:
 
         return self._ajax(f"{what}History", account, **params)
 
-    def _update_accounts(self, html: str):
+    def _update_token(self, html: str) -> None:
+        self._token = parse_token(html)
+
+    def _update_accounts(self, html: str) -> None:
         self._accounts = parse_accounts(html)
-        _LOGGER.debug(f"Привязанные к личному кабинету лицевые счета: {self._accounts}")
 
     @property
     def closed(self) -> bool:
@@ -214,13 +216,13 @@ class ErkcClient:
     def opened(self) -> bool:
         """Сессия открыта."""
 
-        return not (self.closed or self._token is None)
+        return self._token is not None
 
     @property
     def authorized(self) -> bool:
         """Авторизация в аккаунте выполнена."""
 
-        return not (self.closed or self._accounts is None)
+        return self._accounts is not None
 
     @property
     def accounts(self) -> tuple[int, ...]:
@@ -262,7 +264,7 @@ class ErkcClient:
             async with self._get("login") as x:
                 html = await x.text()
 
-            self._token = parse_token(html)
+            self._update_token(html)
 
         if not auth or self.authorized:
             return
@@ -299,7 +301,7 @@ class ErkcClient:
                     html = await x.text()
 
                 # выход из аккаунта выполняет редирект на страницу входа с новым ключом сессии
-                self._token = parse_token(html)
+                self._update_token(html)
                 self._accounts = None
 
         finally:

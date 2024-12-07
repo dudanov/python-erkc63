@@ -22,9 +22,11 @@ def parse_accounts(html: str) -> tuple[int, ...]:
     tag = cast(Tag, bs.find("div", {"id": "select_ls_dropdown"}))
 
     for x in tag.find_all("a", {"href": _RE_ACCOUNT_URL}):
-        ids.append(int(cast(Tag, x).text.rsplit("/", 1)[-1]))
+        ids.append(cast(str, x["href"]).rsplit("/", 1)[1])
 
-    return tuple(ids)
+    _LOGGER.debug(f"Лицевые счета: {", ".join(ids)}")
+
+    return tuple(map(int, ids))
 
 
 def parse_token(html: str) -> str:
