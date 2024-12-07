@@ -50,7 +50,7 @@ _LOGGER = logging.getLogger(__name__)
 _MIN_DATE = dt.date(2018, 1, 1)
 _MAX_DATE = dt.date(2099, 12, 31)
 
-APP_URL = yarl.URL("https://lk.erkc63.ru")
+_BASE_URL = yarl.URL("https://lk.erkc63.ru")
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -144,7 +144,7 @@ class ErkcClient:
         если он не указан в параметре `session`.
         """
 
-        self._cli = session or aiohttp.ClientSession(base_url=APP_URL)
+        self._cli = session or aiohttp.ClientSession()
         self._login = login
         self._password = password
         self._accounts = None
@@ -184,13 +184,13 @@ class ErkcClient:
 
     def _post(self, path: str, **data: Any):
         data["_token"] = self._token
-        return self._cli.post(path, data=data)
+        return self._cli.post(_BASE_URL.joinpath(path), data=data)
 
     def _get(self, path: str, **params: Any):
-        return self._cli.get(path, params=params)
+        return self._cli.get(_BASE_URL.joinpath(path), params=params)
 
     async def _ajax(self, func: str, account: int | None, **params: Any) -> Any:
-        async with self._get(f"/ajax/{self._account(account)}/{func}", **params) as x:
+        async with self._get(f"ajax/{self._account(account)}/{func}", **params) as x:
             return await x.json()
 
     def _history(
@@ -259,7 +259,7 @@ class ErkcClient:
         """Открытие сессии"""
 
         if not self.opened:
-            async with self._get("/login") as x:
+            async with self._get("login") as x:
                 html = await x.text()
 
             self._token = parse_token(html)
@@ -274,7 +274,7 @@ class ErkcClient:
 
         _LOGGER.debug("Вход в аккаунт %s", login)
 
-        async with self._post("/login", login=login, password=password) as x:
+        async with self._post("login", login=login, password=password) as x:
             if x.url == x.history[0].url:
                 raise AuthorizationError("Ошибка входа. Проверьте логин и пароль")
 
@@ -295,7 +295,7 @@ class ErkcClient:
             if self.authorized:
                 _LOGGER.debug("Выход из аккаунта %s", self._login)
 
-                async with self._get("/logout") as x:
+                async with self._get("logout") as x:
                     html = await x.text()
 
                 # выход из аккаунта выполняет редирект на страницу входа с новым ключом сессии
@@ -602,7 +602,7 @@ class ErkcClient:
 
         account = self._account(account)
 
-        async with self._get(f"/account/{account}") as x:
+        async with self._get(f"account/{account}") as x:
             html = await x.text()
 
         return parse_account(html)
@@ -636,7 +636,7 @@ class ErkcClient:
         _LOGGER.debug("Привязка лицевого счета %d", account)
 
         async with self._post(
-            "/account/add", account=account, summ=last_bill_amount
+            "account/add", account=account, summ=last_bill_amount
         ) as x:
             html = await x.text()
 
@@ -658,7 +658,7 @@ class ErkcClient:
             _LOGGER.info("Лицевой счет %d не привязан к аккаунту", account)
             return
 
-        async with self._post(f"/account/{account}/remove") as x:
+        async with self._post(f"account/{account}/remove") as x:
             html = await x.text()
 
         self._update_accounts(html)
@@ -682,7 +682,7 @@ class ErkcClient:
 
         # Если используем без авторизации - извлечем номер лицевого счета
         # из пути запроса и добавим в данные запроса
-        if not path.startswith("/account"):
+        if not path.startswith("account"):
             data["ls"] = int(path.rsplit("/", 1)[-1])
 
         for id, value in values.items():
@@ -719,7 +719,7 @@ class ErkcClient:
         - Последнее показание
         """
 
-        async with self._get(f"/account/{self._account(account)}/counters") as x:
+        async with self._get(f"account/{self._account(account)}/counters") as x:
             html = await x.text()
 
         return parse_meters(html)
@@ -741,7 +741,7 @@ class ErkcClient:
         - `account`: номер лицевого счета.
         """
 
-        async with self._get(f"/counters/{account}") as x:
+        async with self._get(f"counters/{account}") as x:
             html = await x.text()
 
         return parse_meters(html)
@@ -760,7 +760,7 @@ class ErkcClient:
         - `values`: словарь `идентификатор прибора - новое показание`.
         """
 
-        await self._set_meters_values(f"/counters/{account}", values)
+        await self._set_meters_values(f"counters/{account}", values)
 
     @api(public=True)
     async def pub_account_info(self, account: int) -> PublicAccountInfo | None:
@@ -771,7 +771,7 @@ class ErkcClient:
         - `account`: номер лицевого счета.
         """
 
-        async with self._get("/payment/checkLS", ls=account) as x:
+        async with self._get("payment/checkLS", ls=account) as x:
             json: Mapping[str, Any] = await x.json()
 
         if json["checkLS"]:

@@ -1,4 +1,4 @@
-from .client import APP_URL, ErkcClient
+from .client import ErkcClient
 from .errors import (
     AccountBindingError,
     AccountNotFound,
@@ -10,7 +10,6 @@ from .errors import (
 )
 
 __all__ = [
-    "APP_URL",
     "ErkcClient",
     "ErkcError",
     "ApiError",
