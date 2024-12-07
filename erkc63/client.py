@@ -4,7 +4,6 @@ import asyncio
 import datetime as dt
 import functools
 import logging
-import time
 from typing import (
     Any,
     Awaitable,
@@ -17,7 +16,6 @@ from typing import (
     Self,
     Sequence,
     TypeVar,
-    overload,
 )
 
 import aiohttp
@@ -60,63 +58,27 @@ T = TypeVar("T")
 ClientMethod = Callable[Concatenate["Self@ErkcClient", P], Awaitable[T]]
 
 
-@overload
-def api(func: ClientMethod, /) -> ClientMethod: ...
-
-
-@overload
 def api(
     *,
     auth_required: bool = True,
-    check_only: bool = False,
     public: bool = False,
-) -> Callable[[ClientMethod], ClientMethod]: ...
-
-
-def api(
-    func: ClientMethod | None = None,
-    /,
-    *,
-    auth_required: bool = True,
-    check_only: bool = False,
-    public: bool = False,
-) -> ClientMethod | Callable[[ClientMethod], ClientMethod]:
+) -> Callable[[ClientMethod], ClientMethod]:
     """Декоратор методов API клиента"""
 
     def decorator(func: ClientMethod):
         @functools.wraps(func)
         async def _wrapper(self: "ErkcClient", *args, **kwargs):
-            nonlocal auth_required
-            now = time.monotonic()
+            if public and self.authorized:
+                raise AuthorizationRequired("Метод не поддерживает аутентификацию")
 
-            try:
-                if self.opened and now > self._expires:
-                    self._reset()
+            if auth_required and not self.authorized:
+                raise AuthorizationRequired("Метод требует авторизацию")
 
-                if check_only:
-                    return await func(self, *args, **kwargs)
-
-                if public:
-                    auth_required = False
-                    await self.close(close_transport=False)
-
-                if not self.opened:
-                    await self.open(auth=auth_required)
-
-                if auth_required and not self.authorized:
-                    await self.open()
-
-                return await func(self, *args, **kwargs)
-
-            finally:
-                self._expires = now + _SESSION_TIME
+            return await func(self, *args, **kwargs)
 
         return _wrapper
 
-    if func is None:
-        return decorator
-
-    return decorator(func)
+    return decorator
 
 
 class ErkcClient:
@@ -134,8 +96,6 @@ class ErkcClient:
     """Токен сессии."""
     _accounts: tuple[int, ...] | None
     """Лицевые счета, привязанные к аккаунту."""
-    _expires: float
-    """Последнее время"""
 
     def __init__(
         self,
@@ -241,7 +201,6 @@ class ErkcClient:
 
         raise AccountNotFound("Лицевой счет %d не привязан", account)
 
-    @api(check_only=True)
     async def open(
         self,
         login: str | None = None,
@@ -275,7 +234,6 @@ class ErkcClient:
         # Сохраняем актуальную пару логин-пароль
         self._login, self._password = login, password
 
-    @api(check_only=True)
     async def close(self, close_transport: bool = True) -> None:
         """Выход из аккаунта личного кабинета и закрытие сессии."""
 
@@ -299,7 +257,7 @@ class ErkcClient:
         self._token = None
         self._accounts = None
 
-    @api
+    @api(auth_required=True)
     async def download_pdf(self, accrual: Accrual, peni: bool = False) -> bytes:
         """
         Загружает квитанцию в формате PDF. При неудаче возвращает пустые данные.
@@ -321,7 +279,7 @@ class ErkcClient:
         async with self._get(json["file"]) as x:
             return await x.read()
 
-    @api
+    @api(auth_required=True)
     async def qr_codes(self, accrual: Accrual) -> QrCodes:
         """
         Загружает PDF квитанции и извлекает QR коды оплаты.
@@ -338,7 +296,7 @@ class ErkcClient:
 
         return QrCodes(*result)
 
-    @api
+    @api(auth_required=True)
     async def year_accruals(
         self,
         year: int | None = None,
@@ -402,7 +360,7 @@ class ErkcClient:
 
         return result
 
-    @api
+    @api(auth_required=True)
     async def update_accrual(self, accrual: Accruals) -> None:
         """
         Обновление детализированных данных квитанции или начисления.
@@ -422,7 +380,7 @@ class ErkcClient:
             for x in resp
         }
 
-    @api
+    @api(auth_required=True)
     def update_accruals(self, accruals: Iterable[Accruals]):
         """
         Обновление детализированных данных квитанций или начислений.
@@ -433,7 +391,7 @@ class ErkcClient:
 
         return asyncio.gather(*map(self.update_accrual, accruals))
 
-    @api
+    @api(auth_required=True)
     async def meters_history(
         self,
         *,
@@ -500,7 +458,7 @@ class ErkcClient:
             MeterInfoHistory(*k, tuple(dict.fromkeys(v))) for k, v in db.items()
         )
 
-    @api
+    @api(auth_required=True)
     async def accruals_history(
         self,
         *,
@@ -548,7 +506,7 @@ class ErkcClient:
 
         return tuple(result)
 
-    @api
+    @api(auth_required=True)
     async def payments_history(
         self,
         *,
@@ -578,7 +536,7 @@ class ErkcClient:
         # Ответ содержит нулевые платежи (внутренние перерасчеты). Применим фильтр.
         return tuple(x for x in result if x.summa)
 
-    @api
+    @api(auth_required=True)
     async def account_info(self, account: int | None = None) -> AccountInfo:
         """
         Запрос информации о лицевом счете.
@@ -593,7 +551,7 @@ class ErkcClient:
         async with self._get(f"account/{account}") as x:
             return parse_account(await x.text())
 
-    @api
+    @api(auth_required=True)
     async def account_add(
         self,
         account: int | PublicAccountInfo,
@@ -631,7 +589,7 @@ class ErkcClient:
         if account not in self.accounts:
             raise AccountBindingError("Не удалось привязать лицевой счет %d", account)
 
-    @api
+    @api(auth_required=True)
     async def account_rm(self, account: int) -> None:
         """
         Отвязка лицевого счета от аккаунта личного кабинета.
@@ -687,7 +645,7 @@ class ErkcClient:
         async with self._post(path, **data):
             pass
 
-    @api
+    @api(auth_required=True)
     async def meters_info(
         self, account: int | None = None
     ) -> Mapping[int, PublicMeterInfo]:
