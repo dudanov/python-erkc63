@@ -47,9 +47,6 @@ from .utils import (
 
 _LOGGER = logging.getLogger(__name__)
 
-_SEMAPHORE = asyncio.Semaphore()
-"""Глобальный семафор выполнения ограничения сервера одной сессии на IP"""
-
 _MIN_DATE = dt.date(2018, 1, 1)
 _MAX_DATE = dt.date(2099, 12, 31)
 
@@ -262,8 +259,6 @@ class ErkcClient:
         """Открытие сессии"""
 
         if not self.opened:
-            await _SEMAPHORE.acquire()
-
             _LOGGER.debug("Открытие новой сессии")
 
             async with self._get("/login") as x:
@@ -312,8 +307,6 @@ class ErkcClient:
         finally:
             if close_transport:
                 await self._cli.close()
-
-            _SEMAPHORE.release()
 
     def _reset(self):
         self._token = None
