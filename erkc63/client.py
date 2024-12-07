@@ -4,6 +4,7 @@ import asyncio
 import datetime as dt
 import functools
 import logging
+import time
 from typing import (
     Any,
     Awaitable,
@@ -49,6 +50,7 @@ _LOGGER = logging.getLogger(__name__)
 
 _MIN_DATE = dt.date(2018, 1, 1)
 _MAX_DATE = dt.date(2099, 12, 31)
+_SESSION_TIME = 120 * 60
 
 _BASE_URL = yarl.URL("https://lk.erkc63.ru")
 
@@ -85,23 +87,29 @@ def api(
         @functools.wraps(func)
         async def _wrapper(self: "ErkcClient", *args, **kwargs):
             nonlocal auth_required
+            now = time.monotonic()
 
-            self._check_session()
+            try:
+                if self.opened and now > self._expires:
+                    self._reset()
 
-            if check_only:
+                if check_only:
+                    return await func(self, *args, **kwargs)
+
+                if public:
+                    auth_required = False
+                    await self.close(close_transport=False)
+
+                if not self.opened:
+                    await self.open(auth=auth_required)
+
+                if auth_required and not self.authorized:
+                    await self.open()
+
                 return await func(self, *args, **kwargs)
 
-            if public:
-                auth_required = False
-                await self.close(close_transport=False)
-
-            if not self.opened:
-                await self.open(auth=auth_required)
-
-            if auth_required and not self.authorized:
-                await self.open()
-
-            return await func(self, *args, **kwargs)
+            finally:
+                self._expires = now + _SESSION_TIME
 
         return _wrapper
 
@@ -126,6 +134,8 @@ class ErkcClient:
     """Токен сессии."""
     _accounts: tuple[int, ...] | None
     """Лицевые счета, привязанные к аккаунту."""
+    _expires: float
+    """Последнее время"""
 
     def __init__(
         self,
@@ -163,25 +173,6 @@ class ErkcClient:
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         await self.close()
 
-    def _check_session(self) -> None:
-        """
-        Выполняет проверку времени жизни сессии.
-        Сбрасывает при ее истечении либо отсутствии куки.
-        """
-
-        for cookie in self._cli.cookie_jar:
-            if cookie.key == "laravel_session":
-                expires = cookie["expires"]
-                expires = dt.datetime.strptime(expires, "%a, %d-%b-%Y %H:%M:%S %Z")
-                expires = expires.replace(tzinfo=dt.UTC)
-
-                if dt.datetime.now(dt.UTC).replace(microsecond=0) >= expires:
-                    break
-
-                return
-
-        self._reset()
-
     def _post(self, path: str, **data: Any):
         data["_token"] = self._token
         return self._cli.post(_BASE_URL.joinpath(path), data=data)
@@ -197,7 +188,6 @@ class ErkcClient:
         self, what: str, account: int | None, start: dt.date, end: dt.date
     ) -> Coroutine[Any, Any, Sequence[Sequence[str]]]:
         params = {"from": date_to_str(start), "to": date_to_str(end)}
-
         return self._ajax(f"{what}History", account, **params)
 
     def _update_token(self, html: str) -> None:
@@ -262,9 +252,7 @@ class ErkcClient:
 
         if not self.opened:
             async with self._get("login") as x:
-                html = await x.text()
-
-            self._update_token(html)
+                self._update_token(await x.text())
 
         if not auth or self.authorized:
             return
@@ -280,11 +268,9 @@ class ErkcClient:
             if x.url == x.history[0].url:
                 raise AuthorizationError("Ошибка входа. Проверьте логин и пароль")
 
-            _LOGGER.debug("Вход в аккаунт %s успешно выполнен", login)
+            self._update_accounts(await x.text())
 
-            html = await x.text()
-
-        self._update_accounts(html)
+        _LOGGER.debug("Вход в аккаунт %s успешно выполнен", login)
 
         # Сохраняем актуальную пару логин-пароль
         self._login, self._password = login, password
@@ -298,10 +284,10 @@ class ErkcClient:
                 _LOGGER.debug("Выход из аккаунта %s", self._login)
 
                 async with self._get("logout") as x:
-                    html = await x.text()
+                    # выход из аккаунта выполняет редирект на
+                    # страницу входа с новым токеном сессии
+                    self._update_token(await x.text())
 
-                # выход из аккаунта выполняет редирект на страницу входа с новым ключом сессии
-                self._update_token(html)
                 self._accounts = None
 
         finally:
@@ -605,9 +591,7 @@ class ErkcClient:
         account = self._account(account)
 
         async with self._get(f"account/{account}") as x:
-            html = await x.text()
-
-        return parse_account(html)
+            return parse_account(await x.text())
 
     @api
     async def account_add(
@@ -661,9 +645,7 @@ class ErkcClient:
             return
 
         async with self._post(f"account/{account}/remove") as x:
-            html = await x.text()
-
-        self._update_accounts(html)
+            self._update_accounts(await x.text())
 
         if account in self.accounts:
             raise AccountBindingError("Не удалось отвязать лицевой счет %d", account)
@@ -722,9 +704,7 @@ class ErkcClient:
         """
 
         async with self._get(f"account/{self._account(account)}/counters") as x:
-            html = await x.text()
-
-        return parse_meters(html)
+            return parse_meters(await x.text())
 
     @api(public=True)
     async def pub_meters_info(self, account: int) -> Mapping[int, PublicMeterInfo]:
@@ -744,9 +724,7 @@ class ErkcClient:
         """
 
         async with self._get(f"counters/{account}") as x:
-            html = await x.text()
-
-        return parse_meters(html)
+            return parse_meters(await x.text())
 
     @api(public=True)
     async def pub_set_meters_values(
