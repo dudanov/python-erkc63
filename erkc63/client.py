@@ -198,6 +198,8 @@ class ErkcClient:
         if account is None:
             return self.account
 
+        assert account > 0
+
         if account in self.accounts:
             return account
 
@@ -528,11 +530,11 @@ class ErkcClient:
 
         assert start <= end
 
-        resp = await self._history("payments", account, start, end)
-        result = (Payment(date_attr(x), to_float(y), z) for x, y, z in resp)
+        x = await self._history("payments", account, start, end)
+        payments = (Payment(date_attr(x0), to_float(x1), x3) for x0, x1, x3 in x)
 
         # Ответ содержит нулевые платежи (внутренние перерасчеты). Применим фильтр.
-        return tuple(x for x in result if x.summa)
+        return tuple(filter(lambda x: x.summa, payments))
 
     @api(auth_required=True)
     async def account_info(self, account: int | None = None) -> AccountInfo:
@@ -540,13 +542,10 @@ class ErkcClient:
         Запрос информации о лицевом счете.
 
         Параметры:
-        - `account`: номер лицевого счета. Если `None` - будет использоваться
-        основной лицевой счет личного кабинета.
+        - `account`: номер лицевого счета. Если `None` - используется основной счет.
         """
 
-        account = self._account(account)
-
-        async with self._get(f"account/{account}") as x:
+        async with self._get(f"account/{self._account(account)}") as x:
             return parse_account(await x.text())
 
     @api(auth_required=True)
@@ -569,20 +568,19 @@ class ErkcClient:
             account = account.account
 
         if account in self.accounts:
-            _LOGGER.info("Лицевой счет %d уже привязан к аккаунту", account)
             return
 
         if last_bill_amount <= 0:
-            raise ValueError("Сумма последнего начисления не указана")
+            raise AccountBindingError("Сумма последнего начисления не указана")
 
         _LOGGER.debug("Привязка лицевого счета %d", account)
 
         async with self._post(
-            "account/add", account=account, summ=last_bill_amount
+            "account/add",
+            account=account,
+            summ=last_bill_amount,
         ) as x:
-            html = await x.text()
-
-        self._update_accounts(html)
+            self._update_accounts(await x.text())
 
         if account not in self.accounts:
             raise AccountBindingError("Не удалось привязать лицевой счет %d", account)
@@ -597,7 +595,6 @@ class ErkcClient:
         """
 
         if account not in self.accounts:
-            _LOGGER.info("Лицевой счет %d не привязан к аккаунту", account)
             return
 
         async with self._post(f"account/{account}/remove") as x:
@@ -615,10 +612,9 @@ class ErkcClient:
             return
 
         async with self._get(path) as x:
-            html = await x.text()
+            meters = parse_meters(await x.text())
 
         data: dict[str, Any] = {}
-        meters = parse_meters(html)
 
         # Если используем без авторизации - извлечем номер лицевого счета
         # из пути запроса и добавим в данные запроса
@@ -640,8 +636,8 @@ class ErkcClient:
 
             raise ValueError(f"Счетчик {id} не найден")
 
-        async with self._post(path, **data):
-            pass
+        async with self._post(path, **data) as x:
+            await x.text()
 
     @api(auth_required=True)
     async def meters_info(
@@ -733,4 +729,4 @@ class ErkcClient:
 
         result = await asyncio.gather(*map(self.pub_account_info, accounts))
 
-        return {x.account: x for x in result if x}
+        return {x.account: x for x in filter(None, result)}
