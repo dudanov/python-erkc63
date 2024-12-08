@@ -150,7 +150,7 @@ class ErkcClient:
         self._token = parse_token(html)
 
     def _update_accounts(self, html: str) -> None:
-        self._accounts = parse_accounts(html)
+        self._accounts = tuple(parse_accounts(html))
 
     @property
     def closed(self) -> bool:
@@ -439,13 +439,14 @@ class ErkcClient:
             # то сервер не сможет вернуть полный результат ни при каких условиях.
             # Этот случай крайне маловероятен, но выполнена проверка и обход ситуации.
             if len(unique_dates) == 1:
-                _LOGGER.warning("Результат может содержать неполные данные.")
+                _LOGGER.warning("Результат может содержать неполные данные")
 
                 if start == end:
                     break
 
                 end -= dt.timedelta(days=1)
-                _LOGGER.warning("Применен обход.")
+
+                _LOGGER.warning("Применен обход")
 
         # Исключаем дублирование записей из наложенных ответов и конвертируем в кортеж
         return tuple(

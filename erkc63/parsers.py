@@ -17,28 +17,28 @@ _RE_ACCOUNT_URL = re.compile(r"/\d+$")
 _RE_RAWID = re.compile(r"rowId")
 
 
-def parse_accounts(html: str) -> tuple[int, ...]:
-    ids: list[int] = []
-
+def parse_accounts(html: str) -> list[int]:
     bs = BeautifulSoup(html, "html.parser")
-    tag = cast(Tag, bs.find("div", {"id": "select_ls_dropdown"}))
+    menu = cast(Tag, bs.find("div", {"id": "select_ls_dropdown"}))
 
-    for x in tag.find_all("a", {"href": _RE_ACCOUNT_URL}):
-        ids.append(int(cast(str, x["href"]).rsplit("/", 1)[1]))
+    accounts: list[int] = []
+
+    for x in menu.find_all("a", {"href": _RE_ACCOUNT_URL}):
+        accounts.append(int(cast(str, x["href"]).rsplit("/", 1)[1]))
 
     # сортировка вторичных счетов
-    if len(ids) >= 3:
-        ids[1:] = sorted(ids[1:])
+    if len(accounts) >= 3:
+        accounts[1:] = sorted(accounts[1:])
 
-    _LOGGER.debug("Лицевые счета: %s", ids)
+    _LOGGER.debug("Лицевые счета: %s", accounts)
 
-    return tuple(ids)
+    return accounts
 
 
 def parse_token(html: str) -> str:
     bs = BeautifulSoup(html, "html.parser")
-    tag = cast(Tag, bs.find("meta", {"name": "csrf-token"}))
-    token = cast(str, tag["content"])
+    meta = cast(Tag, bs.find("meta", {"name": "csrf-token"}))
+    token = cast(str, meta["content"])
 
     _LOGGER.debug("CSRF токен: %s", token)
 
