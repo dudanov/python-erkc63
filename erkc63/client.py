@@ -67,11 +67,13 @@ def api(
     def decorator(func: ClientMethod):
         @functools.wraps(func)
         async def _wrapper(self: "ErkcClient", *args, **kwargs):
-            if public and self.authorized:
-                raise AuthorizationRequired("Требуется выход из аккаунта")
+            if public:
+                if self.authorized:
+                    raise AuthorizationRequired("Требуется выход из аккаунта")
 
-            if auth_required and not self.authorized:
-                raise AuthorizationRequired("Требуется авторизация")
+            elif auth_required:
+                if not self.authorized:
+                    raise AuthorizationRequired("Требуется авторизация")
 
             return await func(self, *args, **kwargs)
 
