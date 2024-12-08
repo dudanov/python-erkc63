@@ -12,10 +12,7 @@ from typing import (
     Coroutine,
     Iterable,
     Mapping,
-    ParamSpec,
-    Self,
     Sequence,
-    TypeVar,
 )
 
 import aiohttp
@@ -51,22 +48,19 @@ _MAX_DATE = dt.date(2099, 12, 31)
 
 _BASE_URL = yarl.URL("https://lk.erkc63.ru")
 
-P = ParamSpec("P")
-T = TypeVar("T")
-
-ClientMethod = Callable[Concatenate["Self@ErkcClient", P], Awaitable[T]]
+type ClientMethod[T, **P] = Callable[Concatenate["ErkcClient", P], Awaitable[T]]
 
 
-def api(
+def api[T, **P](
     *,
     auth_required: bool = True,
     public: bool = False,
-) -> Callable[[ClientMethod], ClientMethod]:
+) -> Callable[[ClientMethod[T, P]], ClientMethod[T, P]]:
     """Декоратор методов API клиента"""
 
-    def decorator(func: ClientMethod):
+    def decorator(func):
         @functools.wraps(func)
-        async def _wrapper(self: "ErkcClient", *args, **kwargs):
+        async def _wrapper(self: "ErkcClient", *args: P.args, **kwargs: P.kwargs) -> T:
             if public:
                 if self.authorized:
                     raise AuthorizationRequired("Требуется выход из аккаунта")

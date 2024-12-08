@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "erkc63"
-version = "0.2.23"
+version = "0.2.24"
 description = ""
 authors = ["Sergey V. DUDANOV <sergey.dudanov@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.14"
+python = ">=3.12,<3.14"
 aiohttp = ">=3.10.0"
 beautifulsoup4 = ">=4.12.0"
 pypdf = {extras = ["image"], version = ">=4.2.0"}
