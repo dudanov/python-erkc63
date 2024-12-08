@@ -1,6 +1,5 @@
 import dataclasses as dc
 import itertools as it
-import logging
 import re
 from types import MappingProxyType
 from typing import Any, cast
@@ -10,8 +9,6 @@ from bs4 import BeautifulSoup, Tag
 from .account import AccountInfo
 from .meters import PublicMeterInfo
 from .utils import str_normalize, str_to_date
-
-_LOGGER = logging.getLogger(__name__)
 
 _RE_ACCOUNT_URL = re.compile(r"/\d+$")
 _RE_RAWID = re.compile(r"rowId")
@@ -30,8 +27,6 @@ def parse_accounts(html: str) -> list[int]:
     if len(accounts) >= 3:
         accounts[1:] = sorted(accounts[1:])
 
-    _LOGGER.debug("Лицевые счета: %s", accounts)
-
     return accounts
 
 
@@ -39,8 +34,6 @@ def parse_token(html: str) -> str:
     bs = BeautifulSoup(html, "html.parser")
     meta = cast(Tag, bs.find("meta", {"name": "csrf-token"}))
     token = cast(str, meta["content"])
-
-    _LOGGER.debug("CSRF токен: %s", token)
 
     return token
 

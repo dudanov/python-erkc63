@@ -148,9 +148,11 @@ class ErkcClient:
 
     def _update_token(self, html: str) -> None:
         self._token = parse_token(html)
+        _LOGGER.debug("CSRF токен: %s", self._token)
 
     def _update_accounts(self, html: str) -> None:
         self._accounts = tuple(parse_accounts(html))
+        _LOGGER.debug("Лицевые счета: %s", self._accounts)
 
     @property
     def closed(self) -> bool:
@@ -267,11 +269,11 @@ class ErkcClient:
         try:
             json = await self._ajax("getReceipt", accrual.account, receiptId=id)
 
+            async with self._get(json["file"]) as x:
+                return await x.read()
+
         except Exception:
             return b""
-
-        async with self._get(json["file"]) as x:
-            return await x.read()
 
     @api(auth_required=True)
     async def qr_codes(self, accrual: Accrual) -> QrCodes:
