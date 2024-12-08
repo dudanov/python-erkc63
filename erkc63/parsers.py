@@ -18,15 +18,21 @@ _RE_RAWID = re.compile(r"rowId")
 
 
 def parse_accounts(html: str) -> tuple[int, ...]:
-    bs, ids = BeautifulSoup(html, "html.parser"), []
+    ids: list[int] = []
+
+    bs = BeautifulSoup(html, "html.parser")
     tag = cast(Tag, bs.find("div", {"id": "select_ls_dropdown"}))
 
     for x in tag.find_all("a", {"href": _RE_ACCOUNT_URL}):
-        ids.append(cast(str, x["href"]).rsplit("/", 1)[1])
+        ids.append(int(cast(str, x["href"]).rsplit("/", 1)[1]))
 
-    _LOGGER.debug(f"Лицевые счета: {", ".join(ids)}")
+    # сортировка вторичных счетов
+    if len(ids) > 1:
+        ids[1:] = sorted(ids[1:])
 
-    return tuple(map(int, ids))
+    _LOGGER.debug("Лицевые счета: %s", ids)
+
+    return tuple(ids)
 
 
 def parse_token(html: str) -> str:
