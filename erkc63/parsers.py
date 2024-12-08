@@ -27,7 +27,7 @@ def parse_accounts(html: str) -> tuple[int, ...]:
         ids.append(int(cast(str, x["href"]).rsplit("/", 1)[1]))
 
     # сортировка вторичных счетов
-    if len(ids) > 1:
+    if len(ids) >= 3:
         ids[1:] = sorted(ids[1:])
 
     _LOGGER.debug("Лицевые счета: %s", ids)
