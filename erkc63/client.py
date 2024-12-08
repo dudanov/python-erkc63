@@ -48,7 +48,7 @@ _MAX_DATE = dt.date(2099, 12, 31)
 
 _BASE_URL = yarl.URL("https://lk.erkc63.ru")
 
-type ClientMethod[T, **P] = Callable[Concatenate["ErkcClient", P], Awaitable[T]]
+type ClientMethod[T, **P] = Callable[Concatenate[ErkcClient, P], Awaitable[T]]
 
 
 def api[T, **P](
@@ -58,9 +58,9 @@ def api[T, **P](
 ) -> Callable[[ClientMethod[T, P]], ClientMethod[T, P]]:
     """Декоратор методов API клиента"""
 
-    def decorator(func):
+    def decorator(func: ClientMethod[T, P]):
         @functools.wraps(func)
-        async def _wrapper(self: "ErkcClient", *args: P.args, **kwargs: P.kwargs) -> T:
+        async def _wrapper(self: ErkcClient, *args: P.args, **kwargs: P.kwargs) -> T:
             if public:
                 if self.authorized:
                     raise AuthorizationRequired("Требуется выход из аккаунта")
