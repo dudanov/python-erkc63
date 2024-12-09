@@ -27,6 +27,7 @@ from .errors import (
     AuthorizationError,
     AuthorizationRequired,
     ParsingError,
+    SessionRequired,
 )
 from .meters import MeterInfoHistory, MeterValue, PublicMeterInfo
 from .parsers import parse_account, parse_accounts, parse_meters, parse_token
@@ -53,14 +54,17 @@ type ClientMethod[T, **P] = Callable[Concatenate[ErkcClient, P], Awaitable[T]]
 
 def api[T, **P](
     *,
-    auth_required: bool = True,
     public: bool = False,
+    auth_required: bool = True,
 ) -> Callable[[ClientMethod[T, P]], ClientMethod[T, P]]:
     """Декоратор методов API клиента"""
 
     def decorator(func: ClientMethod[T, P]):
         @functools.wraps(func)
         async def _wrapper(self: ErkcClient, *args: P.args, **kwargs: P.kwargs) -> T:
+            if not self.opened:
+                raise SessionRequired("Требуется открытая сессия")
+
             if public:
                 if self.authorized:
                     raise AuthorizationRequired("Требуется выход из аккаунта")
@@ -98,6 +102,8 @@ class ErkcClient:
         password: str | None = None,
         *,
         session: aiohttp.ClientSession | None = None,
+        auth: bool = True,
+        close_connector: bool = True,
     ) -> None:
         """
         Создает клиент личного кабинета ЕРКЦ.
@@ -106,8 +112,8 @@ class ErkcClient:
         - `login`: логин (электронная почта).
         - `password`: пароль.
         - `session`: готовый объект `aiohttp.ClientSession`.
+        - `auth`: выполнить авторизацию при открытии сессии.
         - `close_connector`: закрывать коннектор при закрытии сессии.
-        если он не указан в параметре `session`.
         """
 
         self._cli = session or aiohttp.ClientSession()
@@ -115,6 +121,8 @@ class ErkcClient:
         self._password = password
         self._accounts = None
         self._token = None
+        self._auth = auth
+        self._close_connector = close_connector
 
     async def __aenter__(self):
         try:
@@ -155,7 +163,7 @@ class ErkcClient:
         _LOGGER.debug("Лицевые счета: %s", self._accounts)
 
     @property
-    def closed(self) -> bool:
+    def connector_closed(self) -> bool:
         """Коннектор клиента закрыт."""
 
         return self._cli.closed
@@ -205,13 +213,16 @@ class ErkcClient:
         self,
         login: str | None = None,
         password: str | None = None,
-        auth: bool = True,
+        auth: bool | None = None,
     ) -> None:
         """Открытие сессии"""
 
         if not self.opened:
             async with self._get("login") as x:
                 self._update_token(await x.text())
+
+        if auth is None:
+            auth = self._auth
 
         if not auth or self.authorized:
             return
@@ -234,7 +245,7 @@ class ErkcClient:
         # Сохраняем актуальную пару логин-пароль
         self._login, self._password = login, password
 
-    async def close(self, close_connector: bool = True) -> None:
+    async def close(self, close_connector: bool | None = None) -> None:
         """Выход из аккаунта личного кабинета и закрытие сессии."""
 
         try:
@@ -249,6 +260,9 @@ class ErkcClient:
                 self._accounts = None
 
         finally:
+            if close_connector is None:
+                close_connector = self._close_connector
+
             if close_connector:
                 await self._cli.close()
                 self._token = None
