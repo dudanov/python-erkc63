@@ -61,7 +61,7 @@ def api[T, **P](
 
     def decorator(func: ClientMethod[T, P]):
         @functools.wraps(func)
-        async def _wrapper(self: ErkcClient, *args: P.args, **kwargs: P.kwargs) -> T:
+        def _wrapper(self: ErkcClient, *args: P.args, **kwargs: P.kwargs):
             if not self.opened:
                 raise SessionRequired("Требуется открытая сессия")
 
@@ -73,7 +73,7 @@ def api[T, **P](
                 if not self.authorized:
                     raise AuthorizationRequired("Требуется авторизация")
 
-            return await func(self, *args, **kwargs)
+            return func(self, *args, **kwargs)
 
         return _wrapper
 
