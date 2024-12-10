@@ -4,16 +4,7 @@ import asyncio
 import datetime as dt
 import functools
 import logging
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Concatenate,
-    Coroutine,
-    Iterable,
-    Mapping,
-    Sequence,
-)
+from typing import Any, Awaitable, Callable, Concatenate, Iterable, Mapping, Sequence
 
 import aiohttp
 import yarl
@@ -144,7 +135,7 @@ class ErkcClient:
 
     def _history(
         self, what: str, account: int | None, start: dt.date, end: dt.date
-    ) -> Coroutine[Any, Any, Sequence[Sequence[str]]]:
+    ) -> Awaitable[Sequence[Sequence[str]]]:
         params = {"from": date_to_str(start), "to": date_to_str(end)}
         return self._ajax(f"{what}History", account, **params)
 
