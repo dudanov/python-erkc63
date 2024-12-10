@@ -54,8 +54,8 @@ type ClientMethod[T, **P] = Callable[Concatenate[ErkcClient, P], Awaitable[T]]
 
 def api[T, **P](
     *,
+    auth_required: bool = False,
     public: bool = False,
-    auth_required: bool = True,
 ) -> Callable[[ClientMethod[T, P]], ClientMethod[T, P]]:
     """Декоратор методов API клиента"""
 
