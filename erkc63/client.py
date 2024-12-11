@@ -524,7 +524,7 @@ class ErkcClient:
         payments = (Payment(date_attr(x0), to_float(x1), x3) for x0, x1, x3 in x)
 
         # Ответ содержит нулевые платежи (внутренние перерасчеты). Применим фильтр.
-        return tuple(filter(lambda x: x.summa, payments))
+        return tuple(x for x in payments if x.summa)
 
     @api(auth_required=True)
     async def account_info(self, account: int | None = None) -> AccountInfo:
@@ -719,4 +719,4 @@ class ErkcClient:
 
         result = await asyncio.gather(*map(self.pub_account_info, accounts))
 
-        return {x.account: x for x in filter(None, result)}
+        return {x.account: x for x in result if x}
