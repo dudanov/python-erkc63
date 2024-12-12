@@ -137,7 +137,7 @@ class ErkcClient:
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         await self.close()
 
-    def __call__(self, auth: bool) -> Self:
+    def __call__(self, *, auth: bool) -> Self:
         self._auth = auth
         return self
 
