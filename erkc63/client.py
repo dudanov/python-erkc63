@@ -93,6 +93,8 @@ class ErkcClient:
         password: str | None = None,
         *,
         session: aiohttp.ClientSession | None = None,
+        auth: bool | None = None,
+        close_connector: bool = True,
     ) -> None:
         """
         Создает клиент личного кабинета ЕРКЦ.
@@ -101,6 +103,8 @@ class ErkcClient:
         - `login`: логин (электронная почта).
         - `password`: пароль.
         - `session`: готовый объект `aiohttp.ClientSession`.
+        - `auth`: авторизация при открытии. Если `None`, то авторизация если указаны логин и пароль.
+        - `close_connector`: закрытие коннектора при закрытии сессии.
         """
 
         self._cli = session or aiohttp.ClientSession()
@@ -108,6 +112,8 @@ class ErkcClient:
         self._password = password
         self._accounts = None
         self._token = None
+        self._auth = bool(login and password) if auth is None else auth
+        self._close_connector = close_connector
 
     async def __aenter__(self):
         try:
@@ -198,13 +204,23 @@ class ErkcClient:
         self,
         login: str | None = None,
         password: str | None = None,
-        auth: bool = True,
+        auth: bool | None = None,
     ) -> None:
-        """Открытие сессии"""
+        """
+        Открытие сессии.
+
+        Параметры:
+        - `login`: логин (электронная почта). Если указан - перезаписывает установленный логин при создании объекта.
+        - `password`: пароль. Если указан - перезаписывает установленный пароль при создании объекта.
+        - `auth`: произвести авторизацию. Если `None`, то берется из параметра создания объекта.
+        """
 
         if not self.opened:
             async with self._get("login") as x:
                 self._update_token(await x.text())
+
+        if auth is None:
+            auth = self._auth
 
         if not auth or self.authorized:
             return
@@ -227,8 +243,13 @@ class ErkcClient:
         # Сохраняем актуальную пару логин-пароль
         self._login, self._password = login, password
 
-    async def close(self, close_connector: bool = True) -> None:
-        """Выход из аккаунта личного кабинета и закрытие сессии."""
+    async def close(self, close_connector: bool | None = None) -> None:
+        """
+        Выход из аккаунта личного кабинета и закрытие сессии.
+
+        Параметры:
+        - `close_connector`: закрывает коннектор. Если `None`, то берется из параметра создания объекта.
+        """
 
         try:
             if self.authorized:
@@ -242,6 +263,9 @@ class ErkcClient:
                 self._accounts = None
 
         finally:
+            if close_connector is None:
+                close_connector = self._close_connector
+
             if close_connector:
                 await self._cli.close()
                 self._token = None
