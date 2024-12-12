@@ -4,7 +4,16 @@ import asyncio
 import datetime as dt
 import functools
 import logging
-from typing import Any, Awaitable, Callable, Concatenate, Iterable, Mapping, Sequence
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Concatenate,
+    Iterable,
+    Mapping,
+    Self,
+    Sequence,
+)
 
 import aiohttp
 import yarl
@@ -115,7 +124,7 @@ class ErkcClient:
         self._auth = bool(login and password) if auth is None else auth
         self._close_connector = close_connector
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         try:
             await self.open()
 
@@ -127,6 +136,10 @@ class ErkcClient:
 
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         await self.close()
+
+    def __call__(self, auth: bool) -> Self:
+        self._auth = auth
+        return self
 
     def _post(self, path: str, **data: Any):
         data["_token"] = self._token
