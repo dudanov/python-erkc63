@@ -219,16 +219,20 @@ class ErkcClient:
         password: str | None = None,
         auth: bool | None = None,
     ) -> None:
-        """
-        Открытие сессии.
+        """Opening session with optional authorization.
 
-        Параметры:
-        - `login`: логин (электронная почта). Если указан - перезаписывает установленный логин при создании объекта.
-        - `password`: пароль. Если указан - перезаписывает установленный пароль при создании объекта.
-        - `auth`: произвести авторизацию. Если `None`, то берется из параметра создания объекта.
+        Parameters:
+            login: Optional account e-mail. If specified, the parameter will be saved in the client after successful authorization.
+            password: Optional account password. If specified, the parameter will be saved in the client after successful authorization.
+            auth: Authorization required. If `None`, then the parameter is taken from the client.
+
+        Raises:
+            AuthorizationError: If authorization failed.
         """
 
         if not self.opened:
+            _LOGGER.debug("Opening session.")
+
             async with self._get("login") as x:
                 self._update_token(await x.text())
 
@@ -238,20 +242,22 @@ class ErkcClient:
         if not auth or self.authorized:
             return
 
+        _LOGGER.debug("Authorization started.")
+
         login, password = login or self._login, password or self._password
 
         if not (login and password):
-            raise AuthorizationError("Не заданы параметры входа")
+            raise AuthorizationError("No auth credentials.")
 
-        _LOGGER.debug("Вход в аккаунт %s", login)
+        _LOGGER.debug("Logging to %s", login)
 
         async with self._post("login", login=login, password=password) as x:
             if x.url == x.history[0].url:
-                raise AuthorizationError("Ошибка входа. Проверьте логин и пароль")
+                raise AuthorizationError("Authorization error. Check your credentials.")
 
             self._update_accounts(await x.text())
 
-        _LOGGER.debug("Вход в аккаунт %s успешно выполнен", login)
+        _LOGGER.debug("Sucessful logging to %s account.", login)
 
         # Сохраняем актуальную пару логин-пароль
         self._login, self._password = login, password
