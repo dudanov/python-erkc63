@@ -161,47 +161,47 @@ class ErkcClient:
 
     def _update_token(self, html: str) -> None:
         self._token = parse_token(html)
-        _LOGGER.debug("CSRF токен: %s", self._token)
+        _LOGGER.debug("CSRF token: %s", self._token)
 
     def _update_accounts(self, html: str) -> None:
         self._accounts = tuple(parse_accounts(html))
-        _LOGGER.debug("Лицевые счета: %s", self._accounts)
+        _LOGGER.debug("Binded accounts: %s", self._accounts)
 
     @property
     def connector_closed(self) -> bool:
-        """Коннектор клиента закрыт."""
+        """Connector is closed."""
 
         return self._cli.closed
 
     @property
     def opened(self) -> bool:
-        """Сессия открыта."""
+        """Session is opened."""
 
         return self._token is not None
 
     @property
     def authorized(self) -> bool:
-        """Авторизация в аккаунте выполнена."""
+        """Client is authorized."""
 
         return self._accounts is not None
 
     @property
     def accounts(self) -> tuple[int, ...]:
-        """Лицевые счета, привязанные к аккаунту личного кабиента."""
+        """Binded accounts."""
 
         if self._accounts is None:
-            raise AuthorizationRequired("Требуется авторизация")
+            raise AuthorizationRequired("Not authorized.")
 
         return self._accounts
 
     @property
     def account(self) -> int:
-        """Основной лицевой счет личного кабинета."""
+        """Primary account."""
 
         if x := self.accounts:
             return x[0]
 
-        raise AccountNotFound("Основной лицевой счет не привязан")
+        raise AccountNotFound("Primary account not found.")
 
     def _account(self, account: int | None) -> int:
         if account is None:
@@ -212,7 +212,7 @@ class ErkcClient:
         if account in self.accounts:
             return account
 
-        raise AccountNotFound("Лицевой счет %d не привязан", account)
+        raise AccountNotFound("Account %d not found.", account)
 
     async def open(
         self,
@@ -258,22 +258,21 @@ class ErkcClient:
 
             self._update_accounts(await x.text())
 
-        _LOGGER.debug("Sucessful logging to %s account.", login)
+        _LOGGER.debug("Logging success to %s account.", login)
 
         # Сохраняем актуальную пару логин-пароль
         self._login, self._password = login, password
 
     async def close(self, close_connector: bool | None = None) -> None:
-        """
-        Выход из аккаунта личного кабинета и закрытие сессии.
+        """Log out from account and close session.
 
-        Параметры:
-            close_connector: закрывает коннектор. Если `None`, то берется из параметра создания объекта.
+        Parameters:
+            close_connector: Close connector. If not specified, parameter will be taken from client.
         """
 
         try:
             if self.authorized:
-                _LOGGER.debug("Выход из аккаунта %s", self._login)
+                _LOGGER.debug("Logging out from %s account.", self._login)
 
                 async with self._get("logout") as x:
                     # выход из аккаунта выполняет редирект на
@@ -287,6 +286,8 @@ class ErkcClient:
                 close_connector = self._close_connector
 
             if close_connector:
+                _LOGGER.debug("Closing connector.")
+
                 await self._cli.close()
                 self._token = None
 
@@ -295,7 +296,7 @@ class ErkcClient:
         """
         Загружает квитанцию в формате PDF. При неудаче возвращает пустые данные.
 
-        Параметры:
+        Parameters:
             accrual: квитанция.
             peni: нужна квитанция пени.
         """
@@ -318,7 +319,7 @@ class ErkcClient:
         Загружает PDF квитанции и извлекает QR коды оплаты.
         Возвращает объект `QrCodes`.
 
-        Параметры:
+        Parameters:
             accrual: квитанция.
         """
 
@@ -343,7 +344,7 @@ class ErkcClient:
 
         Если год не уточняется - используется текущий.
 
-        Параметры:
+        Parameters:
             year: год.
             account: номер лицевого счета. Если `None` - будет использоваться
         основной лицевой счет личного кабинета.
@@ -398,7 +399,7 @@ class ErkcClient:
         """
         Обновление детализированных данных квитанции или начисления.
 
-        Параметры:
+        Parameters:
             accrual: квитанция/начисление для обновления.
         """
 
@@ -418,7 +419,7 @@ class ErkcClient:
         """
         Обновление детализированных данных квитанций или начислений.
 
-        Параметры:
+        Parameters:
             accruals: квитанции/начисления для обновления.
         """
 
@@ -437,7 +438,7 @@ class ErkcClient:
 
         Если даты не уточняются - результат будет включать все доступные показания.
 
-        Параметры:
+        Parameters:
             start: дата начала периода.
             end: дата окончания периода (включается в ответ).
             account: номер лицевого счета. Если `None` - будет использоваться
@@ -506,7 +507,7 @@ class ErkcClient:
 
         Если даты не уточняются - результат будет включать все доступные показания.
 
-        Параметры:
+        Parameters:
             start: дата начала периода.
             end: дата окончания периода (включается в ответ).
             account: номер лицевого счета. Если `None` - будет использоваться
@@ -553,7 +554,7 @@ class ErkcClient:
 
         Если даты не уточняются - результат будет включать все доступные показания.
 
-        Параметры:
+        Parameters:
             start: дата начала периода.
             end: дата окончания периода (включается в ответ).
             account: номер лицевого счета. Если `None` - будет использоваться
@@ -575,7 +576,7 @@ class ErkcClient:
         """
         Запрос информации о лицевом счете.
 
-        Параметры:
+        Parameters:
             account: номер лицевого счета. Если `None` - используется основной счет.
         """
 
@@ -591,7 +592,7 @@ class ErkcClient:
         """
         Привязка лицевого счета к аккаунту личного кабинета.
 
-        Параметры:
+        Parameters:
             account: номер или публичная информация о лицевом счете
             last_bill_amount: сумма последнего начисления.
         Может быть взята автоматически из публичной информации о счете.
@@ -624,7 +625,7 @@ class ErkcClient:
         """
         Отвязка лицевого счета от аккаунта личного кабинета.
 
-        Параметры:
+        Parameters:
             account: номер лицевого счета.
         """
 
@@ -705,7 +706,7 @@ class ErkcClient:
         - Дата последнего показания
         - Последнее показание
 
-        Параметры:
+        Parameters:
             account: номер лицевого счета.
         """
 
@@ -721,7 +722,7 @@ class ErkcClient:
         """
         Передача новых показаний приборов учета без авторизации.
 
-        Параметры:
+        Parameters:
             account: номер лицевого счета.
             values: словарь `идентификатор прибора - новое показание`.
         """
@@ -733,7 +734,7 @@ class ErkcClient:
         """
         Запрос открытой информации по лицевому счету.
 
-        Параметры:
+        Parameters:
             account: номер лицевого счета.
         """
 
@@ -757,7 +758,7 @@ class ErkcClient:
         """
         Запрос открытой информации по лицевым счетам.
 
-        Параметры:
+        Parameters:
             accounts: номера лицевых счетов.
         """
 
