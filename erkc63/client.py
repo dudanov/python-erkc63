@@ -57,21 +57,23 @@ def api[T, **P](
     auth_required: bool = False,
     public: bool = False,
 ) -> Callable[[ClientMethod[T, P]], ClientMethod[T, P]]:
-    """Декоратор методов API клиента"""
+    """API methods decorator"""
 
     def decorator(func: ClientMethod[T, P]):
         @functools.wraps(func)
         def _wrapper(self: ErkcClient, *args: P.args, **kwargs: P.kwargs):
             if not self.opened:
-                raise SessionRequired("Требуется открытая сессия")
+                raise SessionRequired("Session not opened.")
 
             if public:
                 if self.authorized:
-                    raise AuthorizationRequired("Требуется выход из аккаунта")
+                    raise AuthorizationRequired(
+                        "Public API works only in unauthorized mode."
+                    )
 
             elif auth_required:
                 if not self.authorized:
-                    raise AuthorizationRequired("Требуется авторизация")
+                    raise AuthorizationRequired("Authorization required.")
 
             return func(self, *args, **kwargs)
 
@@ -81,20 +83,13 @@ def api[T, **P](
 
 
 class ErkcClient:
-    """
-    Клиент личного кабинета ЕРКЦ.
-    """
+    """Клиент личного кабинета ЕРКЦ."""
 
     _cli: aiohttp.ClientSession
-    """Клиентская сессия."""
     _login: str | None
-    """Логин (адрес электронной почты)."""
     _password: str | None
-    """Пароль."""
     _token: str | None
-    """Токен сессии."""
     _accounts: tuple[int, ...] | None
-    """Лицевые счета, привязанные к аккаунту."""
 
     def __init__(
         self,
@@ -293,12 +288,14 @@ class ErkcClient:
 
     @api(auth_required=True)
     async def download_pdf(self, accrual: Accrual, peni: bool = False) -> bytes:
-        """
-        Загружает квитанцию в формате PDF. При неудаче возвращает пустые данные.
+        """Download PDF accrual.
 
         Parameters:
-            accrual: квитанция.
-            peni: нужна квитанция пени.
+            accrual: `Accrual` instance.
+            peni: Peni download.
+
+        Returns:
+            PDF data on success or empty data on error.
         """
 
         if not (id := accrual.peni_id if peni else accrual.bill_id):
@@ -315,12 +312,13 @@ class ErkcClient:
 
     @api(auth_required=True)
     async def qr_codes(self, accrual: Accrual) -> QrCodes:
-        """
-        Загружает PDF квитанции и извлекает QR коды оплаты.
-        Возвращает объект `QrCodes`.
+        """Загружает PDF квитанции и извлекает QR коды оплаты.
 
         Parameters:
             accrual: квитанция.
+        
+        Returns:
+            Возвращает объект `QrCodes`.
         """
 
         result = await asyncio.gather(
@@ -339,18 +337,17 @@ class ErkcClient:
         limit: int | None = None,
         include_details: bool = False,
     ) -> tuple[Accrual, ...]:
-        """
-        Запрос квитанций лицевого счета за год.
+        """Запрос квитанций лицевого счета за год.
 
         Если год не уточняется - используется текущий.
 
         Parameters:
             year: год.
             account: номер лицевого счета. Если `None` - будет использоваться
-        основной лицевой счет личного кабинета.
+                основной лицевой счет личного кабинета.
             limit: кол-во последних квитанций в ответе. По-умолчанию все квитанции за год.
             include_details: дополнительный запрос детализированных затрат на каждую
-        квитанцию в полученном результате. По-умолчанию: `False`.
+                квитанцию в полученном результате. По-умолчанию: `False`.
         """
 
         account = self._account(account)
@@ -396,8 +393,7 @@ class ErkcClient:
 
     @api(auth_required=True)
     async def update_accrual(self, accrual: Accruals) -> None:
-        """
-        Обновление детализированных данных квитанции или начисления.
+        """Обновление детализированных данных квитанции или начисления.
 
         Parameters:
             accrual: квитанция/начисление для обновления.
@@ -416,8 +412,7 @@ class ErkcClient:
 
     @api(auth_required=True)
     def update_accruals(self, accruals: Iterable[Accruals]):
-        """
-        Обновление детализированных данных квитанций или начислений.
+        """Обновление детализированных данных квитанций или начислений.
 
         Parameters:
             accruals: квитанции/начисления для обновления.
@@ -433,16 +428,14 @@ class ErkcClient:
         end: dt.date | None = None,
         account: int | None = None,
     ) -> tuple[MeterInfoHistory, ...]:
-        """
-        Запрос счетчиков лицевого счета с историей показаний.
+        """Запрос счетчиков лицевого счета с историей показаний.
 
         Если даты не уточняются - результат будет включать все доступные показания.
 
         Parameters:
             start: дата начала периода.
             end: дата окончания периода (включается в ответ).
-            account: номер лицевого счета. Если `None` - будет использоваться
-        основной лицевой счет личного кабинета.
+            account: номер лицевого счета. Если `None` - будет использоваться основной лицевой счет личного кабинета.
         """
 
         start, end = start or _MIN_DATE, end or _MAX_DATE
@@ -502,8 +495,7 @@ class ErkcClient:
         account: int | None = None,
         include_details: bool = False,
     ) -> tuple[MonthAccrual, ...]:
-        """
-        Запрос начислений за заданный период.
+        """Запрос начислений за заданный период.
 
         Если даты не уточняются - результат будет включать все доступные показания.
 
@@ -511,9 +503,9 @@ class ErkcClient:
             start: дата начала периода.
             end: дата окончания периода (включается в ответ).
             account: номер лицевого счета. Если `None` - будет использоваться
-        основной лицевой счет личного кабинета.
+                основной лицевой счет личного кабинета.
             include_details: дополнительный запрос детализированных затрат на каждое
-        начисление в полученном результате. По-умолчанию: `False`.
+                начисление в полученном результате. По-умолчанию: `False`.
         """
 
         account = self._account(account)
@@ -549,8 +541,7 @@ class ErkcClient:
         end: dt.date | None = None,
         account: int | None = None,
     ) -> tuple[Payment, ...]:
-        """
-        Запрос истории платежей за заданный период.
+        """Запрос истории платежей за заданный период.
 
         Если даты не уточняются - результат будет включать все доступные показания.
 
@@ -558,7 +549,7 @@ class ErkcClient:
             start: дата начала периода.
             end: дата окончания периода (включается в ответ).
             account: номер лицевого счета. Если `None` - будет использоваться
-        основной лицевой счет личного кабинета.
+                основной лицевой счет личного кабинета.
         """
 
         start, end = start or _MIN_DATE, end or _MAX_DATE
@@ -573,8 +564,7 @@ class ErkcClient:
 
     @api(auth_required=True)
     async def account_info(self, account: int | None = None) -> AccountInfo:
-        """
-        Запрос информации о лицевом счете.
+        """Запрос информации о лицевом счете.
 
         Parameters:
             account: номер лицевого счета. Если `None` - используется основной счет.
@@ -589,13 +579,12 @@ class ErkcClient:
         account: int | PublicAccountInfo,
         last_bill_amount: float = 0,
     ) -> None:
-        """
-        Привязка лицевого счета к аккаунту личного кабинета.
+        """Привязка лицевого счета к аккаунту личного кабинета.
 
         Parameters:
             account: номер или публичная информация о лицевом счете
             last_bill_amount: сумма последнего начисления.
-        Может быть взята автоматически из публичной информации о счете.
+                Может быть взята автоматически из публичной информации о счете.
         """
 
         if isinstance(account, PublicAccountInfo):
@@ -622,8 +611,7 @@ class ErkcClient:
 
     @api(auth_required=True)
     async def account_rm(self, account: int) -> None:
-        """
-        Отвязка лицевого счета от аккаунта личного кабинета.
+        """Отвязка лицевого счета от аккаунта личного кабинета.
 
         Parameters:
             account: номер лицевого счета.
@@ -678,8 +666,7 @@ class ErkcClient:
     async def meters_info(
         self, account: int | None = None
     ) -> Mapping[int, PublicMeterInfo]:
-        """
-        Запрос информации о приборах учета по лицевому счету.
+        """Запрос информации о приборах учета по лицевому счету.
 
         Возвращает словарь `идентификатор - информация о приборе учета`.
 
@@ -695,8 +682,7 @@ class ErkcClient:
 
     @api(public=True)
     async def pub_meters_info(self, account: int) -> Mapping[int, PublicMeterInfo]:
-        """
-        Запрос публичной информации о приборах учета по лицевому счету.
+        """Запрос публичной информации о приборах учета по лицевому счету.
 
         Возвращает словарь `идентификатор - информация о приборе учета`.
 
@@ -719,8 +705,7 @@ class ErkcClient:
         account: int,
         values: Mapping[int, float],
     ) -> None:
-        """
-        Передача новых показаний приборов учета без авторизации.
+        """Передача новых показаний приборов учета без авторизации.
 
         Parameters:
             account: номер лицевого счета.
@@ -731,8 +716,7 @@ class ErkcClient:
 
     @api(public=True)
     async def pub_account_info(self, account: int) -> PublicAccountInfo | None:
-        """
-        Запрос открытой информации по лицевому счету.
+        """Запрос открытой информации по лицевому счету.
 
         Parameters:
             account: номер лицевого счета.
@@ -755,8 +739,7 @@ class ErkcClient:
     async def pub_accounts_info(
         self, *accounts: int
     ) -> Mapping[int, PublicAccountInfo]:
-        """
-        Запрос открытой информации по лицевым счетам.
+        """Запрос открытой информации по лицевым счетам.
 
         Parameters:
             accounts: номера лицевых счетов.
