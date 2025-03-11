@@ -103,17 +103,16 @@ class ErkcClient:
         *,
         session: aiohttp.ClientSession | None = None,
         auth: bool | None = None,
-        close_connector: bool = True,
+        close_connector: bool | None = None,
     ) -> None:
-        """
-        Создает клиент личного кабинета ЕРКЦ.
+        """Client initialization.
 
         Parameters:
-            login: логин (электронная почта).
-            password: пароль.
-            session: готовый объект `aiohttp.ClientSession`.
-            auth: авторизация при открытии. Если `None`, то авторизация если указаны логин и пароль.
-            close_connector: закрытие коннектора при закрытии сессии.
+            login: Optional account e-mail.
+            password: Optional account password.
+            session: Optional external `aiohttp.ClientSession` instance.
+            auth: Authorization while opening client session. If not specified, will be `True` if `login` and `password` are specified.
+            close_connector: Closing connector while closing client session. If not specified, will be `True` if `session` is also not specified.
         """
 
         self._cli = session or aiohttp.ClientSession()
@@ -122,7 +121,9 @@ class ErkcClient:
         self._accounts = None
         self._token = None
         self._auth = bool(login and password) if auth is None else auth
-        self._close_connector = close_connector
+        self._close_connector = (
+            (not session) if close_connector is None else close_connector
+        )
 
     async def __aenter__(self) -> Self:
         try:
