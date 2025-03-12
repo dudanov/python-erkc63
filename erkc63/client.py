@@ -485,7 +485,7 @@ class ErkcClient:
 
         # Исключаем дублирование записей из наложенных ответов и конвертируем в кортеж
         return [
-            MeterInfoHistory(*k, history=tuple(dict.fromkeys(v))) for k, v in db.items()
+            MeterInfoHistory(*k, history=list(dict.fromkeys(v))) for k, v in db.items()
         ]
 
     @api(auth_required=True)

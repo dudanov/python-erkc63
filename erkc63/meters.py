@@ -48,5 +48,5 @@ class MeterValue:
 class MeterInfoHistory(MeterInfo):
     """Счетчик с архивом показаний"""
 
-    history: tuple[MeterValue, ...]
+    history: list[MeterValue]
     """Архив показаний"""
