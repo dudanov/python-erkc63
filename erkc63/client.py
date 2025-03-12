@@ -337,7 +337,7 @@ class ErkcClient:
         account: int | None = None,
         limit: int | None = None,
         include_details: bool = False,
-    ) -> tuple[Accrual, ...]:
+    ) -> list[Accrual]:
         """Запрос квитанций лицевого счета за год.
 
         Если год не уточняется - используется текущий.
@@ -385,7 +385,7 @@ class ErkcClient:
                 case _:
                     raise ParsingError
 
-        result = tuple(db.values())
+        result = list(db.values())
 
         if include_details:
             await self.update_accruals(result)
@@ -412,14 +412,14 @@ class ErkcClient:
         }
 
     @api(auth_required=True)
-    def update_accruals(self, accruals: Iterable[Accruals]):
+    async def update_accruals(self, accruals: Iterable[Accruals]) -> None:
         """Обновление детализированных данных квитанций или начислений.
 
         Parameters:
             accruals: квитанции/начисления для обновления.
         """
 
-        return asyncio.gather(*map(self.update_accrual, accruals))
+        await asyncio.gather(*map(self.update_accrual, accruals))
 
     @api(auth_required=True)
     async def meters_history(
@@ -428,7 +428,7 @@ class ErkcClient:
         start: dt.date | None = None,
         end: dt.date | None = None,
         account: int | None = None,
-    ) -> tuple[MeterInfoHistory, ...]:
+    ) -> list[MeterInfoHistory]:
         """Запрос счетчиков лицевого счета с историей показаний.
 
         Если даты не уточняются - результат будет включать все доступные показания.
@@ -484,9 +484,9 @@ class ErkcClient:
                 _LOGGER.warning("Применен обход")
 
         # Исключаем дублирование записей из наложенных ответов и конвертируем в кортеж
-        return tuple(
+        return [
             MeterInfoHistory(*k, history=tuple(dict.fromkeys(v))) for k, v in db.items()
-        )
+        ]
 
     @api(auth_required=True)
     async def accruals_history(
@@ -496,7 +496,7 @@ class ErkcClient:
         end: dt.date | None = None,
         account: int | None = None,
         include_details: bool = False,
-    ) -> tuple[MonthAccrual, ...]:
+    ) -> list[MonthAccrual]:
         """Запрос начислений за заданный период.
 
         Если даты не уточняются - результат будет включать все доступные показания.
@@ -517,11 +517,11 @@ class ErkcClient:
 
         resp = await self._history("accruals", account, start, end)
 
-        result = []
+        result: list[MonthAccrual] = []
 
-        for date, *floats in resp:
-            floats: Any = map(to_decimal, floats)
-            accrual = MonthAccrual(account, date_attr(date), *floats)
+        for date, *decimals in resp:
+            decimals: Any = map(to_decimal, decimals)
+            accrual = MonthAccrual(account, date_attr(date), *decimals)
 
             # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
             # при первом нулевом начислении прерываем цикл, так как далее все начисления тоже нулевые.
@@ -533,7 +533,7 @@ class ErkcClient:
         if include_details:
             await self.update_accruals(result)
 
-        return tuple(result)
+        return result
 
     @api(auth_required=True)
     async def payments_history(
@@ -542,7 +542,7 @@ class ErkcClient:
         start: dt.date | None = None,
         end: dt.date | None = None,
         account: int | None = None,
-    ) -> tuple[Payment, ...]:
+    ) -> list[Payment]:
         """Запрос истории платежей за заданный период.
 
         Если даты не уточняются - результат будет включать все доступные показания.
@@ -562,7 +562,7 @@ class ErkcClient:
         payments = (Payment(date_attr(x0), to_decimal(x1), x3) for x0, x1, x3 in x)
 
         # Ответ содержит нулевые платежи (внутренние перерасчеты). Применим фильтр.
-        return tuple(x for x in payments if x.summa)
+        return [x for x in payments if x.summa]
 
     @api(auth_required=True)
     async def account_info(self, account: int | None = None) -> AccountInfo:
