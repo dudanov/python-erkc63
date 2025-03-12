@@ -457,15 +457,8 @@ class ErkcClient:
 
             for _, key, date, value, consumption, source in history:
                 unique_dates.add(end := str_to_date(date[27:35]))
-                consumption = Decimal(consumption)
-                key = tuple(key.split(", счетчик №", 1))
-
-                # игнорируем записи без потребления когда присутствуют другие записи
-                if not consumption and key in db:
-                    continue
-
-                value = MeterValue(end, Decimal(value), consumption, source)
-                db.setdefault(key, []).append(value)
+                value = MeterValue(end, Decimal(value), Decimal(consumption), source)
+                db.setdefault(tuple(key.split(", счетчик №", 1)), []).append(value)
 
             if num < 25:
                 break
