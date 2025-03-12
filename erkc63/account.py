@@ -1,4 +1,5 @@
 import dataclasses as dc
+from decimal import Decimal
 
 
 @dc.dataclass
@@ -9,9 +10,9 @@ class PublicAccountInfo:
     """Номер лицевого счета"""
     address: str
     """Адрес"""
-    balance: float
+    balance: Decimal
     """Задолженность"""
-    peni: float
+    peni: Decimal
     """Пени"""
 
     def __repr__(self) -> str:
@@ -37,7 +38,7 @@ class AccountInfo:
     """Электронная почта"""
     account: int
     """Лицевой счет"""
-    square: float
+    square: Decimal
     """Общая площадь"""
     registered: int
     """Зарегистрировано"""

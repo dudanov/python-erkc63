@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import dataclasses as dc
 import datetime as dt
+from decimal import Decimal
 
 
 @dc.dataclass(frozen=True)
@@ -9,7 +12,7 @@ class MeterInfo:
     serial: str
     """Серийный номер"""
 
-    def __eq__(self, other: "MeterInfo") -> bool:
+    def __eq__(self, other: MeterInfo) -> bool:
         return self.name == other.name and self.serial == other.serial
 
 
@@ -23,7 +26,7 @@ class PublicMeterInfo(MeterInfo):
 
     date: dt.date
     """Дата последнего показания"""
-    value: float
+    value: Decimal
     """Последнее показание"""
 
 
@@ -33,9 +36,9 @@ class MeterValue:
 
     date: dt.date
     """Дата"""
-    value: float
+    value: Decimal
     """Значение"""
-    consumption: float
+    consumption: Decimal
     """Расход"""
     source: str
     """Источник"""

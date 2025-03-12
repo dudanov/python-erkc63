@@ -1,6 +1,7 @@
 import dataclasses as dc
 import itertools as it
 import re
+from decimal import Decimal
 from types import MappingProxyType
 from typing import Any, cast
 
@@ -84,7 +85,7 @@ def parse_meters(html: str) -> MappingProxyType[int, PublicMeterInfo]:
 
         name, serial = name.text, serial.text.rsplit("№", 1)[-1]
         date = str_to_date(date.text.strip().removeprefix("от "))
-        value = float(value.text.strip())
+        value = Decimal(value.text.strip())
 
         id = cast(Tag, meter.find("input", {"name": _RE_RAWID}))
         id = int(cast(str, id["value"]))

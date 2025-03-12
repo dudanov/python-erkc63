@@ -1,5 +1,6 @@
 import datetime as dt
 import re
+from decimal import Decimal
 from typing import Any
 
 
@@ -32,10 +33,10 @@ def first_int(_str: str) -> int:
     return int(_str)
 
 
-def to_float(_str: Any) -> float:
+def to_decimal(value: Any) -> Decimal:
     """Преобразует строку в число."""
 
-    return float(str(_str).replace(",", ".").replace(" ", ""))
+    return Decimal(str(value).replace(" ", "").replace(",", "."))
 
 
 def str_to_date(_str: str) -> dt.date:

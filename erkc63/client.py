@@ -4,6 +4,7 @@ import asyncio
 import datetime as dt
 import functools
 import logging
+from decimal import Decimal
 from typing import (
     Any,
     Awaitable,
@@ -39,7 +40,7 @@ from .utils import (
     date_to_str,
     str_normalize,
     str_to_date,
-    to_float,
+    to_decimal,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -316,7 +317,7 @@ class ErkcClient:
 
         Parameters:
             accrual: квитанция.
-        
+
         Returns:
             Возвращает объект `QrCodes`.
         """
@@ -369,8 +370,8 @@ class ErkcClient:
                 Accrual(
                     account=account,
                     date=date,
-                    summa=to_float(data[1]),
-                    peni=to_float(data[2]),
+                    summa=to_decimal(data[1]),
+                    peni=to_decimal(data[2]),
                 ),
             )
 
@@ -406,7 +407,7 @@ class ErkcClient:
         )
 
         accrual.details = {
-            str_normalize(x[0]): AccrualDetalization(*map(to_float, x[1:]))
+            str_normalize(x[0]): AccrualDetalization(*map(to_decimal, x[1:]))
             for x in resp
         }
 
@@ -457,10 +458,10 @@ class ErkcClient:
                 unique_dates.add(end := str_to_date(date[27:35]))
 
                 # игнорируем записи без потребления
-                if not (consumption := float(consumption)):
+                if not (consumption := Decimal(consumption)):
                     continue
 
-                value = MeterValue(end, float(value), consumption, source)
+                value = MeterValue(end, Decimal(value), consumption, source)
 
                 name, serial = key.split(", счетчик №", 1)
                 db.setdefault((name, serial), []).append(value)
@@ -518,7 +519,7 @@ class ErkcClient:
         result = []
 
         for date, *floats in resp:
-            floats: Any = map(to_float, floats)
+            floats: Any = map(to_decimal, floats)
             accrual = MonthAccrual(account, date_attr(date), *floats)
 
             # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
@@ -557,7 +558,7 @@ class ErkcClient:
         assert start <= end
 
         x = await self._history("payments", account, start, end)
-        payments = (Payment(date_attr(x0), to_float(x1), x3) for x0, x1, x3 in x)
+        payments = (Payment(date_attr(x0), to_decimal(x1), x3) for x0, x1, x3 in x)
 
         # Ответ содержит нулевые платежи (внутренние перерасчеты). Применим фильтр.
         return tuple(x for x in payments if x.summa)
@@ -577,7 +578,7 @@ class ErkcClient:
     async def account_add(
         self,
         account: int | PublicAccountInfo,
-        last_bill_amount: float = 0,
+        last_bill_amount: Decimal = Decimal(),
     ) -> None:
         """Привязка лицевого счета к аккаунту личного кабинета.
 
@@ -729,8 +730,8 @@ class ErkcClient:
             return PublicAccountInfo(
                 account,
                 str_normalize(json["address"]),
-                to_float(json["balanceSumma"]),
-                to_float(json["balancePeni"]),
+                to_decimal(json["balanceSumma"]),
+                to_decimal(json["balancePeni"]),
             )
 
         _LOGGER.info("Лицевой счет %d не найден", account)

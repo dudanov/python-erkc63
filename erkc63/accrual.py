@@ -1,6 +1,7 @@
 import dataclasses as dc
 import datetime as dt
-from typing import Mapping
+from decimal import Decimal
+from typing import Mapping, cast
 
 from .errors import ErkcError
 
@@ -9,21 +10,21 @@ from .errors import ErkcError
 class AccrualDetalization:
     """Детализация услуги"""
 
-    tariff: float
+    tariff: Decimal
     """Тариф"""
-    saldo_in: float
+    saldo_in: Decimal
     """Входящее сальдо (долг на начало расчетного периода)"""
-    billed: float
+    billed: Decimal
     """Начислено"""
-    reee: float
+    reee: Decimal
     """Перерасчет"""
-    quality: float
+    quality: Decimal
     """Снято за качество"""
-    payment: float
+    payment: Decimal
     """Платеж"""
-    saldo_out: float
+    saldo_out: Decimal
     """Исходящее сальдо (долг на конец расчетного периода)"""
-    volume: float
+    volume: Decimal
     """Объем"""
 
 
@@ -39,9 +40,9 @@ class Accrual:
     """Лицевой счет"""
     date: dt.date
     """Дата формирования"""
-    summa: float
+    summa: Decimal
     """Сумма"""
-    peni: float
+    peni: Decimal
     """Пени"""
     bill_id: str | None = None
     """Идентификатор квитанции для скачивания"""
@@ -50,39 +51,40 @@ class Accrual:
     details: Mapping[str, AccrualDetalization] | None = None
     """Детализация услуг"""
 
-    def _sum(self, attr: str) -> float:
+    def _sum(self, attr: str) -> Decimal:
         if self.details:
-            return sum(getattr(x, attr) for x in self.details.values())
+            x = sum(getattr(x, attr) for x in self.details.values())
+            return cast(Decimal, x)
 
         raise ErkcError("Отсутствует детализация по услугам")
 
     @property
-    def saldo_in(self) -> float:
+    def saldo_in(self) -> Decimal:
         """Входящее сальдо (долг на начало расчетного периода)"""
         return self._sum("saldo_in")
 
     @property
-    def billed(self) -> float:
+    def billed(self) -> Decimal:
         """Начислено"""
         return self._sum("billed")
 
     @property
-    def reee(self) -> float:
+    def reee(self) -> Decimal:
         """Перерасчет"""
         return self._sum("reee")
 
     @property
-    def quality(self) -> float:
+    def quality(self) -> Decimal:
         """Снято за качество"""
         return self._sum("quality")
 
     @property
-    def payment(self) -> float:
+    def payment(self) -> Decimal:
         """Платеж"""
         return self._sum("payment")
 
     @property
-    def saldo_out(self) -> float:
+    def saldo_out(self) -> Decimal:
         """Исходящее сальдо (долг на конец расчетного периода)"""
         return self._sum("saldo_out")
 
@@ -114,13 +116,13 @@ class MonthAccrual:
     """Лицевой счет"""
     date: dt.date
     """Дата"""
-    saldo_in: float
+    saldo_in: Decimal
     """Входящее сальдо (долг на начало расчетного периода)"""
-    summa: float
+    summa: Decimal
     """Начислено"""
-    payment: float
+    payment: Decimal
     """Платеж"""
-    saldo_out: float
+    saldo_out: Decimal
     """Исходящее сальдо (долг на конец расчетного периода)"""
     details: Mapping[str, AccrualDetalization] | None = None
     """Детализация услуг"""
