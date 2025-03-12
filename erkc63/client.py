@@ -443,9 +443,10 @@ class ErkcClient:
 
         assert start <= end
 
-        db: dict[tuple[str, str], list[MeterValue]] = {}
+        db: dict[tuple, list[MeterValue]] = {}
 
         while True:
+            _LOGGER.debug("Requesting meters history from %s to %s", start, end)
             history = await self._history("counters", account, start, end)
 
             # Лимит записей ответа сервера - 25. Контроль превышения на случай изменения API.
@@ -456,15 +457,15 @@ class ErkcClient:
 
             for _, key, date, value, consumption, source in history:
                 unique_dates.add(end := str_to_date(date[27:35]))
+                consumption = Decimal(consumption)
+                key = tuple(key.split(", счетчик №", 1))
 
-                # игнорируем записи без потребления
-                if not (consumption := Decimal(consumption)):
+                # игнорируем записи без потребления когда присутствуют другие записи
+                if not consumption and key in db:
                     continue
 
                 value = MeterValue(end, Decimal(value), consumption, source)
-
-                name, serial = key.split(", счетчик №", 1)
-                db.setdefault((name, serial), []).append(value)
+                db.setdefault(key, []).append(value)
 
             if num < 25:
                 break
@@ -484,7 +485,7 @@ class ErkcClient:
 
         # Исключаем дублирование записей из наложенных ответов и конвертируем в кортеж
         return tuple(
-            MeterInfoHistory(*k, tuple(dict.fromkeys(v))) for k, v in db.items()
+            MeterInfoHistory(*k, history=tuple(dict.fromkeys(v))) for k, v in db.items()
         )
 
     @api(auth_required=True)
