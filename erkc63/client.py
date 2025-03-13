@@ -17,6 +17,7 @@ from typing import (
 )
 
 import aiohttp
+import orjson
 import yarl
 
 from .account import AccountInfo, PublicAccountInfo
@@ -147,7 +148,7 @@ class ErkcClient:
 
     async def _ajax(self, func: str, account: int | None, **params: Any) -> Any:
         async with self._get(f"ajax/{self._account(account)}/{func}", **params) as x:
-            return await x.json()
+            return await x.json(loads=orjson.loads)
 
     def _history(
         self, what: str, account: int | None, start: dt.date, end: dt.date
@@ -725,7 +726,7 @@ class ErkcClient:
         """
 
         async with self._get("payment/checkLS", ls=account) as x:
-            json: Mapping[str, Any] = await x.json()
+            json: Mapping[str, Any] = await x.json(loads=orjson.loads)
 
         if json["checkLS"]:
             return PublicAccountInfo(

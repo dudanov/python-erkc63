@@ -22,7 +22,7 @@ def parse_accounts(html: str) -> list[int]:
     accounts: list[int] = []
 
     for x in menu.find_all("a", {"href": _RE_ACCOUNT_URL}):
-        accounts.append(int(cast(str, x["href"]).rsplit("/", 1)[1]))
+        accounts.append(int(cast(str, cast(Tag, x)["href"]).rsplit("/", 1)[1]))
 
     # сортировка вторичных счетов
     if len(accounts) >= 3:
