@@ -151,8 +151,12 @@ class ErkcClient:
             return await x.json(loads=orjson.loads)
 
     def _history(
-        self, what: str, account: int | None, start: dt.date, end: dt.date
-    ) -> Awaitable[Sequence[Sequence[str]]]:
+        self,
+        what: str,
+        account: int | None,
+        start: dt.date,
+        end: dt.date,
+    ) -> Awaitable[list[list[str]]]:
         params = {"from": date_to_str(start), "to": date_to_str(end)}
         return self._ajax(f"{what}History", account, **params)
 
@@ -516,13 +520,13 @@ class ErkcClient:
 
         assert start <= end
 
-        resp = await self._history("accruals", account, start, end)
+        history = await self._history("accruals", account, start, end)
 
         result: list[MonthAccrual] = []
 
-        for date, *decimals in resp:
-            decimals: Any = map(to_decimal, decimals)
-            accrual = MonthAccrual(account, date_attr(date), *decimals)
+        for date, *decimals in history:
+            decimals = map(to_decimal, decimals)
+            accrual = MonthAccrual(account, date_attr(date), *decimals, details=None)
 
             # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
             # при первом нулевом начислении прерываем цикл, так как далее все начисления тоже нулевые.
