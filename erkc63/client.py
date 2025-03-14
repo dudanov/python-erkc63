@@ -5,16 +5,7 @@ import datetime as dt
 import functools
 import logging
 from decimal import Decimal
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Concatenate,
-    Iterable,
-    Mapping,
-    Self,
-    Sequence,
-)
+from typing import Any, Awaitable, Callable, Concatenate, Iterable, Mapping, Self
 
 import aiohttp
 import orjson
@@ -358,8 +349,10 @@ class ErkcClient:
 
         account = self._account(account)
 
-        resp: Sequence[Sequence[str]] = await self._ajax(
-            "getReceipts", account, year=year or date_last_accrual().year
+        resp: list[list[str]] = await self._ajax(
+            func="getReceipts",
+            account=account,
+            year=year or date_last_accrual().year,
         )
 
         db: dict[dt.date, Accrual] = {}
