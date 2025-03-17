@@ -58,23 +58,23 @@ def api[T, **P](
     auth_required: bool = False,
     public: bool = False,
 ) -> Callable[[ClientMethod[T, P]], ClientMethod[T, P]]:
-    """API methods decorator"""
+    """Декоратор методов клиента"""
 
     def decorator(func: ClientMethod[T, P]):
         @functools.wraps(func)
         def _wrapper(self: ErkcClient, *args: P.args, **kwargs: P.kwargs):
             if not self.opened:
-                raise SessionRequired("Session not opened.")
+                raise SessionRequired("Сессия не открыта.")
 
             if public:
                 if self.authorized:
                     raise AuthorizationRequired(
-                        "Public API works only in unauthorized mode."
+                        "Публичный API работает без авторизации."
                     )
 
             elif auth_required:
                 if not self.authorized:
-                    raise AuthorizationRequired("Authorization required.")
+                    raise AuthorizationRequired("Требуется авторизация.")
 
             return func(self, *args, **kwargs)
 
@@ -101,14 +101,14 @@ class ErkcClient:
         auth: bool | None = None,
         close_connector: bool | None = None,
     ) -> None:
-        """Client initialization.
+        """Инициализация клиента.
 
         Parameters:
-            login: Optional account e-mail.
-            password: Optional account password.
-            session: Optional external `aiohttp.ClientSession` instance.
-            auth: Authorization while opening client session. If not specified, will be `True` if `login` and `password` are specified.
-            close_connector: Closing connector while closing client session. If not specified, will be `True` if `session` is also not specified.
+            login: E-mail личного кабинета. Опционально.
+            password: Пароль личного кабинета. Опционально.
+            session: Внешняя клиентская сессия `aiohttp.ClientSession`. Опционально.
+            auth: Авторизоваться при открытии. Если не указано, будет `True` при указании `login` and `password`.
+            close_connector: Закрыть коннектор сессии при закрытии. Если не указано, будет `True` если `session` также не указан.
         """
 
         self._cli = session or aiohttp.ClientSession()
@@ -163,47 +163,47 @@ class ErkcClient:
 
     def _update_token(self, html: str) -> None:
         self._token = parse_token(html)
-        _LOGGER.debug("CSRF token: %s", self._token)
+        _LOGGER.debug("CSRF токен: %s", self._token)
 
     def _update_accounts(self, html: str) -> None:
         self._accounts = tuple(parse_accounts(html))
-        _LOGGER.debug("Binded accounts: %s", self._accounts)
+        _LOGGER.debug("Привязанные лицевые счета: %s", self._accounts)
 
     @property
     def connector_closed(self) -> bool:
-        """Connector is closed."""
+        """Коннектор сессии закрыт."""
 
         return self._cli.closed
 
     @property
     def opened(self) -> bool:
-        """Session is opened."""
+        """Сессия открыта."""
 
         return self._token is not None
 
     @property
     def authorized(self) -> bool:
-        """Client is authorized."""
+        """Клиент авторизован."""
 
         return self._accounts is not None
 
     @property
     def accounts(self) -> tuple[int, ...]:
-        """Binded accounts."""
+        """Привязанные лицевые счета."""
 
         if self._accounts is None:
-            raise AuthorizationRequired("Not authorized.")
+            raise AuthorizationRequired("Не авторизован в личном кабинете.")
 
         return self._accounts
 
     @property
     def account(self) -> int:
-        """Primary account."""
+        """Основной лицевой счет."""
 
         if x := self.accounts:
             return x[0]
 
-        raise AccountNotFound("Primary account not found.")
+        raise AccountNotFound("Основной лицевой счет не найден.")
 
     def _account(self, account: int | None) -> int:
         if account is None:
@@ -214,7 +214,7 @@ class ErkcClient:
         if account in self.accounts:
             return account
 
-        raise AccountNotFound("Account %d not found.", account)
+        raise AccountNotFound("Лицевой счет %d не найден.", account)
 
     async def open(
         self,
@@ -222,19 +222,19 @@ class ErkcClient:
         password: str | None = None,
         auth: bool | None = None,
     ) -> None:
-        """Opening session with optional authorization.
+        """Открыть сессию с опциональной авторизацией в личном кабинете.
 
         Parameters:
-            login: Optional account e-mail. If specified, the parameter will be saved in the client after successful authorization.
-            password: Optional account password. If specified, the parameter will be saved in the client after successful authorization.
-            auth: Authorization required. If `None`, then the parameter is taken from the client.
+            login: E-mail личного кабинета. Опционально. Будет сохранен в клиенте в случае успешной авторизации.
+            password: Пароль личного кабинета. Опционально. Будет сохранен в клиенте в случае успешной авторизации.
+            auth: Авторизоваться при открытии. Если не указано, берет из клиента.
 
         Raises:
-            AuthorizationError: If authorization failed.
+            AuthorizationError: При ошибке авторизации.
         """
 
         if not self.opened:
-            _LOGGER.debug("Opening session.")
+            _LOGGER.debug("Открытие сессии.")
 
             async with self._get("login") as x:
                 self._update_token(await x.text())
@@ -245,38 +245,38 @@ class ErkcClient:
         if not auth or self.authorized:
             return
 
-        _LOGGER.debug("Authorization started.")
+        _LOGGER.debug("Авторизация.")
 
         login, password = login or self._login, password or self._password
 
         if not (login and password):
-            raise AuthorizationError("No auth credentials.")
+            raise AuthorizationError("Не указаны параметры входа.")
 
-        _LOGGER.debug("Logging to %s", login)
+        _LOGGER.debug("Авторизация в личном кабинете %s", login)
 
         async with self._post("login", login=login, password=password) as x:
             if x.url == x.history[0].url:
                 raise AuthorizationError(
-                    "Authorization error. Check your credentials."
+                    "Ошибка авторизации. Проверьте данные входа."
                 )
 
             self._update_accounts(await x.text())
 
-        _LOGGER.debug("Logging success to %s account.", login)
+        _LOGGER.debug("Авторизация в личном кабинете %s успешна.", login)
 
         # Сохраняем актуальную пару логин-пароль
         self._login, self._password = login, password
 
     async def close(self, close_connector: bool | None = None) -> None:
-        """Log out from account and close session.
+        """Выход из личного кабинета и закрытие клиентской сессии.
 
         Parameters:
-            close_connector: Close connector. If not specified, parameter will be taken from client.
+            close_connector: Закрыть коннектор. Если не указан, параметр берется из клиента.
         """
 
         try:
             if self.authorized:
-                _LOGGER.debug("Logging out from %s account.", self._login)
+                _LOGGER.debug("Выход из личного кабинета %s.", self._login)
 
                 async with self._get("logout") as x:
                     # выход из аккаунта выполняет редирект на
@@ -290,21 +290,21 @@ class ErkcClient:
                 close_connector = self._close_connector
 
             if close_connector:
-                _LOGGER.debug("Closing connector.")
+                _LOGGER.debug("Закрытие коннектора сессии.")
 
                 await self._cli.close()
                 self._token = None
 
     @api(auth_required=True)
     async def download_pdf(self, accrual: Accrual, peni: bool = False) -> bytes:
-        """Download PDF accrual.
+        """Загрузка квитанции в формате PDF.
 
         Parameters:
-            accrual: `Accrual` instance.
-            peni: Peni download.
+            accrual: Экземпляр объекта `Accrual`.
+            peni: Загрузить квитанцию на пени.
 
         Returns:
-            PDF data on success or empty data on error.
+            Данные PDF при успехе или пустые данные при неудачи.
         """
 
         if not (id := accrual.peni_id if peni else accrual.bill_id):
