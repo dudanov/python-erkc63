@@ -1,6 +1,6 @@
 [project]
 name = "erkc63"
-version = "0.2.33"
+version = "0.2.34"
 description = ""
 authors = [
     { name = "Sergey Dudanov", email = "sergey.dudanov@gmail.com" },
@@ -16,17 +16,29 @@ dependencies = [
     "beautifulsoup4 >= 4.12",
     "orjson >=3.10",
 ]
-keywords = ["erkc63", "async", "client"]
+keywords = [
+  "erkc63",
+  "async",
+  "client",
+]
 classifiers = [
   "Development Status :: 4 - Beta",
-  "Programming Language :: Python"
+  "Framework :: AsyncIO",
+  "Intended Audience :: Developers",
+  "Natural Language :: Russian",
+  "Operating System :: OS Independent",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 ]
 
 [project.urls]
-Homepage = "https://github.com/dudanov/python-erkc63"
-Documentation = "https://github.com/dudanov/python-erkc63"
-Repository = "https://github.com/dudanov/python-erkc63.git"
-Issues = "https://github.com/dudanov/python-erkc63/issues"
+homepage = "https://github.com/dudanov/python-erkc63"
+documentation = "https://github.com/dudanov/python-erkc63"
+repository = "https://github.com/dudanov/python-erkc63.git"
+issues = "https://github.com/dudanov/python-erkc63/issues"
 
 [project.optional-dependencies]
 qrcode = [
