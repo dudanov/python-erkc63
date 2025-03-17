@@ -653,7 +653,7 @@ class ErkcClient:
     async def _set_meters_values(
         self,
         path: str,
-        values: Mapping[int, float],
+        values: Mapping[int, Decimal],
     ) -> None:
         if not values:
             return
@@ -729,7 +729,7 @@ class ErkcClient:
     async def pub_set_meters_values(
         self,
         account: int,
-        values: Mapping[int, float],
+        values: Mapping[int, Decimal],
     ) -> None:
         """Передача новых показаний приборов учета без авторизации.
 
@@ -759,7 +759,7 @@ class ErkcClient:
                 to_decimal(json["balancePeni"]),
             )
 
-        _LOGGER.info("Лицевой счет %d не найден", account)
+        _LOGGER.info("Лицевой счет %d не найден.", account)
 
     @api(public=True)
     async def pub_accounts_info(
