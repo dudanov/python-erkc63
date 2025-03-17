@@ -41,7 +41,7 @@ def _img_paid(img_data: bytes, paid_scale: float) -> bytes:
 def _page_img(doc: pymupdf.Document, name: str) -> bytes:
     for img in doc.get_page_images(0):
         if img[7] == name:
-            return pymupdf.Pixmap(doc, img[0]).samples
+            return pymupdf.Pixmap(doc, img[0]).tobytes()
 
     raise FileNotFoundError("Image %s not found.", name)
 
