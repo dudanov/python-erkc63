@@ -5,7 +5,15 @@ import datetime as dt
 import functools
 import logging
 from decimal import Decimal
-from typing import Any, Awaitable, Callable, Concatenate, Iterable, Mapping, Self
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Concatenate,
+    Iterable,
+    Mapping,
+    Self,
+)
 
 import aiohttp
 import orjson
