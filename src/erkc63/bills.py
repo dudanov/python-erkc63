@@ -1,5 +1,5 @@
 import io
-from importlib import resources as impresources
+from importlib import resources
 from typing import Literal
 
 from PIL import Image
@@ -7,9 +7,8 @@ from pypdf import PageObject, PdfReader
 
 QrSupported = Literal["erkc", "kapremont", "peni"]
 
-# img = impresources.files("erkc63") / "paid.png"
-
-# _PAID_LOGO = Image.open(img.name).convert("RGBA")
+png_data = resources.files("erkc63").joinpath("images", "paid.png").read_bytes()
+_PAID_LOGO = Image.open(png_data).convert("RGBA")
 
 
 def _paid_logo(size: float) -> Image.Image:

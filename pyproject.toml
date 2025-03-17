@@ -1,7 +1,7 @@
 [project]
 name = "erkc63"
 version = "0.2.35"
-description = "Асинхронный клиент для сайта ЕРКЦ 63."
+description = "Клиент личного кабинета ЕРКЦ."
 authors = [
   { name = "Sergey Dudanov", email = "sergey.dudanov@gmail.com" },
 ]
@@ -35,20 +35,21 @@ classifiers = [
 ]
 
 [project.urls]
-"Home Page" = "https://github.com/dudanov/python-erkc63"
 "Documentation" = "https://github.com/dudanov/python-erkc63"
-"Source Code" = "https://github.com/dudanov/python-erkc63.git"
+"Home Page" = "https://github.com/dudanov/python-erkc63"
 "Issue Tracker" = "https://github.com/dudanov/python-erkc63/issues"
+"Source Code" = "https://github.com/dudanov/python-erkc63.git"
 
 [project.optional-dependencies]
 qrcode = [
+  "pillow >= 11.0",
   "pymupdf >= 1.25",
 ]
 
 [tool.uv]
 dev-dependencies = [
-  "ruff",
   "isort",
+  "ruff",
 ]
 
 [build-system]
@@ -59,9 +60,10 @@ build-backend = "hatchling.build"
 line-length = 80
 
 [tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
 docstring-code-format = true
+indent-style = "space"
+quote-style = "double"
 
 [tool.isort]
+line_length = 80
 profile = "black"
