@@ -313,7 +313,10 @@ class ErkcClient:
         try:
             json = await self._ajax("getReceipt", accrual.account, receiptId=id)
 
-            async with self._get(json["file"]) as x:
+            async with self._get(
+                f"account/{accrual.account}/receipts/download",
+                kvit=json["fileName"],
+            ) as x:
                 return await x.read()
 
         except Exception:

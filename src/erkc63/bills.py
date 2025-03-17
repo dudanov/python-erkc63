@@ -2,13 +2,14 @@ import io
 from importlib import resources
 from typing import Literal
 
+import pymupdf
 from PIL import Image
-from pypdf import PageObject, PdfReader
 
 QrSupported = Literal["erkc", "kapremont", "peni"]
 
-png_data = resources.files("erkc63").joinpath("images", "paid.png").read_bytes()
-_PAID_LOGO = Image.open(png_data).convert("RGBA")
+_PAID_LOGO = Image.open(
+    resources.files().joinpath("images", "paid.png").open("rb")
+).convert("RGBA")
 
 
 def _paid_logo(size: float) -> Image.Image:
@@ -37,10 +38,10 @@ def _img_paid(img_data: bytes, paid_scale: float) -> bytes:
     return _img_to_png(img)
 
 
-def _page_img(page: PageObject, name: str) -> bytes:
-    for img in page.images:
-        if img.name == name:
-            return img.data
+def _page_img(doc: pymupdf.Document, name: str) -> bytes:
+    for img in doc.get_page_images(0):
+        if img[7] == name:
+            return doc.extract_image(img[0])["image"]
 
     raise FileNotFoundError("Image %s not found.", name)
 
@@ -58,13 +59,13 @@ class QrCodes:
         self._codes = {}
 
         if pdf_erkc:
-            page = PdfReader(io.BytesIO(pdf_erkc)).pages[0]
-            self._codes["erkc"] = _page_img(page, "img2.png")
-            self._codes["kapremont"] = _page_img(page, "img4.png")
+            page = pymupdf.Document(stream=pdf_erkc)
+            self._codes["erkc"] = _page_img(page, "img2")
+            self._codes["kapremont"] = _page_img(page, "img4")
 
         if pdf_peni:
-            page = PdfReader(io.BytesIO(pdf_peni)).pages[0]
-            self._codes["peni"] = _page_img(page, "img0.png")
+            page = pymupdf.Document(stream=pdf_peni)
+            self._codes["peni"] = _page_img(page, "img0")
 
     def qr(self, qr: QrSupported, paid: bool = False) -> bytes | None:
         if img := self._codes.get(qr):
