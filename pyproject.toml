@@ -1,17 +1,55 @@
-[tool.poetry]
+[project]
 name = "erkc63"
 version = "0.2.32"
 description = ""
-authors = ["Sergey V. DUDANOV <sergey.dudanov@gmail.com>"]
+authors = [
+    { name = "Sergey Dudanov", email = "sergey.dudanov@gmail.com" },
+]
+maintainers = [
+    { name = "Sergey Dudanov", email = "sergey.dudanov@gmail.com" },
+]
+license = "Apache-2.0"
 readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "aiohttp >= 3.10",
+    "beautifulsoup4 >= 4.12",
+    "orjson >=3.10",
+]
+keywords = ["erkc63", "async", "client"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python"
+]
 
-[tool.poetry.dependencies]
-python = ">=3.12,<3.14"
-aiohttp = ">=3.10.0"
-beautifulsoup4 = ">=4.12.0"
-pypdf = {extras = ["image"], version = ">=4.2.0"}
-orjson = "^3.10.15"
+[project.urls]
+Homepage = "https://github.com/dudanov/python-erkc63"
+Documentation = "https://github.com/dudanov/python-erkc63"
+Repository = "https://github.com/dudanov/python-erkc63.git"
+Issues = "https://github.com/dudanov/python-erkc63/issues"
+
+[project.optional-dependencies]
+qrcode = [
+    "pymupdf >= 1.25",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "ruff",
+    "isort",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 80
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+
+[tool.isort]
+profile = "black"

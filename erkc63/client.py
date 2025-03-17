@@ -138,7 +138,9 @@ class ErkcClient:
         return self._cli.get(_BASE_URL.joinpath(path), params=params)
 
     async def _ajax(self, func: str, account: int | None, **params: Any) -> Any:
-        async with self._get(f"ajax/{self._account(account)}/{func}", **params) as x:
+        async with self._get(
+            f"ajax/{self._account(account)}/{func}", **params
+        ) as x:
             return await x.json(loads=orjson.loads)
 
     def _history(
@@ -246,7 +248,9 @@ class ErkcClient:
 
         async with self._post("login", login=login, password=password) as x:
             if x.url == x.history[0].url:
-                raise AuthorizationError("Authorization error. Check your credentials.")
+                raise AuthorizationError(
+                    "Authorization error. Check your credentials."
+                )
 
             self._update_accounts(await x.text())
 
@@ -483,7 +487,8 @@ class ErkcClient:
 
         # Исключаем дублирование записей из наложенных ответов и конвертируем в кортеж
         return [
-            MeterInfoHistory(*k, history=list(dict.fromkeys(v))) for k, v in db.items()
+            MeterInfoHistory(*k, history=list(dict.fromkeys(v)))
+            for k, v in db.items()
         ]
 
     @api(auth_required=True)
@@ -519,7 +524,9 @@ class ErkcClient:
 
         for date, *decimals in history:
             decimals = map(to_decimal, decimals)
-            accrual = MonthAccrual(account, date_attr(date), *decimals, details=None)
+            accrual = MonthAccrual(
+                account, date_attr(date), *decimals, details=None
+            )
 
             # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
             # при первом нулевом начислении прерываем цикл, так как далее все начисления тоже нулевые.
@@ -557,7 +564,9 @@ class ErkcClient:
         assert start <= end
 
         x = await self._history("payments", account, start, end)
-        payments = (Payment(date_attr(x0), to_decimal(x1), x3) for x0, x1, x3 in x)
+        payments = (
+            Payment(date_attr(x0), to_decimal(x1), x3) for x0, x1, x3 in x
+        )
 
         # Ответ содержит нулевые платежи (внутренние перерасчеты). Применим фильтр.
         return [x for x in payments if x.summa]
@@ -607,7 +616,9 @@ class ErkcClient:
             self._update_accounts(await x.text())
 
         if account not in self.accounts:
-            raise AccountBindingError("Не удалось привязать лицевой счет %d", account)
+            raise AccountBindingError(
+                "Не удалось привязать лицевой счет %d", account
+            )
 
     @api(auth_required=True)
     async def account_rm(self, account: int) -> None:
@@ -624,7 +635,9 @@ class ErkcClient:
             self._update_accounts(await x.text())
 
         if account in self.accounts:
-            raise AccountBindingError("Не удалось отвязать лицевой счет %d", account)
+            raise AccountBindingError(
+                "Не удалось отвязать лицевой счет %d", account
+            )
 
     async def _set_meters_values(
         self,
@@ -681,7 +694,9 @@ class ErkcClient:
             return parse_meters(await x.text())
 
     @api(public=True)
-    async def pub_meters_info(self, account: int) -> Mapping[int, PublicMeterInfo]:
+    async def pub_meters_info(
+        self, account: int
+    ) -> Mapping[int, PublicMeterInfo]:
         """Запрос публичной информации о приборах учета по лицевому счету.
 
         Возвращает словарь `идентификатор - информация о приборе учета`.
