@@ -51,12 +51,16 @@ class QrCodes:
     _paid_scale: float
 
     def __init__(
-        self, pdf_erkc: bytes, pdf_peni: bytes, paid_scale: float = 0.65
+        self,
+        pdf_erkc: bytes,
+        pdf_peni: bytes,
+        *,
+        paid_scale: float = 0.65,
     ) -> None:
         assert 0 < paid_scale <= 1
 
-        self._paid_scale = paid_scale
         self._codes = {}
+        self._paid_scale = paid_scale
 
         if pdf_erkc:
             page = pymupdf.Document(stream=pdf_erkc)
