@@ -16,7 +16,7 @@ _RE_RAWID = re.compile(r"rowId")
 
 
 def parse_accounts(html: str) -> list[int]:
-    bs = BeautifulSoup(html, "html.parser")
+    bs = BeautifulSoup(html, "lxml")
     menu = cast(Tag, bs.find("div", {"id": "select_ls_dropdown"}))
 
     accounts: list[int] = []
@@ -32,7 +32,7 @@ def parse_accounts(html: str) -> list[int]:
 
 
 def parse_token(html: str) -> str:
-    bs = BeautifulSoup(html, "html.parser")
+    bs = BeautifulSoup(html, "lxml")
     meta = cast(Tag, bs.find("meta", {"name": "csrf-token"}))
     token = cast(str, meta["content"])
 
@@ -40,7 +40,7 @@ def parse_token(html: str) -> str:
 
 
 def parse_account(html: str) -> AccountInfo:
-    bs = BeautifulSoup(html, "html.parser")
+    bs = BeautifulSoup(html, "lxml")
     wl = cast(Tag, bs.find("div", class_="widget-left"))
 
     ws1 = cast(Tag, wl.find("div", class_="widget-section1"))
@@ -68,7 +68,7 @@ def parse_meters(html: str) -> MappingProxyType[int, PublicMeterInfo]:
 
     result: dict[int, PublicMeterInfo] = {}
 
-    bs = BeautifulSoup(html, "html.parser")
+    bs = BeautifulSoup(html, "lxml")
     form = cast(Tag, bs.find("form", id="sendCountersValues"))
 
     for meter in form.find_all("div", class_="block-sch"):
