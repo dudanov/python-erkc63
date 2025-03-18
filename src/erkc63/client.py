@@ -140,9 +140,11 @@ class ErkcClient:
 
     def _post(self, path: str, **data: Any):
         data["_token"] = self._token
+        _LOGGER.debug("POST: path='%s', data=%s", path, data)
         return self._cli.post(_BASE_URL.joinpath(path), data=data)
 
     def _get(self, path: str, **params: Any):
+        _LOGGER.debug("GET: path='%s', params=%s", path, params)
         return self._cli.get(_BASE_URL.joinpath(path), params=params)
 
     async def _ajax(self, func: str, account: int | None, **params: Any) -> Any:
@@ -274,6 +276,9 @@ class ErkcClient:
             close_connector: Закрыть коннектор. Если не указан, параметр берется из клиента.
         """
 
+        if close_connector is None:
+            close_connector = self._close_connector
+
         try:
             if self.authorized:
                 _LOGGER.debug("Выход из личного кабинета %s.", self._login)
@@ -286,9 +291,6 @@ class ErkcClient:
                 self._accounts = None
 
         finally:
-            if close_connector is None:
-                close_connector = self._close_connector
-
             if close_connector:
                 _LOGGER.debug("Закрытие коннектора сессии.")
 
