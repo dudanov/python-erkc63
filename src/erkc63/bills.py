@@ -71,21 +71,21 @@ class QrCodes:
             page = pymupdf.Document(stream=pdf_peni)
             self._codes["peni"] = _page_img(page, "img0")
 
-    def qr(self, qr: QrSupported, paid: bool = False) -> bytes | None:
+    def qr(self, qr: QrSupported, *, paid: bool = False) -> bytes | None:
         if img := self._codes.get(qr):
             return _img_paid(img, self._paid_scale) if paid else img
 
-    def erkc(self, is_paid: bool = False) -> bytes | None:
+    def erkc(self, *, paid: bool = False) -> bytes | None:
         """QR-код оплаты коммунальных услуг."""
 
-        return self.qr("erkc", is_paid)
+        return self.qr("erkc", paid=paid)
 
-    def kapremont(self, is_paid: bool = False) -> bytes | None:
+    def kapremont(self, *, paid: bool = False) -> bytes | None:
         """QR-код оплаты капитального ремонта."""
 
-        return self.qr("kapremont", is_paid)
+        return self.qr("kapremont", paid=paid)
 
-    def peni(self, is_paid: bool = False) -> bytes | None:
+    def peni(self, *, paid: bool = False) -> bytes | None:
         """QR-код оплаты пени."""
 
-        return self.qr("peni", is_paid)
+        return self.qr("peni", paid=paid)
