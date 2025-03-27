@@ -301,6 +301,7 @@ class ErkcClient:
     async def download_pdf(
         self,
         accrual: Accrual,
+        *,
         peni: bool = False,
     ) -> bytes | None:
         """Загрузка квитанции в формате PDF.
@@ -339,8 +340,8 @@ class ErkcClient:
         """
 
         result = await asyncio.gather(
-            self.download_pdf(accrual, False),
-            self.download_pdf(accrual, True),
+            self.download_pdf(accrual, peni=False),
+            self.download_pdf(accrual, peni=True),
         )
 
         return QrCodes(*result)
