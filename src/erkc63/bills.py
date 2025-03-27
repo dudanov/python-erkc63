@@ -52,8 +52,8 @@ class QrCodes:
 
     def __init__(
         self,
-        pdf_erkc: bytes,
-        pdf_peni: bytes,
+        pdf_erkc: bytes | None,
+        pdf_peni: bytes | None,
         *,
         paid_scale: float = 0.65,
     ) -> None:

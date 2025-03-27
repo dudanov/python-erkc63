@@ -298,7 +298,11 @@ class ErkcClient:
                 self._token = None
 
     @api(auth_required=True)
-    async def download_pdf(self, accrual: Accrual, peni: bool = False) -> bytes:
+    async def download_pdf(
+        self,
+        accrual: Accrual,
+        peni: bool = False,
+    ) -> bytes | None:
         """Загрузка квитанции в формате PDF.
 
         Parameters:
@@ -306,23 +310,22 @@ class ErkcClient:
             peni: Загрузить квитанцию на пени.
 
         Returns:
-            Данные PDF при успехе или пустые данные при неудачи.
+            Данные PDF при успехе или `None` при неудаче.
         """
 
         if not (id := accrual.peni_id if peni else accrual.bill_id):
-            return b""
+            return
 
         try:
-            json = await self._ajax("getReceipt", accrual.account, receiptId=id)
+            account = accrual.account
+            json = await self._ajax("getReceipt", account, receiptId=id)
+            path = f"account/{account}/receipts/download"
 
-            async with self._get(
-                f"account/{accrual.account}/receipts/download",
-                kvit=json["fileName"],
-            ) as x:
+            async with self._get(path, kvit=json["fileName"]) as x:
                 return await x.read()
 
         except Exception:
-            return b""
+            return
 
     @api(auth_required=True)
     async def qr_codes(self, accrual: Accrual) -> QrCodes:
