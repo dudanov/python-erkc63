@@ -304,14 +304,14 @@ class ErkcClient:
         *,
         peni: bool = False,
     ) -> bytes | None:
-        """Загрузка квитанции в формате PDF.
+        """Загрузка документа квитанции в формате PDF.
 
         Parameters:
-            accrual: Экземпляр объекта `Accrual`.
-            peni: Загрузить квитанцию на пени.
+            accrual: Объект квитанции.
+            peni: Загрузить квитанцию для оплаты пени.
 
         Returns:
-            Данные PDF при успехе или `None` при неудаче.
+            Данные в формате `PDF` при успехе или `None` при неудаче.
         """
 
         if not (id := accrual.peni_id if peni else accrual.bill_id):
@@ -320,9 +320,15 @@ class ErkcClient:
         try:
             account = accrual.account
             json = await self._ajax("getReceipt", account, receiptId=id)
+            filename: str = json["fileName"]
             path = f"account/{account}/receipts/download"
 
-            async with self._get(path, kvit=json["fileName"]) as x:
+            async with self._get(path, kvit=filename) as x:
+                _LOGGER.debug(
+                    "Загрузка квитанции '%s', размер %d байт.",
+                    filename,
+                    x.content_length,
+                )
                 return await x.read()
 
         except Exception:
