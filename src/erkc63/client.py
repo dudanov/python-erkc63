@@ -402,12 +402,12 @@ class ErkcClient:
 
             id = data_attr(data[5])
 
-            match x := data[3]:
+            match data[3]:
                 case "общая":
                     record.bill_id = id
                 case "пени":
                     record.peni_id = id
-                case _:
+                case _ as x:
                     raise ParsingError("Неизвестный тип квитанции '%s'.", x)
 
         result = list(db.values())
