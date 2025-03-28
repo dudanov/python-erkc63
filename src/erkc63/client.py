@@ -147,7 +147,9 @@ class ErkcClient:
         _LOGGER.debug("GET: path='%s', params=%s", path, params)
         return self._cli.get(_BASE_URL.joinpath(path), params=params)
 
-    async def _ajax(self, func: str, account: int | None, **params: Any) -> Any:
+    async def _ajax(
+        self, func: str, account: int | str | None, **params: Any
+    ) -> Any:
         async with self._get(
             f"ajax/{self._account(account)}/{func}", **params
         ) as x:
@@ -156,7 +158,7 @@ class ErkcClient:
     def _history(
         self,
         what: str,
-        account: int | None,
+        account: int | str | None,
         start: dt.date,
         end: dt.date,
     ) -> Awaitable[list[list[str]]]:
@@ -207,11 +209,11 @@ class ErkcClient:
 
         raise AccountNotFound("Основной лицевой счет не найден.")
 
-    def _account(self, account: int | None) -> int:
+    def _account(self, account: int | str | None) -> int:
         if account is None:
             return self.account
 
-        assert account > 0
+        assert (account := int(account)) > 0
 
         if account in self.accounts:
             return account
@@ -357,7 +359,7 @@ class ErkcClient:
         self,
         year: int | None = None,
         *,
-        account: int | None = None,
+        account: int | str | None = None,
         limit: int | None = None,
         include_details: bool = False,
     ) -> list[Accrual]:
@@ -452,7 +454,7 @@ class ErkcClient:
         *,
         start: dt.date | None = None,
         end: dt.date | None = None,
-        account: int | None = None,
+        account: int | str | None = None,
     ) -> list[MeterInfoHistory]:
         """Запрос счетчиков лицевого счета с историей показаний.
 
@@ -520,7 +522,7 @@ class ErkcClient:
         *,
         start: dt.date | None = None,
         end: dt.date | None = None,
-        account: int | None = None,
+        account: int | str | None = None,
         include_details: bool = False,
     ) -> list[MonthAccrual]:
         """Запрос начислений за заданный период.
@@ -569,7 +571,7 @@ class ErkcClient:
         *,
         start: dt.date | None = None,
         end: dt.date | None = None,
-        account: int | None = None,
+        account: int | str | None = None,
     ) -> list[Payment]:
         """Запрос истории платежей за заданный период.
 
@@ -595,7 +597,10 @@ class ErkcClient:
         return [x for x in payments if x.summa]
 
     @api(auth_required=True)
-    async def account_info(self, account: int | None = None) -> AccountInfo:
+    async def account_info(
+        self,
+        account: int | str | None = None,
+    ) -> AccountInfo:
         """Запрос информации о лицевом счете.
 
         Parameters:
@@ -608,7 +613,7 @@ class ErkcClient:
     @api(auth_required=True)
     async def account_add(
         self,
-        account: int | PublicAccountInfo,
+        account: int | str | PublicAccountInfo,
         last_bill_amount: Decimal = Decimal(),
     ) -> None:
         """Привязка лицевого счета к аккаунту личного кабинета.
@@ -622,6 +627,8 @@ class ErkcClient:
         if isinstance(account, PublicAccountInfo):
             last_bill_amount = last_bill_amount or account.balance
             account = account.account
+
+        assert (account := int(account)) > 0
 
         if account in self.accounts:
             return
@@ -644,12 +651,14 @@ class ErkcClient:
             )
 
     @api(auth_required=True)
-    async def account_rm(self, account: int) -> None:
+    async def account_rm(self, account: int | str) -> None:
         """Отвязка лицевого счета от аккаунта личного кабинета.
 
         Parameters:
             account: номер лицевого счета.
         """
+
+        assert (account := int(account)) > 0
 
         if account not in self.accounts:
             return
@@ -700,7 +709,7 @@ class ErkcClient:
 
     @api(auth_required=True)
     async def meters_info(
-        self, account: int | None = None
+        self, account: int | str | None = None
     ) -> Mapping[int, PublicMeterInfo]:
         """Запрос информации о приборах учета по лицевому счету.
 
@@ -721,7 +730,7 @@ class ErkcClient:
         self,
         values: Mapping[int, Decimal],
         *,
-        account: int | None = None,
+        account: int | str | None = None,
     ) -> None:
         """Передача новых показаний приборов учета.
 
@@ -736,7 +745,7 @@ class ErkcClient:
 
     @api(public=True)
     async def pub_meters_info(
-        self, account: int
+        self, account: int | str
     ) -> Mapping[int, PublicMeterInfo]:
         """Запрос публичной информации о приборах учета по лицевому счету.
 
@@ -752,13 +761,15 @@ class ErkcClient:
             account: номер лицевого счета.
         """
 
+        assert (account := int(account)) > 0
+
         async with self._get(f"counters/{account}") as x:
             return parse_meters(await x.text())
 
     @api(public=True)
     async def pub_set_meters_values(
         self,
-        account: int,
+        account: int | str,
         values: Mapping[int, Decimal],
     ) -> None:
         """Передача новых показаний приборов учета без авторизации.
@@ -768,15 +779,21 @@ class ErkcClient:
             values: словарь `идентификатор прибора - новое показание`.
         """
 
+        assert (account := int(account)) > 0
+
         await self._set_meters_values(f"counters/{account}", values)
 
     @api(public=True)
-    async def pub_account_info(self, account: int) -> PublicAccountInfo | None:
+    async def pub_account_info(
+        self, account: int | str
+    ) -> PublicAccountInfo | None:
         """Запрос открытой информации по лицевому счету.
 
         Parameters:
             account: номер лицевого счета.
         """
+
+        assert (account := int(account)) > 0
 
         async with self._get("payment/checkLS", ls=account) as x:
             json: Mapping[str, Any] = await x.json(loads=orjson.loads)
@@ -793,7 +810,7 @@ class ErkcClient:
 
     @api(public=True)
     async def pub_accounts_info(
-        self, accounts: Iterable[int]
+        self, accounts: Iterable[int | str]
     ) -> Mapping[int, PublicAccountInfo]:
         """Запрос открытой информации по лицевым счетам.
 
