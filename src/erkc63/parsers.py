@@ -17,12 +17,12 @@ _RE_RAWID = re.compile(r"rowId")
 
 def parse_accounts(html: str) -> list[int]:
     bs = BeautifulSoup(html, "lxml")
-    menu = cast(Tag, bs.find("div", {"id": "select_ls_dropdown"}))
+    menu = cast(Tag, bs.find("div", id="select_ls_dropdown"))
 
     accounts: list[int] = []
 
-    for x in menu.find_all("a", {"href": _RE_ACCOUNT_URL}):
-        accounts.append(int(cast(str, cast(Tag, x)["href"]).rsplit("/", 1)[1]))
+    for x in menu("a", href=_RE_ACCOUNT_URL):
+        accounts.append(int(str(cast(Tag, x)["href"]).rsplit("/", 1)[1]))
 
     # сортировка вторичных счетов
     if len(accounts) >= 3:
@@ -44,10 +44,10 @@ def parse_account(html: str) -> AccountInfo:
     wl = cast(Tag, bs.find("div", class_="widget-left"))
 
     ws1 = cast(Tag, wl.find("div", class_="widget-section1"))
-    ws1 = cast(Tag, ws1.find_all("div", class_="text-col-left"))
+    ws1 = cast(Tag, ws1("div", class_="text-col-left"))
 
     ws2 = cast(Tag, wl.find("div", class_="widget-section2"))
-    ws2 = cast(list[Tag], ws2.find_all("div", class_="text-col-right"))
+    ws2 = cast(list[Tag], ws2("div", class_="text-col-right"))
 
     ws = (str_normalize(x.text) for x in it.chain(ws1, ws2))
 
@@ -71,7 +71,7 @@ def parse_meters(html: str) -> MappingProxyType[int, PublicMeterInfo]:
     bs = BeautifulSoup(html, "lxml")
     form = cast(Tag, bs.find("form", id="sendCountersValues"))
 
-    for meter in form.find_all("div", class_="block-sch"):
+    for meter in form("div", class_="block-sch"):
         meter = cast(Tag, meter)
 
         name = cast(Tag, meter.find("span", class_="type"))
