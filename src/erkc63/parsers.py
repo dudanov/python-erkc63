@@ -71,10 +71,12 @@ def parse_meters(html: str) -> MappingProxyType[int, PublicMeterInfo]:
     Возвращает словарь `идентификатор - информация о приборе учета`.
     """
 
-    result: dict[int, PublicMeterInfo] = {}
-
     bs = BeautifulSoup(html, "lxml")
-    form = cast(Tag, bs.find("form", id="sendCountersValues"))
+
+    if (form := cast(Tag, bs.find("form", id="sendCountersValues"))) is None:
+        raise ParsingError("Не найдена форма отправки показаний счетчиков.")
+
+    result: dict[int, PublicMeterInfo] = {}
 
     for meter in form("div", class_="block-sch"):
         meter = cast(Tag, meter)
