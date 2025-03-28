@@ -8,21 +8,25 @@ from typing import Any, cast
 from bs4 import BeautifulSoup, Tag
 
 from .account import AccountInfo
+from .errors import ParsingError
 from .meters import PublicMeterInfo
 from .utils import str_normalize, str_to_date
 
-_RE_ACCOUNT_URL = re.compile(r"/\d+$")
 _RE_RAWID = re.compile(r"rowId")
 
 
 def parse_accounts(html: str) -> list[int]:
     bs = BeautifulSoup(html, "lxml")
-    menu = cast(Tag, bs.find("div", id="select_ls_dropdown"))
+
+    if (menu := cast(Tag, bs.find("div", id="select_ls_dropdown"))) is None:
+        raise ParsingError("Не найдено меню выбора лицевых счетов.")
 
     accounts: list[int] = []
 
-    for x in menu("a", href=_RE_ACCOUNT_URL):
-        accounts.append(int(str(cast(Tag, x)["href"]).rsplit("/", 1)[1]))
+    for x in menu("a", href=re.compile(r"/\d+$")):
+        href = str(cast(Tag, x)["href"])
+        account = int(href.rpartition("/")[-1])
+        accounts.append(account)
 
     # сортировка вторичных счетов
     if len(accounts) >= 3:
