@@ -661,6 +661,7 @@ class ErkcClient:
         assert (account := int(account)) > 0
 
         if account not in self.accounts:
+            _LOGGER.debug("Лицевой счет %d не привязан.", account)
             return
 
         async with self._post(f"account/{account}/remove") as x:
