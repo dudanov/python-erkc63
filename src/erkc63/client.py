@@ -793,7 +793,7 @@ class ErkcClient:
 
     @api(public=True)
     async def pub_accounts_info(
-        self, *accounts: int
+        self, accounts: Iterable[int]
     ) -> Mapping[int, PublicAccountInfo]:
         """Запрос открытой информации по лицевым счетам.
 
