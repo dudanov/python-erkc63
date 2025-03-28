@@ -716,6 +716,24 @@ class ErkcClient:
         async with self._get(f"account/{self._account(account)}/counters") as x:
             return parse_meters(await x.text())
 
+    @api(auth_required=True)
+    async def set_meters_values(
+        self,
+        values: Mapping[int, Decimal],
+        *,
+        account: int | None = None,
+    ) -> None:
+        """Передача новых показаний приборов учета.
+
+        Parameters:
+            values: словарь `идентификатор прибора - новое показание`.
+            account: номер лицевого счета.
+        """
+
+        await self._set_meters_values(
+            f"account/{self._account(account)}/counters", values
+        )
+
     @api(public=True)
     async def pub_meters_info(
         self, account: int
