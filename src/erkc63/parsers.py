@@ -37,10 +37,11 @@ def parse_accounts(html: str) -> list[int]:
 
 def parse_token(html: str) -> str:
     bs = BeautifulSoup(html, "lxml")
-    meta = cast(Tag, bs.find("meta", {"name": "csrf-token"}))
-    token = cast(str, meta["content"])
 
-    return token
+    if (x := cast(Tag, bs.find("meta", {"name": "csrf-token"}))) is None:
+        raise ParsingError("Не найден тег с CSRF токеном.")
+
+    return str(x["content"])
 
 
 def parse_account(html: str) -> AccountInfo:
@@ -48,7 +49,7 @@ def parse_account(html: str) -> AccountInfo:
     wl = cast(Tag, bs.find("div", class_="widget-left"))
 
     ws1 = cast(Tag, wl.find("div", class_="widget-section1"))
-    ws1 = cast(Tag, ws1("div", class_="text-col-left"))
+    ws1 = cast(list[Tag], ws1("div", class_="text-col-left"))
 
     ws2 = cast(Tag, wl.find("div", class_="widget-section2"))
     ws2 = cast(list[Tag], ws2("div", class_="text-col-right"))
