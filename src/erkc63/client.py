@@ -304,7 +304,7 @@ class ErkcClient:
         *,
         peni: bool = False,
     ) -> bytes | None:
-        """Загрузка документа квитанции в формате PDF.
+        """Загрузка квитанции в формате PDF.
 
         Parameters:
             accrual: Объект квитанции.
@@ -402,13 +402,13 @@ class ErkcClient:
 
             id = data_attr(data[5])
 
-            match data[3]:
+            match x := data[3]:
                 case "общая":
                     record.bill_id = id
                 case "пени":
                     record.peni_id = id
                 case _:
-                    raise ParsingError
+                    raise ParsingError("Неизвестный тип квитанции '%s'.", x)
 
         result = list(db.values())
 
