@@ -25,7 +25,7 @@ def parse_accounts(html: str) -> list[int]:
 
     for x in menu("a", href=re.compile(r"/\d+$")):
         href = str(cast(Tag, x)["href"])
-        account = int(href.rpartition("/")[-1])
+        account = int(href.rsplit("/", 1)[-1])
         accounts.append(account)
 
     # сортировка вторичных счетов
