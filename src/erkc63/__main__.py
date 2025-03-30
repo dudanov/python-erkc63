@@ -12,21 +12,23 @@ with open("secrets.json") as f:
 
 async def main():
     async with ErkcClient(secrets["login"], secrets["password"]) as cli:
-        print(await cli.account_info())
-        print(await cli.meters_info())
+        # print(await cli.account_info())
+        # print(await cli.meters_info())
 
-        for m in await cli.meters_history():
-            for value in m.history:
-                print(value)
+        # for m in await cli.meters_history():
+        #    for value in m.history:
+        #        print(value)
 
-        for x in await cli.year_accruals(include_details=True):
-            print(x)
+        x = await cli.year_accruals(include_details=True)
 
-        for x in await cli.accruals_history():
-            print(x)
+        await cli.qr_codes(x[1])
 
-        for x in await cli.payments_history():
-            print(x)
+
+#        for x in await cli.accruals_history():
+#            print(x)
+
+#        for x in await cli.payments_history():
+#            print(x)
 
 
 asyncio.run(main())

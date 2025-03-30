@@ -334,6 +334,7 @@ class ErkcClient:
                 return await x.read()
 
         except Exception:
+            _LOGGER.debug("Ошибка загрузки квитанции.")
             return
 
     @api(auth_required=True)
