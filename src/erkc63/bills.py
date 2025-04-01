@@ -14,6 +14,7 @@ QrSupported = Literal["erkc", "kapremont", "peni"]
 _PAID_LOGO = PILImage.open(
     resources.files().joinpath("images", "paid.png").open("rb")
 ).convert("RGBA")
+"""Изображение штампа `ОПЛАЧЕНО` с альфа-каналом."""
 
 image_convert = partial(Image.convert, mode="P", palette=Palette.WEB)
 """Конвертирует изображение в 8-битное с палитрой `WEB`."""
