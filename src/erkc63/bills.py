@@ -122,23 +122,38 @@ class QrCodes:
             page = Document(stream=pdf_peni)[0]
             self._codes["peni"] = get_image_from_pdfpage(page, "img0")
 
-    def qr(self, qr: QrSupported, *, paid: bool = False) -> bytes | None:
-        if img := self._codes.get(qr):
-            return image_save(
-                image_set_paid(img, self._paid_scale) if paid else img
-            )
+    def qr(
+        self,
+        qr: QrSupported,
+        filename: str | None = None,
+        *,
+        paid: bool = False,
+    ) -> bytes | None:
+        if (image := self._codes.get(qr)) is None:
+            return
 
-    def erkc(self, *, paid: bool = False) -> bytes | None:
+        if paid:
+            image = image_set_paid(image, self._paid_scale)
+
+        return image_save(image, filename)
+
+    def erkc(
+        self, filename: str | None = None, *, paid: bool = False
+    ) -> bytes | None:
         """QR-код оплаты коммунальных услуг."""
 
-        return self.qr("erkc", paid=paid)
+        return self.qr("erkc", filename, paid=paid)
 
-    def kapremont(self, *, paid: bool = False) -> bytes | None:
+    def kapremont(
+        self, filename: str | None = None, *, paid: bool = False
+    ) -> bytes | None:
         """QR-код оплаты капитального ремонта."""
 
-        return self.qr("kapremont", paid=paid)
+        return self.qr("kapremont", filename, paid=paid)
 
-    def peni(self, *, paid: bool = False) -> bytes | None:
+    def peni(
+        self, filename: str | None = None, *, paid: bool = False
+    ) -> bytes | None:
         """QR-код оплаты пени."""
 
-        return self.qr("peni", paid=paid)
+        return self.qr("peni", filename, paid=paid)
