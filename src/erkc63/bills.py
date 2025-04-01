@@ -52,6 +52,8 @@ def image_set_paid(src: Image, paid_scale: float) -> Image:
 def get_image_from_pdfpage(page: Page, image_name: str) -> Image:
     """Извлекает изображение со страницы `PDF` в `Image`."""
 
+    assert image_name
+
     for image in page.get_images():
         if image[7] == image_name:
             return image_convert(Pixmap(page.parent, image[0]).pil_image())
@@ -68,6 +70,8 @@ def pdfpage_to_image(
     Рендерит страницу `PDF` в `Image`.
     Размер изображения пропорционально вписывается в указанные ограничения.
     """
+
+    assert all(max_rect)
 
     factor: float = min(x / y for x, y in zip(max_rect, page.rect[2:]))
     matrix = Matrix(Identity).prescale(factor, factor)
