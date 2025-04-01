@@ -14,7 +14,7 @@ QrSupported = Literal["erkc", "kapremont", "peni"]
 _PAID_LOGO = PILImage.open(
     resources.files().joinpath("images", "paid.png").open("rb")
 ).convert("RGBA")
-"""Изображение штампа `ОПЛАЧЕНО` с альфа-каналом."""
+"""Изображение штампа `ОПЛАЧЕН` с альфа-каналом."""
 
 image_convert = partial(Image.convert, mode="P", palette=Palette.WEB)
 """Конвертирует изображение в 8-битное с палитрой `WEB`."""
@@ -35,7 +35,7 @@ def image_save(img: Image, filename: str | None = None) -> bytes:
 
 
 def image_set_paid(src: Image, paid_scale: float) -> Image:
-    """Ставит штамп `ОПЛАЧЕНО` на изображении."""
+    """Ставит штамп `ОПЛАЧЕН` на изображении."""
 
     assert 0 < paid_scale <= 1
 
