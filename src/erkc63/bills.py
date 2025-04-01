@@ -1,89 +1,81 @@
 import io
 from functools import partial
 from importlib import resources
-from typing import Literal, overload
+from typing import Literal
 
-import pymupdf
-from PIL import Image
+from PIL import Image as PILImage
+from PIL.Image import Image, Palette
+from pymupdf import Document, Identity, Matrix, Page, Pixmap
 
 from .utils import str_normalize, to_decimal
 
 QrSupported = Literal["erkc", "kapremont", "peni"]
 
-_PAID_LOGO = Image.open(
+_PAID_LOGO = PILImage.open(
     resources.files().joinpath("images", "paid.png").open("rb")
 ).convert("RGBA")
 
-_pil_to_png = partial(Image.Image.save, format="png", optimize=True)
+image_convert = partial(Image.convert, mode="P", palette=Palette.WEB)
+"""Конвертирует изображение в 8-битное с палитрой `WEB`."""
 
 
-def _paid_logo(size: float) -> Image.Image:
-    img = _PAID_LOGO.copy()
-    img.thumbnail((size, size), Image.Resampling.BICUBIC)
+def image_save(img: Image, filename: str | None = None) -> bytes:
+    """Сохраняет изображение в оптимизированный PNG."""
 
-    return img
+    bio = io.BytesIO()
+    image_convert(img).save(bio, format="png", optimize=True)
+    data = bio.getvalue()
 
+    if filename:
+        with open(filename, "wb") as file:
+            file.write(data)
 
-@overload
-def _img_to_png(img: Image.Image) -> bytes: ...
-
-
-@overload
-def _img_to_png(img: Image.Image, file: io.BufferedWriter) -> None: ...
-
-
-def _img_to_png(
-    img: Image.Image, file: io.BufferedWriter | None = None
-) -> bytes | None:
-    img = img.convert("P", palette=Image.Palette.WEB)
-
-    if file is None:
-        _pil_to_png(img, bio := io.BytesIO())
-
-        return bio.getvalue()
-
-    _pil_to_png(img, file)
+    return data
 
 
-def _img_paid(img_data: bytes, paid_scale: float) -> bytes:
-    img = Image.open(io.BytesIO(img_data)).convert("RGB")
-    # Resize the logo to logo_max_size
-    logo = _paid_logo(min(img.width, img.height) * paid_scale)
-    # Calculate the center of the QR code
-    box = (img.width - logo.width) // 2, (img.height - logo.height) // 2
-    img.paste(logo, box, logo)
+def image_set_paid(src: Image, paid_scale: float) -> Image:
+    """Ставит штамп `ОПЛАЧЕНО` на изображении."""
 
-    return _img_to_png(img)
+    assert 0 < paid_scale <= 1
 
+    src = src.convert("RGB")
+    size = int(min(src.width, src.height) * paid_scale)
+    box = (src.width - size) // 2, (src.height - size) // 2
 
-def _doc_img(doc: pymupdf.Document, name: str) -> bytes:
-    for x in doc.get_page_images(0):
-        if x[7] == name:
-            return pymupdf.Pixmap(doc, x[0]).tobytes()
+    logo = _PAID_LOGO.resize((size, size))
+    src.paste(logo, box, logo)
 
-    raise FileNotFoundError("Image %s not found.", name)
+    return src
 
 
-def _page_img(
-    page: pymupdf.Page,
-    max_width: int = 3840,
-    max_height: int = 2160,
-    filename: str | None = None,
-) -> bytes | None:
-    width, height = page.rect[2:]
-    scale = min(max_width / width, max_height / height)
-    matrix = pymupdf.Matrix(pymupdf.Identity).prescale(scale, scale)
-    img: Image.Image = page.get_pixmap(matrix=matrix).pil_image()  # type: ignore
+def get_image_from_pdfpage(page: Page, image_name: str) -> Image:
+    """Извлекает изображение со страницы `PDF` в `Image`."""
 
-    if not filename:
-        return _img_to_png(img)
+    for image in page.get_images():
+        if image[7] == image_name:
+            return image_convert(Pixmap(page.parent, image[0]).pil_image())
 
-    with open(filename, "wb") as file:
-        _img_to_png(img, file)
+    raise FileNotFoundError("Image '%s' not found.", image_name)
+
+
+def pdfpage_to_image(
+    page: Page,
+    *,
+    max_rect: tuple[int, int] = (3840, 2160),
+) -> Image:
+    """
+    Рендерит страницу `PDF` в `Image`.
+    Размер изображения пропорционально вписывается в указанные ограничения.
+    """
+
+    factor: float = min(x / y for x, y in zip(max_rect, page.rect[2:]))
+    matrix = Matrix(Identity).prescale(factor, factor)
+
+    return image_convert(page.get_pixmap(matrix=matrix).pil_image())  # type: ignore
 
 
 class QrCodes:
-    _codes: dict[QrSupported, bytes]
+    _codes: dict[QrSupported, Image]
     _paid_scale: float
 
     def __init__(
@@ -99,14 +91,15 @@ class QrCodes:
         self._paid_scale = paid_scale
 
         if pdf_erkc:
-            doc = pymupdf.Document(stream=pdf_erkc)
-            self._codes["erkc"] = _doc_img(doc, "img2")
-            self._codes["kapremont"] = _doc_img(doc, "img4")
-            page = doc[0]
+            page = Document(stream=pdf_erkc)[0]
+            self._codes["erkc"] = get_image_from_pdfpage(page, "img2")
+            self._codes["kapremont"] = get_image_from_pdfpage(page, "img4")
+
             with open("pdf.pdf", "wb") as f:
                 f.write(pdf_erkc)
 
-            _page_img(page, filename="pdf.png")
+            image_save(pdfpage_to_image(page), filename="pdf.png")
+            image_save(get_image_from_pdfpage(page, "img2"), filename="qr.png")
 
             dd = to_decimal(
                 page.get_textbox((680, 460, 720, 470))
@@ -122,12 +115,14 @@ class QrCodes:
             print(dd)
 
         if pdf_peni:
-            doc = pymupdf.Document(stream=pdf_peni)
-            self._codes["peni"] = _doc_img(doc, "img0")
+            page = Document(stream=pdf_peni)[0]
+            self._codes["peni"] = get_image_from_pdfpage(page, "img0")
 
     def qr(self, qr: QrSupported, *, paid: bool = False) -> bytes | None:
         if img := self._codes.get(qr):
-            return _img_paid(img, self._paid_scale) if paid else img
+            return image_save(
+                image_set_paid(img, self._paid_scale) if paid else img
+            )
 
     def erkc(self, *, paid: bool = False) -> bytes | None:
         """QR-код оплаты коммунальных услуг."""
