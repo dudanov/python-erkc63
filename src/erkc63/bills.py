@@ -20,11 +20,11 @@ image_convert = partial(Image.convert, mode="P", palette=Palette.WEB)
 """Конвертирует изображение в 8-битное с палитрой `WEB`."""
 
 
-def image_save(img: Image, filename: str | None = None) -> bytes:
+def image_save(image: Image, filename: str | None = None) -> bytes:
     """Сохраняет изображение в 8-битный оптимизированный `PNG` с палитрой `WEB`."""
 
     bio = io.BytesIO()
-    img.save(bio, format="png", optimize=True)
+    image.save(bio, format="png", optimize=True)
     data = bio.getvalue()
 
     if filename:
@@ -34,19 +34,19 @@ def image_save(img: Image, filename: str | None = None) -> bytes:
     return data
 
 
-def image_set_paid(src: Image, paid_scale: float) -> Image:
+def image_set_paid(image: Image, paid_scale: float) -> Image:
     """Ставит штамп `ОПЛАЧЕН` на изображении."""
 
     assert 0 < paid_scale <= 1
 
-    src = src.convert("RGB")
-    size = int(min(src.width, src.height) * paid_scale)
-    box = (src.width - size) // 2, (src.height - size) // 2
+    image = image.convert("RGB")
+    px = int(min(image.width, image.height) * paid_scale)
+    box = (image.width - px) // 2, (image.height - px) // 2
 
-    logo = _PAID_LOGO.resize((size, size))
-    src.paste(logo, box, logo)
+    logo = _PAID_LOGO.resize((px, px))
+    image.paste(logo, box, logo)
 
-    return image_convert(src)
+    return image_convert(image)
 
 
 def get_image_from_pdfpage(page: Page, image_name: str) -> Image:
