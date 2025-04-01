@@ -71,7 +71,7 @@ def pdfpage_to_image(
     Размер изображения пропорционально вписывается в указанные ограничения.
     """
 
-    assert all(max_rect)
+    assert all(x > 0 for x in max_rect)
 
     factor: float = min(x / y for x, y in zip(max_rect, page.rect[2:]))
     matrix = Matrix(Identity).prescale(factor, factor)
