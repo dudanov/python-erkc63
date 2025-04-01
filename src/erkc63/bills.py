@@ -24,7 +24,7 @@ def image_save(img: Image, filename: str | None = None) -> bytes:
     """Сохраняет изображение в 8-битный оптимизированный `PNG` с палитрой `WEB`."""
 
     bio = io.BytesIO()
-    image_convert(img).save(bio, format="png", optimize=True)
+    img.save(bio, format="png", optimize=True)
     data = bio.getvalue()
 
     if filename:
@@ -46,7 +46,7 @@ def image_set_paid(src: Image, paid_scale: float) -> Image:
     logo = _PAID_LOGO.resize((size, size))
     src.paste(logo, box, logo)
 
-    return src
+    return image_convert(src)
 
 
 def get_image_from_pdfpage(page: Page, image_name: str) -> Image:
