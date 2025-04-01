@@ -21,7 +21,7 @@ image_convert = partial(Image.convert, mode="P", palette=Palette.WEB)
 
 
 def image_save(img: Image, filename: str | None = None) -> bytes:
-    """Сохраняет изображение в оптимизированный PNG."""
+    """Сохраняет изображение в 8-битный оптимизированный `PNG` с палитрой `WEB`."""
 
     bio = io.BytesIO()
     image_convert(img).save(bio, format="png", optimize=True)
