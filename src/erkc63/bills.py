@@ -64,7 +64,7 @@ def get_image_from_pdfpage(page: Page, image_name: str) -> Image:
 def pdfpage_to_image(
     page: Page,
     *,
-    max_rect: tuple[int, int] = (3840, 2160),
+    max_rect: tuple[int, int] = (3840, 2160),  # по-умолчанию 4К разрешение
 ) -> Image:
     """
     Рендерит страницу `PDF` в `Image`.
