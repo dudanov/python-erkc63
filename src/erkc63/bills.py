@@ -9,7 +9,7 @@ from pymupdf import Document, Identity, Matrix, Page, Pixmap
 
 from .utils import str_normalize, to_decimal
 
-QrSupported = Literal["erkc", "kapremont", "peni"]
+QrSupported = Literal["erkc", "erkc_pdf", "kapremont", "peni", "peni_pdf"]
 
 _PAID_LOGO = PILImage.open(
     resources.files().joinpath("images", "paid.png").open("rb")
@@ -96,30 +96,29 @@ class QrCodes:
 
         if pdf_erkc:
             page = Document(stream=pdf_erkc)[0]
+            self._codes["erkc_pdf"] = pdfpage_to_image(page)
             self._codes["erkc"] = get_image_from_pdfpage(page, "img2")
             self._codes["kapremont"] = get_image_from_pdfpage(page, "img4")
-
-            with open("pdf.pdf", "wb") as f:
-                f.write(pdf_erkc)
-
-            image_save(pdfpage_to_image(page), filename="pdf.png")
-            image_save(get_image_from_pdfpage(page, "img2"), filename="qr.png")
 
             dd = to_decimal(
                 page.get_textbox((680, 460, 720, 470))
             )  # сумма начисления за капремонт
             print(dd)
+
             dd = to_decimal(
                 page.get_textbox((786, 460, 820, 470))
             )  # сумма начисления за капремонт
             print(dd)
+
             dd = str_normalize(page.get_textbox((375, 75, 420, 81)))  # ЕЛС
             print(dd)
+
             dd = to_decimal(page.get_textbox((150, 165, 225, 177)))  # к оплате
             print(dd)
 
         if pdf_peni:
             page = Document(stream=pdf_peni)[0]
+            self._codes["peni_pdf"] = pdfpage_to_image(page)
             self._codes["peni"] = get_image_from_pdfpage(page, "img0")
 
     def qr(
