@@ -50,14 +50,21 @@ def image_set_paid(image: Image, paid_scale: float) -> Image:
     return image_convert(image)
 
 
-def get_image_from_pdfpage(page: Page, image_name: str) -> Image:
+def get_image_from_pdfpage(
+    page: Page,
+    image_name: str,
+    max_rect: tuple[int, int] = (3840, 2160),
+) -> Image:
     """Извлекает изображение со страницы `PDF` в `Image`."""
 
     assert image_name
 
     for image in page.get_images():
         if image[7] == image_name:
-            return image_convert(Pixmap(page.parent, image[0]).pil_image())
+            image = Pixmap(page.parent, image[0]).pil_image()
+            image.thumbnail(max_rect)
+
+            return image_convert(image)
 
     raise FileNotFoundError("Image '%s' not found.", image_name)
 
@@ -91,6 +98,7 @@ class QrCodes:
         pdf_erkc: bytes | None,
         pdf_peni: bytes | None,
         *,
+        max_rect: tuple[int, int] = (3840, 2160),
         paid_scale: float = 0.65,
     ) -> None:
         assert 0 < paid_scale <= 1
@@ -100,9 +108,11 @@ class QrCodes:
 
         if pdf_erkc:
             page = Document(stream=pdf_erkc)[0]
-            self._pdf["erkc"] = pdfpage_to_png(page)
-            self._codes["erkc"] = get_image_from_pdfpage(page, "img2")
-            self._codes["kapremont"] = get_image_from_pdfpage(page, "img4")
+            self._pdf["erkc"] = pdfpage_to_png(page, max_rect)
+            self._codes["erkc"] = get_image_from_pdfpage(page, "img2", max_rect)
+            self._codes["kapremont"] = get_image_from_pdfpage(
+                page, "img4", max_rect
+            )
 
             dd = to_decimal(
                 page.get_textbox((680, 460, 720, 470))
@@ -122,8 +132,8 @@ class QrCodes:
 
         if pdf_peni:
             page = Document(stream=pdf_peni)[0]
-            self._pdf["peni"] = pdfpage_to_png(page)
-            self._codes["peni"] = get_image_from_pdfpage(page, "img0")
+            self._pdf["peni"] = pdfpage_to_png(page, max_rect)
+            self._codes["peni"] = get_image_from_pdfpage(page, "img0", max_rect)
 
     def qr(
         self,
