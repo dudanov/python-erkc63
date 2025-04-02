@@ -9,7 +9,8 @@ from pymupdf import Document, Identity, Matrix, Page, Pixmap
 
 from .utils import str_normalize, to_decimal
 
-QrSupported = Literal["erkc", "erkc_pdf", "kapremont", "peni", "peni_pdf"]
+PdfSupported = Literal["erkc", "peni"]
+QrSupported = Literal["erkc", "kapremont", "peni"]
 
 _PAID_LOGO = PILImage.open(
     resources.files().joinpath("images", "paid.png").open("rb")
@@ -61,10 +62,11 @@ def get_image_from_pdfpage(page: Page, image_name: str) -> Image:
     raise FileNotFoundError("Image '%s' not found.", image_name)
 
 
-def pdfpage_to_image(
+def pdfpage_to_png(
     page: Page,
     max_rect: tuple[int, int] = (3840, 2160),
-) -> Image:
+    filename: str | None = None,
+) -> bytes:
     """
     Рендерит страницу `PDF` в `Image`.
     Размер изображения пропорционально вписывается в указанные ограничения, по-умолчанию 4К (3840 x 2160).
@@ -74,13 +76,15 @@ def pdfpage_to_image(
 
     factor: float = min(x / y for x, y in zip(max_rect, page.rect[2:]))
     matrix = Matrix(Identity).prescale(factor, factor)
+    image: Image = page.get_pixmap(matrix=matrix).pil_image()  # type: ignore
 
-    return image_convert(page.get_pixmap(matrix=matrix).pil_image())  # type: ignore
+    return image_save(image_convert(image), filename)
 
 
 class QrCodes:
     _codes: dict[QrSupported, Image]
     _paid_scale: float
+    _pdf: dict[PdfSupported, bytes]
 
     def __init__(
         self,
@@ -96,7 +100,7 @@ class QrCodes:
 
         if pdf_erkc:
             page = Document(stream=pdf_erkc)[0]
-            self._codes["erkc_pdf"] = pdfpage_to_image(page)
+            self._pdf["erkc"] = pdfpage_to_png(page)
             self._codes["erkc"] = get_image_from_pdfpage(page, "img2")
             self._codes["kapremont"] = get_image_from_pdfpage(page, "img4")
 
@@ -118,7 +122,7 @@ class QrCodes:
 
         if pdf_peni:
             page = Document(stream=pdf_peni)[0]
-            self._codes["peni_pdf"] = pdfpage_to_image(page)
+            self._pdf["peni"] = pdfpage_to_png(page)
             self._codes["peni"] = get_image_from_pdfpage(page, "img0")
 
     def qr(
@@ -136,23 +140,55 @@ class QrCodes:
 
         return image_save(image, filename)
 
-    def erkc(
-        self, filename: str | None = None, *, paid: bool = False
+    def qr_erkc(
+        self,
+        filename: str | None = None,
+        *,
+        paid: bool = False,
     ) -> bytes | None:
         """QR-код оплаты коммунальных услуг."""
 
         return self.qr("erkc", filename, paid=paid)
 
-    def kapremont(
-        self, filename: str | None = None, *, paid: bool = False
+    def qr_kapremont(
+        self,
+        filename: str | None = None,
+        *,
+        paid: bool = False,
     ) -> bytes | None:
         """QR-код оплаты капитального ремонта."""
 
         return self.qr("kapremont", filename, paid=paid)
 
-    def peni(
-        self, filename: str | None = None, *, paid: bool = False
+    def qr_peni(
+        self,
+        filename: str | None = None,
+        *,
+        paid: bool = False,
     ) -> bytes | None:
         """QR-код оплаты пени."""
 
         return self.qr("peni", filename, paid=paid)
+
+    def pdf(
+        self,
+        pdf: PdfSupported,
+        filename: str | None = None,
+    ) -> bytes | None:
+        """Возвращает указанный счет в формате `PNG`."""
+
+        if (data := self._pdf.get(pdf)) and filename:
+            with open(filename, "wb") as file:
+                file.write(data)
+
+        return data
+
+    def pdf_erkc(self, filename: str | None = None) -> bytes | None:
+        """Счет основной в формате `PNG`."""
+
+        return self.pdf("erkc", filename)
+
+    def pdf_peni(self, filename: str | None = None) -> bytes | None:
+        """Счет на пени в формате `PNG`."""
+
+        return self.pdf("peni", filename)
