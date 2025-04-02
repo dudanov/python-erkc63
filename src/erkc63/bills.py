@@ -89,7 +89,7 @@ def pdfpage_to_png(
 
 
 class QrCodes:
-    _codes: dict[QrSupported, Image]
+    _qr: dict[QrSupported, Image]
     _paid_scale: float
     _pdf: dict[PdfSupported, bytes]
 
@@ -103,14 +103,15 @@ class QrCodes:
     ) -> None:
         assert 0 < paid_scale <= 1
 
-        self._codes = {}
         self._paid_scale = paid_scale
+        self._pdf = {}
+        self._qr = {}
 
         if pdf_erkc:
             page = Document(stream=pdf_erkc)[0]
             self._pdf["erkc"] = pdfpage_to_png(page, max_rect)
-            self._codes["erkc"] = get_image_from_pdfpage(page, "img2", max_rect)
-            self._codes["kapremont"] = get_image_from_pdfpage(
+            self._qr["erkc"] = get_image_from_pdfpage(page, "img2", max_rect)
+            self._qr["kapremont"] = get_image_from_pdfpage(
                 page, "img4", max_rect
             )
 
@@ -133,7 +134,7 @@ class QrCodes:
         if pdf_peni:
             page = Document(stream=pdf_peni)[0]
             self._pdf["peni"] = pdfpage_to_png(page, max_rect)
-            self._codes["peni"] = get_image_from_pdfpage(page, "img0", max_rect)
+            self._qr["peni"] = get_image_from_pdfpage(page, "img0", max_rect)
 
     def qr(
         self,
@@ -142,7 +143,7 @@ class QrCodes:
         *,
         paid: bool = False,
     ) -> bytes | None:
-        if (image := self._codes.get(qr)) is None:
+        if (image := self._qr.get(qr)) is None:
             return
 
         if paid:
