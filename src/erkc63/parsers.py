@@ -6,6 +6,7 @@ from types import MappingProxyType
 from typing import Any, cast
 
 from bs4 import BeautifulSoup, Tag
+from bs4.filter import SoupStrainer
 
 from .account import AccountInfo
 from .errors import ParsingError
@@ -16,17 +17,15 @@ _RE_RAWID = re.compile(r"rowId")
 
 
 def parse_accounts(html: str) -> list[int]:
-    bs = BeautifulSoup(html, "lxml")
-
-    if (menu := cast(Tag, bs.find("div", id="select_ls_dropdown"))) is None:
-        raise ParsingError("Не найдено меню выбора лицевых счетов.")
+    x = SoupStrainer("div", id="select_ls_dropdown")
+    x = BeautifulSoup(html, "lxml", parse_only=x)
+    menu = cast(Tag, x.contents[0])
 
     accounts: list[int] = []
 
-    for x in menu("a", href=re.compile(r"/\d+$")):
-        href = str(cast(Tag, x)["href"])
-        account = int(href.rsplit("/", 1)[-1])
-        accounts.append(account)
+    for x in cast(list[Tag], menu("a")[:-2]):  # крайние 2 ссылки не аккаунты
+        id = str(x["href"]).rsplit("/", 1)[-1]
+        accounts.append(int(id))
 
     # сортировка вторичных счетов
     if len(accounts) >= 3:
@@ -36,17 +35,16 @@ def parse_accounts(html: str) -> list[int]:
 
 
 def parse_token(html: str) -> str:
-    bs = BeautifulSoup(html, "lxml")
+    x = SoupStrainer("meta", {"name": "csrf-token"})
+    x = BeautifulSoup(html, "lxml", parse_only=x)
 
-    if (x := cast(Tag, bs.find("meta", {"name": "csrf-token"}))) is None:
-        raise ParsingError("Не найден тег с CSRF токеном.")
-
-    return str(x["content"])
+    return str(cast(Tag, x.contents[0])["content"])
 
 
 def parse_account(html: str) -> AccountInfo:
-    bs = BeautifulSoup(html, "lxml")
-    wl = cast(Tag, bs.find("div", class_="widget-left"))
+    x = SoupStrainer("div", class_="widget-left")
+    x = BeautifulSoup(html, "lxml", parse_only=x)
+    wl = cast(Tag, x.contents[0])
 
     ws1 = cast(Tag, wl.find("div", class_="widget-section1"))
     ws1 = cast(list[Tag], ws1("div", class_="text-col-left"))
