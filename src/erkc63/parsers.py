@@ -70,10 +70,16 @@ def parse_meters(html: str) -> MappingProxyType[int, PublicMeterInfo]:
 
     result: dict[int, PublicMeterInfo] = {}
 
-    # BeautifulSoup v4.13.4 не работает корректно фильтр SoupStrainer
-    # с multi-value атрибутами. Написал багрепорт. Надеюсь в v4.13.5 исправят.
-    # https://bugs.launchpad.net/beautifulsoup/+bug/2111651
-    x = SoupStrainer("div", class_="block-sch col-md-4")
+    # Из-за особенности реализации парсинга в BeautifulSoup с использованием
+    # фильтра SoupStrainer он не позволяет типичным образом работать с
+    # multi-value атрибутами. Связался с автором, он внесет это в документацию.
+    # Дал совет использовать лямбду для фильтрации атрибута class. Но обнаружил
+    # другой баг с вызовом лямбды фильтра атрибута при отсутствии самого
+    # атрибута тега. При исправлении нужно будет убрать из лямбды проверку
+    # `x is not None and `.
+    x = SoupStrainer(
+        "div", class_=lambda x: x is not None and "block-sch" in x.split()
+    )
     x = BeautifulSoup(html, "lxml", parse_only=x)
 
     for meter in cast(list[Tag], x.contents):
