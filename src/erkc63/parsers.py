@@ -9,7 +9,6 @@ from bs4 import BeautifulSoup, Tag
 from bs4.filter import SoupStrainer
 
 from .account import AccountInfo
-from .errors import ParsingError
 from .meters import PublicMeterInfo
 from .utils import str_normalize, str_to_date
 
@@ -69,19 +68,18 @@ def parse_meters(html: str) -> MappingProxyType[int, PublicMeterInfo]:
     Возвращает словарь `идентификатор - информация о приборе учета`.
     """
 
-    bs = BeautifulSoup(html, "lxml")
-
-    if (form := cast(Tag, bs.find("form", id="sendCountersValues"))) is None:
-        raise ParsingError("Не найдена форма отправки показаний счетчиков.")
-
     result: dict[int, PublicMeterInfo] = {}
 
-    for meter in form("div", class_="block-sch"):
-        meter = cast(Tag, meter)
+    # BeautifulSoup v4.13.4 не работает корректно фильтр SoupStrainer
+    # с multi-value атрибутами. Написал багрепорт. Надеюсь в v4.13.5 исправят.
+    # https://bugs.launchpad.net/beautifulsoup/+bug/2111651
+    x = SoupStrainer("div", class_="block-sch col-md-4")
+    x = BeautifulSoup(html, "lxml", parse_only=x)
 
+    for meter in cast(list[Tag], x.contents):
         name = cast(Tag, meter.find("span", class_="type"))
 
-        if not name.text:
+        if not name.string:
             continue
 
         serial = cast(Tag, name.find_next("span"))

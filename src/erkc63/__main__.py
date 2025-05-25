@@ -19,9 +19,11 @@ async def main():
         #    for value in m.history:
         #        print(value)
 
-        x = await cli.year_accruals(include_details=True)
+        # x = await cli.year_accruals(include_details=True)
 
-        await cli.qr_codes(x[1])
+        # await cli.qr_codes(x[1])
+        dd = await cli.meters_info()
+        print(dd)
 
 
 #        for x in await cli.accruals_history():
