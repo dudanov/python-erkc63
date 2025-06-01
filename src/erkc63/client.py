@@ -19,9 +19,6 @@ import aiohttp
 import orjson
 import yarl
 
-from .account import AccountInfo, PublicAccountInfo
-from .accrual import Accrual, AccrualDetalization, Accruals, MonthAccrual
-from .bills import QrCodes
 from .errors import (
     AccountBindingError,
     AccountNotFound,
@@ -30,9 +27,22 @@ from .errors import (
     ParsingError,
     SessionRequired,
 )
-from .meters import MeterInfoHistory, MeterValue, PublicMeterInfo
-from .parsers import parse_account, parse_accounts, parse_meters, parse_token
-from .payment import Payment
+from .parsers.accounts import parse_account, parse_accounts
+from .parsers.bills import QrCodes
+from .parsers.meters import parse_meters
+from .parsers.token import parse_token
+from .types import (
+    AccountInfo,
+    Accrual,
+    AccrualDetalization,
+    Accruals,
+    MeterInfoHistory,
+    MeterValue,
+    MonthAccrual,
+    Payment,
+    PublicAccountInfo,
+    PublicMeterInfo,
+)
 from .utils import (
     data_attr,
     date_attr,
