@@ -33,12 +33,12 @@ def parse_account(html: str) -> AccountInfo:
     x = SoupStrainer("div", class_=re.compile("text-col-"))
     tags = BeautifulSoup(html, "lxml", parse_only=x).contents
 
-    POSITIONS = 0, 1, 2, 3, 5, 7, 9, 11, 13, 14, 16, 18, 20, 22
-    FIELDS = dc.fields(AccountInfo)
-    assert len(POSITIONS) == len(FIELDS)
+    TAG_POSITIONS = 0, 1, 2, 3, 5, 7, 9, 11, 13, 14, 16, 18, 20, 22
+    INFO_FIELDS = dc.fields(AccountInfo)
+    assert len(TAG_POSITIONS) == len(INFO_FIELDS)
 
     def _args() -> Iterator[Any]:
-        for pos, field in zip(POSITIONS, FIELDS):
+        for pos, field in zip(TAG_POSITIONS, INFO_FIELDS):
             x = " ".join(tags[pos].stripped_strings)
             match str(field.type):
                 case "str":
