@@ -1,4 +1,3 @@
-import re
 from decimal import Decimal
 from typing import Mapping, cast
 
@@ -7,8 +6,6 @@ from bs4 import Tag
 from ..types import PublicMeterInfo
 from ..utils import str_to_date
 from .parser import parse_html_divclass
-
-_RE_RAWID = re.compile(r"rowId")
 
 
 def parse_meters(html: str) -> Mapping[int, PublicMeterInfo]:
