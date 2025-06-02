@@ -7,9 +7,9 @@ import logging
 from decimal import Decimal
 from typing import (
     Any,
-    Awaitable,
     Callable,
     Concatenate,
+    Coroutine,
     Iterable,
     Mapping,
     Self,
@@ -59,7 +59,9 @@ _MAX_DATE = dt.date(2099, 12, 31)
 
 _BASE_URL = yarl.URL("https://lk.erkc63.ru")
 
-type ClientMethod[T, **P] = Callable[Concatenate[ErkcClient, P], Awaitable[T]]
+type ClientMethod[T, **P] = Callable[
+    Concatenate[ErkcClient, P], Coroutine[Any, Any, T]
+]
 
 
 def api[T, **P](
@@ -170,7 +172,7 @@ class ErkcClient:
         account: int | str | None,
         start: dt.date,
         end: dt.date,
-    ) -> Awaitable[list[list[str]]]:
+    ) -> Coroutine[Any, Any, list[list[str]]]:
         params = {"from": date_to_str(start), "to": date_to_str(end)}
         return self._ajax(f"{what}History", account, **params)
 
@@ -365,10 +367,13 @@ class ErkcClient:
             Возвращает объект `QrCodes`.
         """
 
-        result = await asyncio.gather(
-            self.download_pdf(accrual, peni=False),
-            self.download_pdf(accrual, peni=True),
-        )
+        async with asyncio.TaskGroup() as tg:
+            tasks = [
+                tg.create_task(self.download_pdf(accrual, peni=False)),
+                tg.create_task(self.download_pdf(accrual, peni=True)),
+            ]
+
+        result = (x.result() for x in tasks)
 
         return QrCodes(*result, max_rect=max_rect, paid_scale=paid_scale)
 
@@ -464,7 +469,9 @@ class ErkcClient:
             accruals: квитанции/начисления для обновления.
         """
 
-        await asyncio.gather(*map(self.update_accrual, accruals))
+        async with asyncio.TaskGroup() as tg:
+            for x in accruals:
+                tg.create_task(self.update_accrual(x))
 
     @api(auth_required=True)
     async def meters_history(
@@ -837,6 +844,7 @@ class ErkcClient:
             accounts: номера лицевых счетов.
         """
 
-        result = await asyncio.gather(*map(self.pub_account_info, accounts))
+        async with asyncio.TaskGroup() as tg:
+            tasks = [tg.create_task(self.pub_account_info(x)) for x in accounts]
 
-        return {x.account: x for x in result if x}
+        return {x.account: x for x in (x.result() for x in tasks) if x}
