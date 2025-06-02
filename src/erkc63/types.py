@@ -48,12 +48,12 @@ class PublicAccountInfo:
         )
 
 
-@dc.dataclass
+@dc.dataclass(frozen=True, slots=True)
 class AccountInfo:
     """Информация о лицевом счете"""
 
     address: str
-    """Адрес"""
+    """Адрес жилого помещения"""
     person: str
     """Собственник"""
     phone: str
@@ -62,23 +62,23 @@ class AccountInfo:
     """Электронная почта"""
     account: int
     """Лицевой счет"""
-    square: Decimal
-    """Общая площадь"""
-    registered: int
+    total_area: Decimal
+    """Общая площадь жилого помещения"""
+    people_registered: int
     """Зарегистрировано"""
-    hosted: int
+    people_lives: int
     """Проживает"""
-    document: str
+    ownership: str
     """Право собственности"""
-    k_oplate: Decimal
+    payment: Decimal
     """К оплате"""
-    dolg: Decimal
+    debt: Decimal
     """Долг на начало периода"""
-    nachisleno: Decimal
+    accrued: Decimal
     """Начислено за период"""
-    pereraschet: Decimal
+    recalculation: Decimal
     """Перерасчет на начало периода"""
-    oplacheno: Decimal
+    paid: Decimal
     """Оплачено"""
 
 
