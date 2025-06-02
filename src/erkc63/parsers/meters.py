@@ -21,22 +21,15 @@ def parse_meters(html: str) -> Mapping[int, PublicMeterInfo]:
     result: dict[int, PublicMeterInfo] = {}
 
     for meter in parse_html_divclass(html, "block-sch"):
-        name = cast(Tag, meter.find("span", class_="type"))
+        name, serial, date, value = meter.stripped_strings
 
-        if not name.string:
+        if not name:
             continue
 
-        serial = cast(Tag, name.find_next("span"))
-        date = cast(Tag, meter.find(class_="block-note"))
-        value = cast(Tag, date.find_next_sibling())
+        serial = serial.rsplit("№", 1)[-1]
+        date, value = str_to_date(date.removeprefix("от ")), Decimal(value)
 
-        name, serial = name.text, serial.text.rsplit("№", 1)[-1]
-        date = str_to_date(date.text.strip().removeprefix("от "))
-        value = Decimal(value.text.strip())
-
-        id = cast(Tag, meter.find("input", {"name": _RE_RAWID}))
-        id = int(cast(str, id["value"]))
-
+        id = int(cast(str, cast(Tag, meter("input")[1])["value"]))
         result[id] = PublicMeterInfo(name, serial, date, value)
 
     return result
