@@ -19,6 +19,7 @@ import aiohttp
 import orjson
 import yarl
 
+from .bills import QrCodes
 from .errors import (
     AccountBindingError,
     AccountNotFound,
@@ -28,7 +29,6 @@ from .errors import (
     SessionRequired,
 )
 from .parsers import parse_account, parse_accounts, parse_token
-from .parsers.bills import QrCodes
 from .parsers.meters import parse_meters
 from .types import (
     AccountInfo,

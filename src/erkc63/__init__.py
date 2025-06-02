@@ -1,3 +1,4 @@
+from .bills import QrCodes
 from .client import ErkcClient
 from .errors import (
     AccountBindingError,
@@ -9,7 +10,6 @@ from .errors import (
     ParsingError,
     SessionRequired,
 )
-from .parsers.bills import QrCodes
 from .types import (
     AccountInfo,
     Accrual,
