@@ -8,6 +8,6 @@ def parse_token(html: str) -> str:
     """Извлекает CSRF-токен сессии из страницы"""
 
     x = SoupStrainer("meta", {"name": "csrf-token"})
-    x = BeautifulSoup(html, "lxml", parse_only=x)
+    tags = BeautifulSoup(html, "lxml", parse_only=x).contents
 
-    return str(cast(Tag, x.contents[0])["content"])
+    return str(cast(Tag, tags[0])["content"])

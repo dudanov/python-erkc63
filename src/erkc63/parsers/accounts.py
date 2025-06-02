@@ -2,11 +2,11 @@ import dataclasses as dc
 from decimal import Decimal
 from typing import Any, Iterator, cast
 
-from bs4 import BeautifulSoup, Tag
-from bs4.filter import SoupStrainer
+from bs4 import Tag
 
 from ..types import AccountInfo
 from ..utils import str_normalize
+from .parser import parse_html_divclass
 
 _POS_TYPES = tuple(
     (pos, str(field.type))
@@ -21,10 +21,7 @@ _POS_TYPES = tuple(
 def parse_accounts(html: str) -> list[int]:
     """Парсит меню выбора лицевого счета"""
 
-    x = SoupStrainer("div", id="select_ls_dropdown")
-    x = BeautifulSoup(html, "lxml", parse_only=x)
-
-    menu = cast(Tag, x.contents[0])
+    menu = cast(Tag, parse_html_divclass(html, "dropdown-menu")[0])
     accounts = cast(list[Tag], menu("a")[:-2])  # нижние 2 ссылки не аккаунты
     accounts = [int(cast(str, x.string)) for x in accounts]
 
@@ -38,12 +35,7 @@ def parse_accounts(html: str) -> list[int]:
 def parse_account(html: str) -> AccountInfo:
     """Парсит главную страницу лицевого счета со сводной информацией"""
 
-    x = SoupStrainer(
-        name="div",
-        class_=lambda k: k is not None and k.find("text-col-") != -1,
-    )
-
-    tags = BeautifulSoup(html, "lxml", parse_only=x).contents
+    tags = parse_html_divclass(html, "text-col-")
 
     def _args() -> Iterator[Any]:
         for pos, _type in _POS_TYPES:
