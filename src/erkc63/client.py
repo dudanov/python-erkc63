@@ -27,10 +27,9 @@ from .errors import (
     ParsingError,
     SessionRequired,
 )
-from .parsers.accounts import parse_account, parse_accounts
+from .parsers import parse_account, parse_accounts, parse_token
 from .parsers.bills import QrCodes
 from .parsers.meters import parse_meters
-from .parsers.token import parse_token
 from .types import (
     AccountInfo,
     Accrual,
