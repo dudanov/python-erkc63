@@ -21,7 +21,7 @@ _POS_TYPES = tuple(
 def parse_accounts(html: str) -> list[int]:
     """Парсит меню выбора лицевого счета"""
 
-    menu = cast(Tag, parse_html_divclass(html, "dropdown-menu")[0])
+    menu = parse_html_divclass(html, "dropdown-menu")[0]
     accounts = cast(list[Tag], menu("a")[:-2])  # нижние 2 ссылки не аккаунты
     accounts = [int(cast(str, x.string)) for x in accounts]
 
