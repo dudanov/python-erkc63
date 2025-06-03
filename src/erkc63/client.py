@@ -160,17 +160,12 @@ class ErkcClient:
     async def _ajax(
         self, func: str, account: int | str | None, **params: Any
     ) -> Any:
-        async with self._get(
-            f"ajax/{self._account(account)}/{func}", **params
-        ) as x:
+        path = f"ajax/{self._account(account)}/{func}"
+        async with self._get(path, **params) as x:
             return await x.json(loads=orjson.loads)
 
     def _history(
-        self,
-        what: str,
-        account: int | str | None,
-        start: dt.date,
-        end: dt.date,
+        self, what: str, account: int | str | None, start: dt.date, end: dt.date
     ) -> Coroutine[Any, Any, list[list[str]]]:
         params = {"from": date_to_str(start), "to": date_to_str(end)}
         return self._ajax(f"{what}History", account, **params)
@@ -572,9 +567,11 @@ class ErkcClient:
         result: list[MonthAccrual] = []
 
         for date, *decimals in history:
-            decimals = map(to_decimal, decimals)
             accrual = MonthAccrual(
-                account, date_attr(date), *decimals, details=None
+                account,
+                date_attr(date),
+                *map(to_decimal, decimals),
+                details=None,
             )
 
             # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
