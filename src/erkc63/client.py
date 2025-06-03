@@ -229,7 +229,7 @@ class ErkcClient:
         if account in self.accounts:
             return account
 
-        raise AccountNotFound("Лицевой счет %d не найден.", account)
+        raise AccountNotFound(f"Лицевой счет {account} не найден.")
 
     async def open(
         self,
@@ -433,7 +433,7 @@ class ErkcClient:
                 case "пени":
                     record.peni_id = id
                 case _ as x:
-                    raise ParsingError("Неизвестный тип квитанции '%s'.", x)
+                    raise ParsingError(f"Неизвестный тип квитанции '{x}'.")
 
         result = list(db.values())
 
@@ -659,7 +659,7 @@ class ErkcClient:
             return
 
         if last_bill_amount <= 0:
-            raise AccountBindingError("Сумма последнего начисления не указана")
+            raise AccountBindingError("Не указана сумма последнего начисления.")
 
         _LOGGER.debug("Привязка лицевого счета %d", account)
 
@@ -672,7 +672,7 @@ class ErkcClient:
 
         if account not in self.accounts:
             raise AccountBindingError(
-                "Не удалось привязать лицевой счет %d", account
+                f"Не удалось привязать лицевой счет {account}."
             )
 
     @api(auth_required=True)
@@ -694,7 +694,7 @@ class ErkcClient:
 
         if account in self.accounts:
             raise AccountBindingError(
-                "Не удалось отвязать лицевой счет %d", account
+                f"Не удалось отвязать лицевой счет {account}."
             )
 
     async def _set_meters_values(
@@ -725,10 +725,10 @@ class ErkcClient:
                     continue
 
                 raise ValueError(
-                    f"Новое значение счетчика {id} должно быть выше текущего {m.value}"
+                    f"Новое значение счетчика {id} должно быть выше {m.value}."
                 )
 
-            raise ValueError(f"Счетчик {id} не найден")
+            raise ValueError(f"Счетчик {id} не найден.")
 
         async with self._post(path, **data) as x:
             await x.text()

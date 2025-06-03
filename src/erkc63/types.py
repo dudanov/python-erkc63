@@ -179,7 +179,7 @@ class Accrual:
             x = sum(getattr(x, attr) for x in self.details.values())
             return cast(Decimal, x)
 
-        raise ErkcError("Отсутствует детализация по услугам")
+        raise ErkcError("Отсутствует детализация по услугам.")
 
     @property
     def saldo_in(self) -> Decimal:

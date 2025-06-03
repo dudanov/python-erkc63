@@ -66,7 +66,7 @@ def get_image_from_pdfpage(
 
             return image_convert(image)
 
-    raise FileNotFoundError("Image '%s' not found.", image_name)
+    raise FileNotFoundError(f"Изображение '{image_name}' не найдено.")
 
 
 def pdfpage_to_png(
