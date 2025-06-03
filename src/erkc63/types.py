@@ -135,18 +135,18 @@ class AccrualDetalization:
 
     tariff: Decimal
     """Тариф"""
-    saldo_in: Decimal
-    """Входящее сальдо (долг на начало расчетного периода)"""
-    billed: Decimal
-    """Начислено"""
+    debt: Decimal
+    """Долг на начало расчетного периода"""
+    accrued: Decimal
+    """Начислено за расчетный период"""
     recalculation: Decimal
     """Перерасчет"""
     quality: Decimal
     """Снято за качество"""
+    paid: Decimal
+    """Оплачено"""
     payment: Decimal
-    """Платеж"""
-    saldo_out: Decimal
-    """Исходящее сальдо (долг на конец расчетного периода)"""
+    """К оплате"""
     volume: Decimal
     """Объем"""
 
@@ -182,16 +182,16 @@ class Accrual:
         raise ErkcError("Отсутствует детализация по услугам.")
 
     @property
-    def saldo_in(self) -> Decimal:
-        """Входящее сальдо (долг на начало расчетного периода)"""
+    def debt(self) -> Decimal:
+        """Долг на начало расчетного периода"""
 
-        return self._sum("saldo_in")
+        return self._sum("debt")
 
     @property
-    def billed(self) -> Decimal:
-        """Начислено"""
+    def accrued(self) -> Decimal:
+        """Начислено за расчетный период"""
 
-        return self._sum("billed")
+        return self._sum("accrued")
 
     @property
     def recalculation(self) -> Decimal:
@@ -206,28 +206,28 @@ class Accrual:
         return self._sum("quality")
 
     @property
-    def payment(self) -> Decimal:
-        """Платеж"""
+    def paid(self) -> Decimal:
+        """Оплачено"""
 
-        return self._sum("payment")
+        return self._sum("paid")
 
     @property
-    def saldo_out(self) -> Decimal:
-        """Исходящее сальдо (долг на конец расчетного периода)"""
+    def payment(self) -> Decimal:
+        """К оплате"""
 
-        return self._sum("saldo_out")
+        return self._sum("payment")
 
     @property
     def is_correct(self) -> bool:
         """Корректен (сумма счета совпадает с суммой начислений по услугам)"""
 
-        return self.summa == self.billed
+        return self.summa == self.accrued
 
     @property
     def is_paid(self) -> bool:
         """Оплачен"""
 
-        return self.saldo_out <= 0
+        return self.payment <= 0
 
     @property
     def tariffs(self):
