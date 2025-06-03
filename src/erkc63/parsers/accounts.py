@@ -5,23 +5,23 @@ from bs4 import Tag
 from ..types import AccountInfo
 from .parser import parse_html_divclass
 
-_MAP_ACCOUNT_INFO: Final = {
-    0: "address",
-    1: "person",
-    2: "phone",
-    3: "email",
-    5: "account",
-    7: "total_area",
-    9: "people_registered",
-    11: "people_lives",
-    13: "ownership",
-    14: "payment",
-    16: "debt",
-    18: "accrued",
-    20: "recalculation",
-    22: "paid",
-}
-"""Словарь соответствия индекса тега и имени поля `AccountInfo`."""
+_ACCOUNT_INFO: Final = (
+    ("address", 0),
+    ("person", 1),
+    ("phone", 2),
+    ("email", 3),
+    ("account", 5),
+    ("total_area", 7),
+    ("people_registered", 9),
+    ("people_lives", 11),
+    ("ownership", 13),
+    ("payment", 14),
+    ("debt", 16),
+    ("accrued", 18),
+    ("recalculation", 20),
+    ("paid", 22),
+)
+"""Кортеж из пар поле `AccountInfo` - индекс тега на странице."""
 
 
 def parse_accounts(html: str) -> list[int]:
@@ -46,6 +46,6 @@ def parse_account(html: str) -> AccountInfo:
     return AccountInfo.from_dict(
         {
             field: next(tags[idx].stripped_strings)
-            for idx, field in _MAP_ACCOUNT_INFO.items()
+            for field, idx in _ACCOUNT_INFO
         }
     )
