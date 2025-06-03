@@ -28,8 +28,7 @@ from .errors import (
     ParsingError,
     SessionRequired,
 )
-from .parsers import parse_account, parse_accounts, parse_token
-from .parsers.meters import parse_meters
+from .parsers import parse_account, parse_accounts, parse_meters, parse_token
 from .types import (
     AccountInfo,
     Accrual,
