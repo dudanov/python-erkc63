@@ -3,7 +3,6 @@ from typing import Mapping, cast
 from bs4 import Tag
 
 from ..types import PublicMeterInfo
-from ..utils import str_to_date
 from .parser import parse_html_divclass
 
 
@@ -20,9 +19,8 @@ def parse_meters(html: str) -> Mapping[int, PublicMeterInfo]:
                 continue
 
             name, serial, date, value = x
-
             serial = serial[serial.rfind("№") + 1 :]
-            date = str_to_date(date.removeprefix("от ")).isoformat()
+            iso_date = "20" + "-".join(reversed(date[3:].split(".")))
 
             id = int(cast(str, cast(Tag, meter("input")[1])["value"]))
 
@@ -32,7 +30,7 @@ def parse_meters(html: str) -> Mapping[int, PublicMeterInfo]:
                     {
                         "name": name,
                         "serial": serial,
-                        "date": date,
+                        "date": iso_date,
                         "value": value,
                     }
                 ),
