@@ -1,9 +1,12 @@
+import logging
 from typing import Mapping, cast
 
 from bs4 import Tag
 
 from ..types import PublicMeterInfo
 from .parser import parse_html_divclass
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def parse_meters(html: str) -> Mapping[int, PublicMeterInfo]:
@@ -16,7 +19,10 @@ def parse_meters(html: str) -> Mapping[int, PublicMeterInfo]:
     def _items():
         for meter in parse_html_divclass(html, "block-sch"):
             if len(x := tuple(meter.stripped_strings)) != 4:
+                _LOGGER.debug("Wrong meter data: %s", x)
                 continue
+
+            _LOGGER.debug("Parsing meter data: %s", x)
 
             name, serial, date, value = x
             id = int(cast(str, cast(Tag, meter("input")[1])["value"]))
