@@ -249,13 +249,13 @@ class MonthAccrual:
     """Лицевой счет"""
     date: dt.date
     """Дата"""
-    saldo_in: Decimal
-    """Входящее сальдо (долг на начало расчетного периода)"""
-    summa: Decimal
+    debt: Decimal
+    """Долг на начало расчетного периода"""
+    accrued: Decimal
     """Начислено"""
+    paid: Decimal
+    """Оплачено"""
     payment: Decimal
-    """Платеж"""
-    saldo_out: Decimal
-    """Исходящее сальдо (долг на конец расчетного периода)"""
+    """К оплате"""
     details: Mapping[str, AccrualDetalization] | None = None
     """Детализация услуг"""
