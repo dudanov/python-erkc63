@@ -576,7 +576,7 @@ class ErkcClient:
 
             # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
             # при первом нулевом начислении прерываем цикл, так как далее все начисления тоже нулевые.
-            if not accrual.summa:
+            if not accrual.accrued:
                 break
 
             result.append(accrual)
