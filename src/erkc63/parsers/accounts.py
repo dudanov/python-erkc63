@@ -1,27 +1,10 @@
-from typing import Final, cast
+import dataclasses as dc
+from typing import cast
 
 from bs4 import Tag
 
 from ..types import AccountInfo
 from .parser import parse_html_divclass
-
-_ACCOUNT_INFO: Final = (
-    ("address", 0),
-    ("person", 1),
-    ("phone", 2),
-    ("email", 3),
-    ("account", 5),
-    ("total_area", 7),
-    ("people_registered", 9),
-    ("people_lives", 11),
-    ("ownership", 13),
-    ("payment", 14),
-    ("debt", 16),
-    ("accrued", 18),
-    ("recalculation", 20),
-    ("paid", 22),
-)
-"""Кортеж из пар поле `AccountInfo` - индекс тега на странице."""
 
 
 def parse_accounts(html: str) -> list[int]:
@@ -45,7 +28,11 @@ def parse_account(html: str) -> AccountInfo:
 
     return AccountInfo.from_dict(
         {
-            field: next(tags[idx].stripped_strings)
-            for field, idx in _ACCOUNT_INFO
+            field.name: next(tags[idx].stripped_strings)
+            for field, idx in zip(
+                dc.fields(AccountInfo),
+                (0, 1, 2, 3, 5, 7, 9, 11, 13, 14, 16, 18, 20, 22),
+                strict=True,
+            )
         }
     )
