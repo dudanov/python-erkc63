@@ -5,6 +5,9 @@ import datetime as dt
 from decimal import Decimal
 from typing import Mapping, cast
 
+from mashumaro.config import BaseConfig
+from mashumaro.mixins.dict import DataClassDictMixin
+
 from .errors import ErkcError
 
 type Accruals = Accrual | MonthAccrual
@@ -49,7 +52,7 @@ class PublicAccountInfo:
 
 
 @dc.dataclass(frozen=True, slots=True)
-class AccountInfo:
+class AccountInfo(DataClassDictMixin):
     """Информация о лицевом счете"""
 
     address: str
@@ -80,6 +83,13 @@ class AccountInfo:
     """Перерасчет на начало периода"""
     paid: Decimal
     """Оплачено"""
+
+    class Config(BaseConfig):
+        serialization_strategy = {
+            Decimal: {"deserialize": lambda x: x.replace(" ", "")},
+            int: {"deserialize": lambda x: int(x) if x != "-" else 0},
+            str: {"deserialize": lambda s: s.replace("  ", " ")},
+        }
 
 
 @dc.dataclass(frozen=True)

@@ -1,21 +1,27 @@
-import dataclasses as dc
-from decimal import Decimal
-from typing import Any, Iterator, cast
+from typing import Final, cast
 
 from bs4 import Tag
 
 from ..types import AccountInfo
-from ..utils import str_normalize
 from .parser import parse_html_divclass
 
-_POS_TYPES = tuple(
-    (pos, str(field.type))
-    for pos, field in zip(
-        [0, 1, 2, 3, 5, 7, 9, 11, 13, 14, 16, 18, 20, 22],  # позиции тегов
-        dc.fields(AccountInfo),  # поля
-        strict=True,
-    )
-)
+_MAP_ACCOUNT_INFO: Final = {
+    0: "address",
+    1: "person",
+    2: "phone",
+    3: "email",
+    5: "account",
+    7: "total_area",
+    9: "people_registered",
+    11: "people_lives",
+    13: "ownership",
+    14: "payment",
+    16: "debt",
+    18: "accrued",
+    20: "recalculation",
+    22: "paid",
+}
+"""Словарь соответствия индекса тега и имени поля `AccountInfo`."""
 
 
 def parse_accounts(html: str) -> list[int]:
@@ -37,21 +43,9 @@ def parse_account(html: str) -> AccountInfo:
 
     tags = parse_html_divclass(html, "text-col-")
 
-    def _args() -> Iterator[Any]:
-        for pos, _type in _POS_TYPES:
-            string = next(tags[pos].stripped_strings)
-
-            match _type:
-                case "str":
-                    yield str_normalize(string)
-
-                case "int":
-                    yield int(string) if string != "-" else 0
-
-                case "Decimal":
-                    yield Decimal(string.replace(" ", ""))
-
-                case _ as x:
-                    raise TypeError(f"Неизвестный тип: '{x}'.")
-
-    return AccountInfo(*_args())
+    return AccountInfo.from_dict(
+        {
+            field: next(tags[idx].stripped_strings)
+            for idx, field in _MAP_ACCOUNT_INFO.items()
+        }
+    )
