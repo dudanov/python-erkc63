@@ -19,21 +19,15 @@ def parse_meters(html: str) -> Mapping[int, PublicMeterInfo]:
                 continue
 
             name, serial, date, value = x
-            serial = serial[serial.rfind("№") + 1 :]
-            iso_date = "20" + "-".join(reversed(date[3:].split(".")))
-
             id = int(cast(str, cast(Tag, meter("input")[1])["value"]))
 
-            yield (
-                id,
-                PublicMeterInfo.from_dict(
-                    {
-                        "name": name,
-                        "serial": serial,
-                        "date": iso_date,
-                        "value": value,
-                    }
-                ),
-            )
+            data = {
+                "name": name,
+                "serial": serial[serial.rfind("№") + 1 :].lstrip(),
+                "date": "20{}-{}-{}".format(*date[3:].split(".")[::-1]),
+                "value": value,
+            }
+
+            yield id, PublicMeterInfo.from_dict(data)
 
     return dict(_items())
