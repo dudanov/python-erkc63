@@ -24,7 +24,7 @@ def parse_meters(html: str) -> Mapping[int, PublicMeterInfo]:
             data = {
                 "name": name,
                 "serial": serial[serial.rfind("№") + 1 :].lstrip(),
-                "date": "20{}-{}-{}".format(*date[3:].split(".")[::-1]),
+                "date": "20{2}-{1}-{0}".format(*date[3:].split(".")),
                 "value": value,
             }
 
