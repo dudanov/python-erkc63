@@ -1,4 +1,3 @@
-from decimal import Decimal
 from typing import Mapping, cast
 
 from bs4 import Tag
@@ -15,18 +14,28 @@ def parse_meters(html: str) -> Mapping[int, PublicMeterInfo]:
     Возвращает словарь `идентификатор - информация о приборе учета`.
     """
 
-    result: dict[int, PublicMeterInfo] = {}
+    def _items():
+        for meter in parse_html_divclass(html, "block-sch"):
+            if len(x := tuple(meter.stripped_strings)) != 4:
+                continue
 
-    for meter in parse_html_divclass(html, "block-sch"):
-        name, serial, date, value = meter.stripped_strings
+            name, serial, date, value = x
 
-        if not name:
-            continue
+            serial = serial[serial.rfind("№") + 1 :]
+            date = str_to_date(date.removeprefix("от ")).isoformat()
 
-        serial = serial.rsplit("№", 1)[-1]
-        date, value = str_to_date(date.removeprefix("от ")), Decimal(value)
+            id = int(cast(str, cast(Tag, meter("input")[1])["value"]))
 
-        id = int(cast(str, cast(Tag, meter("input")[1])["value"]))
-        result[id] = PublicMeterInfo(name, serial, date, value)
+            yield (
+                id,
+                PublicMeterInfo.from_dict(
+                    {
+                        "name": name,
+                        "serial": serial,
+                        "date": date,
+                        "value": value,
+                    }
+                ),
+            )
 
-    return result
+    return dict(_items())

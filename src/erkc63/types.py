@@ -93,7 +93,7 @@ class AccountInfo(DataClassDictMixin):
 
 
 @dc.dataclass(frozen=True)
-class MeterInfo:
+class MeterInfo(DataClassDictMixin):
     name: str
     """Ресурс учета"""
     serial: str
