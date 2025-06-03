@@ -139,7 +139,7 @@ class AccrualDetalization:
     """Входящее сальдо (долг на начало расчетного периода)"""
     billed: Decimal
     """Начислено"""
-    reee: Decimal
+    recalculation: Decimal
     """Перерасчет"""
     quality: Decimal
     """Снято за качество"""
@@ -184,45 +184,55 @@ class Accrual:
     @property
     def saldo_in(self) -> Decimal:
         """Входящее сальдо (долг на начало расчетного периода)"""
+
         return self._sum("saldo_in")
 
     @property
     def billed(self) -> Decimal:
         """Начислено"""
+
         return self._sum("billed")
 
     @property
-    def reee(self) -> Decimal:
+    def recalculation(self) -> Decimal:
         """Перерасчет"""
-        return self._sum("reee")
+
+        return self._sum("recalculation")
 
     @property
     def quality(self) -> Decimal:
         """Снято за качество"""
+
         return self._sum("quality")
 
     @property
     def payment(self) -> Decimal:
         """Платеж"""
+
         return self._sum("payment")
 
     @property
     def saldo_out(self) -> Decimal:
         """Исходящее сальдо (долг на конец расчетного периода)"""
+
         return self._sum("saldo_out")
 
     @property
     def is_correct(self) -> bool:
         """Корректен (сумма счета совпадает с суммой начислений по услугам)"""
+
         return self.summa == self.billed
 
     @property
     def is_paid(self) -> bool:
         """Оплачен"""
-        return not self.saldo_out
+
+        return self.saldo_out <= 0
 
     @property
     def tariffs(self):
+        """Тарифы по ресурсам"""
+
         assert self.details
         return {k: v.tariff for k, v in self.details.items()}
 
