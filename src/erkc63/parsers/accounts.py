@@ -49,18 +49,18 @@ class AccountInfo(DataClassDictMixin):
             str: {"deserialize": lambda x: " ".join(x.split())},
         }
 
+    @classmethod
+    def from_html(cls, html: str):
+        """Парсит главную страницу лицевого счета со сводной информацией"""
 
-def parse_account(html: str) -> AccountInfo:
-    """Парсит главную страницу лицевого счета со сводной информацией"""
+        tags = parse_html_divclass(html, "text-col-")
 
-    tags = parse_html_divclass(html, "text-col-")
-
-    return AccountInfo.from_dict(
-        {
-            x.name: next(tags[x.metadata["tag"]].stripped_strings)
-            for x in dc.fields(AccountInfo)
-        }
-    )
+        return cls.from_dict(
+            {
+                x.name: next(tags[x.metadata["tag"]].stripped_strings)
+                for x in dc.fields(cls)
+            }
+        )
 
 
 def parse_accounts(html: str) -> list[int]:

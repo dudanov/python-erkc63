@@ -28,8 +28,7 @@ from .errors import (
     ParsingError,
     SessionRequired,
 )
-from .parsers import parse_account, parse_accounts, parse_meters, parse_token
-from .parsers.accounts import AccountInfo
+from .parsers import AccountInfo, parse_accounts, parse_meters, parse_token
 from .types import (
     Accrual,
     AccrualDetalization,
@@ -629,7 +628,7 @@ class ErkcClient:
         """
 
         async with self._get(f"account/{self._account(account)}") as x:
-            return parse_account(await x.text())
+            return AccountInfo.from_html(await x.text())
 
     @api(auth_required=True)
     async def account_add(
