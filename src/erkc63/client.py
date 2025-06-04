@@ -842,4 +842,4 @@ class ErkcClient:
         async with asyncio.TaskGroup() as tg:
             tasks = [tg.create_task(self.pub_account_info(x)) for x in accounts]
 
-        return {x.account: x for x in (x.result() for x in tasks) if x}
+        return {x.account: x for task in tasks if (x := task.result())}
