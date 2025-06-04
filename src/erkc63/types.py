@@ -23,7 +23,7 @@ class Payment:
 
     date: dt.date
     """Дата"""
-    summa: Decimal
+    payment: Decimal
     """Сумма"""
     provider: str
     """Платежный провайдер"""

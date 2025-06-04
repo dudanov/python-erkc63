@@ -615,7 +615,7 @@ class ErkcClient:
         )
 
         # Ответ содержит нулевые платежи (внутренние перерасчеты). Применим фильтр.
-        return [x for x in payments if x.summa]
+        return [x for x in payments if x.payment]
 
     @api(auth_required=True)
     async def account_info(
