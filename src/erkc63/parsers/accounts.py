@@ -3,7 +3,6 @@ from decimal import Decimal
 from typing import cast
 
 from bs4 import Tag
-from mashumaro.config import BaseConfig
 from mashumaro.mixins.dict import DataClassDictMixin
 
 from .parser import parse_html_divclass
@@ -42,7 +41,7 @@ class AccountInfo(DataClassDictMixin):
     paid: Decimal = dc.field(metadata={"tag": 22})
     """Оплачено"""
 
-    class Config(BaseConfig):
+    class Config:
         serialization_strategy = {
             Decimal: {"deserialize": lambda x: x.replace(" ", "")},
             int: {"deserialize": lambda x: int(x) if x != "-" else 0},
