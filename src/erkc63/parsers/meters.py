@@ -22,19 +22,16 @@ class PublicMeterInfo(DataClassDictMixin):
 
     name: str
     """Ресурс учета"""
-
     serial: str = dc.field(
         metadata={"deserialize": lambda x: x[x.rfind("№") + 1 :].lstrip()}
     )
     """Серийный номер"""
-
     date: dt.date = dc.field(
         metadata={
             "deserialize": lambda x: "20{2}-{1}-{0}".format(*x[3:].split("."))
         }
     )
     """Дата последнего показания"""
-
     value: Decimal
     """Последнее показание"""
 
