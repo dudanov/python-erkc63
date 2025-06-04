@@ -14,11 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 
 @dc.dataclass(slots=True, kw_only=True)
 class PublicMeterInfo(DataClassDictMixin):
-    """
-    Информация о приборе учета.
-
-    Результат парсинга HTML-страницы.
-    """
+    """Информация о приборе учета."""
 
     name: str
     """Ресурс учета"""
@@ -36,12 +32,8 @@ class PublicMeterInfo(DataClassDictMixin):
     """Последнее показание"""
 
     @classmethod
-    def parse_meters(cls, html: str) -> Mapping[int, Self]:
-        """
-        Парсит HTML страницу с информацией по приборам учета.
-
-        Возвращает словарь `идентификатор - информация о приборе учета`.
-        """
+    def meters_from_html(cls, html: str) -> Mapping[int, Self]:
+        """Возвращает словарь `идентификатор - информация о приборе учета`."""
 
         def _items():
             for meter in parse_html_divclass(html, "block-sch"):
