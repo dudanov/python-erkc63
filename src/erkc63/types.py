@@ -88,7 +88,7 @@ class AccountInfo(DataClassDictMixin):
         serialization_strategy = {
             Decimal: {"deserialize": lambda x: x.replace(" ", "")},
             int: {"deserialize": lambda x: int(x) if x != "-" else 0},
-            str: {"deserialize": lambda s: " ".join(s.split())},
+            str: {"deserialize": lambda x: " ".join(x.split())},
         }
 
 
