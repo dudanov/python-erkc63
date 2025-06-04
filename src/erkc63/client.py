@@ -28,7 +28,22 @@ from .errors import (
     ParsingError,
     SessionRequired,
 )
-from .parsers import AccountInfo, PublicMeterInfo, parse_accounts, parse_token
+from .parsers import (
+    AccountInfo,
+    PublicAccountInfo,
+    PublicMeterInfo,
+    parse_accounts,
+    parse_token,
+)
+from .parsers.utils import (
+    data_attr,
+    date_attr,
+    date_last_accrual,
+    date_to_str,
+    str_normalize,
+    str_to_date,
+    to_decimal,
+)
 from .types import (
     Accrual,
     AccrualDetalization,
@@ -37,16 +52,6 @@ from .types import (
     MeterValue,
     MonthAccrual,
     Payment,
-    PublicAccountInfo,
-)
-from .utils import (
-    data_attr,
-    date_attr,
-    date_last_accrual,
-    date_to_str,
-    str_normalize,
-    str_to_date,
-    to_decimal,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -633,7 +638,7 @@ class ErkcClient:
     async def account_add(
         self,
         account: int | str | PublicAccountInfo,
-        last_bill_amount: Decimal = Decimal(),
+        last_payment: Decimal = Decimal(),
     ) -> None:
         """Привязка лицевого счета к аккаунту личного кабинета.
 
@@ -644,7 +649,7 @@ class ErkcClient:
         """
 
         if isinstance(account, PublicAccountInfo):
-            last_bill_amount = last_bill_amount or account.balance
+            last_payment = last_payment or account.payment
             account = account.account
 
         assert (account := int(account)) > 0
@@ -652,7 +657,7 @@ class ErkcClient:
         if account in self.accounts:
             return
 
-        if last_bill_amount <= 0:
+        if last_payment <= 0:
             raise AccountBindingError("Не указана сумма последнего начисления.")
 
         _LOGGER.debug("Привязка лицевого счета %d", account)
@@ -660,7 +665,7 @@ class ErkcClient:
         async with self._post(
             "account/add",
             account=account,
-            summ=last_bill_amount,
+            summ=last_payment,
         ) as x:
             self._update_accounts(await x.text())
 
@@ -816,15 +821,11 @@ class ErkcClient:
         assert (account := int(account)) > 0
 
         async with self._get("payment/checkLS", ls=account) as x:
-            json: Mapping[str, Any] = await x.json(loads=orjson.loads)
+            json: dict[str, Any] = await x.json(loads=orjson.loads)
+            json["account"] = account
 
-        if json["checkLS"]:
-            return PublicAccountInfo(
-                account,
-                str_normalize(json["address"]),
-                to_decimal(json["balanceSumma"]),
-                to_decimal(json["balancePeni"]),
-            )
+        if json.pop("checkLS"):
+            return PublicAccountInfo.from_dict(json)
 
         _LOGGER.info("Лицевой счет %d не найден.", account)
 

@@ -29,28 +29,6 @@ class Payment:
     """Платежный провайдер"""
 
 
-@dc.dataclass
-class PublicAccountInfo:
-    """Открытая информация о лицевом счете."""
-
-    account: int
-    """Номер лицевого счета"""
-    address: str
-    """Адрес"""
-    balance: Decimal
-    """Задолженность"""
-    peni: Decimal
-    """Пени"""
-
-    def __repr__(self) -> str:
-        return (
-            f"Лицевой счет:  {self.account}\n"
-            f"Адрес:         {self.address}\n"
-            f"Задолженность: {self.balance}\n"
-            f"Пени:          {self.peni}\n"
-        )
-
-
 @dc.dataclass(frozen=True)
 class MeterInfo(DataClassDictMixin):
     name: str

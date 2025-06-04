@@ -6,6 +6,39 @@ from bs4 import Tag
 from mashumaro.mixins.dict import DataClassDictMixin
 
 from .parser import parse_html_divclass
+from .utils import str_normalize, to_decimal
+
+
+@dc.dataclass(slots=True, kw_only=True)
+class PublicAccountInfo(DataClassDictMixin):
+    """Открытая информация о лицевом счете."""
+
+    account: int
+    """Номер лицевого счета"""
+    address: str
+    """Адрес"""
+    payment: Decimal
+    """К оплате"""
+    penalty: Decimal
+    """Пени"""
+
+    class Config:
+        aliases = {
+            "payment": "balanceSumma",
+            "penalty": "balancePeni",
+        }
+        serialization_strategy = {
+            Decimal: {"deserialize": to_decimal},
+            str: {"deserialize": str_normalize},
+        }
+
+    def __repr__(self) -> str:
+        return (
+            f"Лицевой счет: {self.account}\n"
+            f"Адрес:        {self.address}\n"
+            f"К оплате:     {self.payment}\n"
+            f"Пени:         {self.penalty}\n"
+        )
 
 
 @dc.dataclass(slots=True, kw_only=True)
@@ -43,9 +76,9 @@ class AccountInfo(DataClassDictMixin):
 
     class Config:
         serialization_strategy = {
-            Decimal: {"deserialize": lambda x: x.replace(" ", "")},
+            Decimal: {"deserialize": to_decimal},
             int: {"deserialize": lambda x: int(x) if x != "-" else 0},
-            str: {"deserialize": lambda x: " ".join(x.split())},
+            str: {"deserialize": str_normalize},
         }
 
     @classmethod

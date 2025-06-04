@@ -11,7 +11,9 @@ with open("secrets.json") as f:
 
 
 async def main():
-    async with ErkcClient(secrets["login"], secrets["password"]) as cli:
+    async with ErkcClient(
+        secrets["login"], secrets["password"], auth=False
+    ) as cli:
         # print(await cli.account_info())
         # print(await cli.meters_info())
 
@@ -22,7 +24,7 @@ async def main():
         # x = await cli.year_accruals(include_details=True)
 
         # await cli.qr_codes(x[1])
-        dd = await cli.account_info()
+        dd = await cli.pub_account_info(7759101)
         print(dd)
 
 
