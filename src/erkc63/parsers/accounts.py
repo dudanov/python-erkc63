@@ -42,6 +42,13 @@ class AccountInfo(DataClassDictMixin):
     paid: Decimal = dc.field(metadata={"tag": 22})
     """Оплачено"""
 
+    class Config(BaseConfig):
+        serialization_strategy = {
+            Decimal: {"deserialize": lambda x: x.replace(" ", "")},
+            int: {"deserialize": lambda x: int(x) if x != "-" else 0},
+            str: {"deserialize": lambda x: " ".join(x.split())},
+        }
+
     @classmethod
     def from_html(cls, html: str):
         """Конструктор из HTML главной страницы лицевого счета."""
@@ -54,13 +61,6 @@ class AccountInfo(DataClassDictMixin):
                 for x in dc.fields(cls)
             }
         )
-
-    class Config(BaseConfig):
-        serialization_strategy = {
-            Decimal: {"deserialize": lambda x: x.replace(" ", "")},
-            int: {"deserialize": lambda x: int(x) if x != "-" else 0},
-            str: {"deserialize": lambda x: " ".join(x.split())},
-        }
 
 
 def parse_accounts(html: str) -> tuple[int, ...]:
