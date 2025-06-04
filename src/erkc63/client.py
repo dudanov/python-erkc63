@@ -822,7 +822,9 @@ class ErkcClient:
 
         async with self._get("payment/checkLS", ls=account) as x:
             json: dict[str, Any] = await x.json(loads=orjson.loads)
-            json["account"] = account
+
+        _LOGGER.debug("JSON ответ: %s", json)
+        json["account"] = account
 
         if json.pop("checkLS"):
             return PublicAccountInfo.from_dict(json)
