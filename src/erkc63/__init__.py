@@ -10,7 +10,7 @@ from .errors import (
     ParsingError,
     SessionRequired,
 )
-from .parsers.accounts import AccountInfo
+from .parsers import AccountInfo, PublicMeterInfo
 from .types import (
     Accrual,
     AccrualDetalization,
@@ -20,7 +20,6 @@ from .types import (
     MonthAccrual,
     Payment,
     PublicAccountInfo,
-    PublicMeterInfo,
 )
 
 __all__ = [

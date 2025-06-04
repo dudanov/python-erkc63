@@ -62,20 +62,6 @@ class MeterInfo(DataClassDictMixin):
         return self.name == other.name and self.serial == other.serial
 
 
-@dc.dataclass(frozen=True, eq=False)
-class PublicMeterInfo(MeterInfo):
-    """
-    Информация о приборе учета.
-
-    Результат парсинга HTML-страницы.
-    """
-
-    date: dt.date
-    """Дата последнего показания"""
-    value: Decimal
-    """Последнее показание"""
-
-
 @dc.dataclass(frozen=True)
 class MeterValue:
     """Показание счетчика"""

@@ -1,39 +1,62 @@
+import dataclasses as dc
+import datetime as dt
 import logging
-from typing import Mapping, cast
+from decimal import Decimal
+from typing import Mapping, Self, cast
 
 from bs4 import Tag
+from mashumaro import DataClassDictMixin
 
-from ..types import PublicMeterInfo
 from .parser import parse_html_divclass
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def parse_meters(html: str) -> Mapping[int, PublicMeterInfo]:
+@dc.dataclass(slots=True, kw_only=True)
+class PublicMeterInfo(DataClassDictMixin):
     """
-    Парсит HTML страницу с информацией по приборам учета.
+    Информация о приборе учета.
 
-    Возвращает словарь `идентификатор - информация о приборе учета`.
+    Результат парсинга HTML-страницы.
     """
 
-    def _items():
-        for meter in parse_html_divclass(html, "block-sch"):
-            if len(x := tuple(meter.stripped_strings)) != 4:
-                _LOGGER.debug("Wrong meter data: %s", x)
-                continue
+    name: str
+    """Ресурс учета"""
 
-            _LOGGER.debug("Parsing meter data: %s", x)
+    serial: str = dc.field(
+        metadata={"deserialize": lambda x: x[x.rfind("№") + 1 :].lstrip()}
+    )
+    """Серийный номер"""
 
-            name, serial, date, value = x
-            id = int(cast(str, cast(Tag, meter("input")[1])["value"]))
+    date: dt.date = dc.field(
+        metadata={
+            "deserialize": lambda x: "20{2}-{1}-{0}".format(*x[3:].split("."))
+        }
+    )
+    """Дата последнего показания"""
 
-            data = {
-                "name": name,
-                "serial": serial[serial.rfind("№") + 1 :].lstrip(),
-                "date": "20{2}-{1}-{0}".format(*date[3:].split(".")),
-                "value": value,
-            }
+    value: Decimal
+    """Последнее показание"""
 
-            yield id, PublicMeterInfo.from_dict(data)
+    @classmethod
+    def parse_meters(cls, html: str) -> Mapping[int, Self]:
+        """
+        Парсит HTML страницу с информацией по приборам учета.
 
-    return dict(_items())
+        Возвращает словарь `идентификатор - информация о приборе учета`.
+        """
+
+        def _items():
+            for meter in parse_html_divclass(html, "block-sch"):
+                if len(data := tuple(meter.stripped_strings)) != 4:
+                    _LOGGER.debug("Wrong meter data: %s", data)
+                    continue
+
+                _LOGGER.debug("Parsing meter data: %s", data)
+
+                id = int(cast(str, cast(Tag, meter("input")[1])["value"]))
+                data = {k.name: v for k, v in zip(dc.fields(cls), data)}
+
+                yield id, cls.from_dict(data)
+
+        return dict(_items())

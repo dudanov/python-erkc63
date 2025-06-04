@@ -28,7 +28,7 @@ from .errors import (
     ParsingError,
     SessionRequired,
 )
-from .parsers import AccountInfo, parse_accounts, parse_meters, parse_token
+from .parsers import AccountInfo, PublicMeterInfo, parse_accounts, parse_token
 from .types import (
     Accrual,
     AccrualDetalization,
@@ -38,7 +38,6 @@ from .types import (
     MonthAccrual,
     Payment,
     PublicAccountInfo,
-    PublicMeterInfo,
 )
 from .utils import (
     data_attr,
@@ -701,7 +700,7 @@ class ErkcClient:
             return
 
         async with self._get(path) as x:
-            meters = parse_meters(await x.text())
+            meters = PublicMeterInfo.parse_meters(await x.text())
 
         data: dict[str, Any] = {}
 
@@ -744,7 +743,7 @@ class ErkcClient:
         """
 
         async with self._get(f"account/{self._account(account)}/counters") as x:
-            return parse_meters(await x.text())
+            return PublicMeterInfo.parse_meters(await x.text())
 
     @api(auth_required=True)
     async def set_meters_values(
@@ -785,7 +784,7 @@ class ErkcClient:
         assert (account := int(account)) > 0
 
         async with self._get(f"counters/{account}") as x:
-            return parse_meters(await x.text())
+            return PublicMeterInfo.parse_meters(await x.text())
 
     @api(public=True)
     async def pub_set_meters_values(
