@@ -173,56 +173,56 @@ class Accrual:
     """Лицевой счет"""
     date: dt.date
     """Дата формирования"""
-    summa: Decimal
+    payment: Decimal
     """Сумма"""
-    peni: Decimal
+    penalty: Decimal
     """Пени"""
-    bill_id: str | None = None
+    payment_id: str | None = None
     """Идентификатор квитанции для скачивания"""
-    peni_id: str | None = None
+    penalty_id: str | None = None
     """Идентификатор квитанции на пени для скачивания"""
-    details: Mapping[str, AccrualDetalization] | None = None
+    details: dict[str, AccrualDetalization] = dc.field(default_factory=dict)
     """Детализация услуг"""
 
     def _sum(self, attr: str) -> Decimal:
-        if self.details:
-            x = sum(getattr(x, attr) for x in self.details.values())
-            return cast(Decimal, x)
+        if not self.details:
+            raise ErkcError("Отсутствует детализация по услугам.")
 
-        raise ErkcError("Отсутствует детализация по услугам.")
+        x = sum(getattr(x, attr) for x in self.details.values())
+        return cast(Decimal, x)
 
     @property
-    def debt(self) -> Decimal:
+    def details_debt(self) -> Decimal:
         """Долг на начало расчетного периода"""
 
         return self._sum("debt")
 
     @property
-    def accrued(self) -> Decimal:
+    def details_accrued(self) -> Decimal:
         """Начислено за расчетный период"""
 
         return self._sum("accrued")
 
     @property
-    def recalculation(self) -> Decimal:
+    def details_recalculation(self) -> Decimal:
         """Перерасчет"""
 
         return self._sum("recalculation")
 
     @property
-    def quality(self) -> Decimal:
+    def details_quality(self) -> Decimal:
         """Снято за качество"""
 
         return self._sum("quality")
 
     @property
-    def paid(self) -> Decimal:
+    def details_paid(self) -> Decimal:
         """Оплачено"""
 
         return self._sum("paid")
 
     @property
-    def payment(self) -> Decimal:
+    def details_payment(self) -> Decimal:
         """К оплате"""
 
         return self._sum("payment")
@@ -231,19 +231,20 @@ class Accrual:
     def is_correct(self) -> bool:
         """Корректен (сумма счета совпадает с суммой начислений по услугам)"""
 
-        return self.summa == self.accrued
+        return self.payment == self.details_accrued
 
     @property
     def is_paid(self) -> bool:
         """Оплачен"""
 
-        return self.payment <= 0
+        return self.details_payment <= 0
 
     @property
     def tariffs(self):
         """Тарифы по ресурсам"""
 
         assert self.details
+
         return {k: v.tariff for k, v in self.details.items()}
 
 

@@ -309,7 +309,7 @@ class ErkcClient:
         self,
         accrual: Accrual,
         *,
-        peni: bool = False,
+        penalty: bool = False,
     ) -> bytes | None:
         """Загрузка квитанции в формате PDF.
 
@@ -321,7 +321,7 @@ class ErkcClient:
             Данные в формате `PDF` при успехе или `None` при неудаче.
         """
 
-        if not (id := accrual.peni_id if peni else accrual.bill_id):
+        if not (id := accrual.penalty_id if penalty else accrual.payment_id):
             return
 
         try:
@@ -363,8 +363,8 @@ class ErkcClient:
 
         async with asyncio.TaskGroup() as tg:
             tasks = [
-                tg.create_task(self.download_pdf(accrual, peni=False)),
-                tg.create_task(self.download_pdf(accrual, peni=True)),
+                tg.create_task(self.download_pdf(accrual, penalty=False)),
+                tg.create_task(self.download_pdf(accrual, penalty=True)),
             ]
 
         result = (x.result() for x in tasks)
@@ -414,8 +414,8 @@ class ErkcClient:
                 Accrual(
                     account=account,
                     date=date,
-                    summa=to_decimal(data[1]),
-                    peni=to_decimal(data[2]),
+                    payment=to_decimal(data[1]),
+                    penalty=to_decimal(data[2]),
                 ),
             )
 
@@ -423,9 +423,9 @@ class ErkcClient:
 
             match data[3]:
                 case "общая":
-                    record.bill_id = id
+                    record.payment_id = id
                 case "пени":
-                    record.peni_id = id
+                    record.penalty_id = id
                 case _ as x:
                     raise ParsingError(f"Неизвестный тип квитанции '{x}'.")
 
