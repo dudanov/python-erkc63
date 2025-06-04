@@ -1,10 +1,66 @@
 import dataclasses as dc
+from decimal import Decimal
 from typing import cast
 
 from bs4 import Tag
+from mashumaro.config import BaseConfig
+from mashumaro.mixins.dict import DataClassDictMixin
 
-from ..types import AccountInfo
 from .parser import parse_html_divclass
+
+
+@dc.dataclass(slots=True, kw_only=True)
+class AccountInfo(DataClassDictMixin):
+    """Информация о лицевом счете"""
+
+    address: str = dc.field(metadata={"tag": 0})
+    """Адрес жилого помещения"""
+    person: str = dc.field(metadata={"tag": 1})
+    """Собственник"""
+    phone: str = dc.field(metadata={"tag": 2})
+    """Телефон"""
+    email: str = dc.field(metadata={"tag": 3})
+    """Электронная почта"""
+    account: int = dc.field(metadata={"tag": 5})
+    """Лицевой счет"""
+    total_area: Decimal = dc.field(metadata={"tag": 7})
+    """Общая площадь жилого помещения"""
+    people_registered: int = dc.field(metadata={"tag": 9})
+    """Зарегистрировано"""
+    people_lives: int = dc.field(metadata={"tag": 11})
+    """Проживает"""
+    ownership: str = dc.field(metadata={"tag": 13})
+    """Право собственности"""
+    payment: Decimal = dc.field(metadata={"tag": 14})
+    """К оплате"""
+    debt: Decimal = dc.field(metadata={"tag": 16})
+    """Долг на начало периода"""
+    accrued: Decimal = dc.field(metadata={"tag": 18})
+    """Начислено за период"""
+    recalculation: Decimal = dc.field(metadata={"tag": 20})
+    """Перерасчет на начало периода"""
+    paid: Decimal = dc.field(metadata={"tag": 22})
+    """Оплачено"""
+
+    class Config(BaseConfig):
+        serialization_strategy = {
+            Decimal: {"deserialize": lambda x: x.replace(" ", "")},
+            int: {"deserialize": lambda x: int(x) if x != "-" else 0},
+            str: {"deserialize": lambda x: " ".join(x.split())},
+        }
+
+
+def parse_account(html: str) -> AccountInfo:
+    """Парсит главную страницу лицевого счета со сводной информацией"""
+
+    tags = parse_html_divclass(html, "text-col-")
+
+    return AccountInfo.from_dict(
+        {
+            x.name: next(tags[x.metadata["tag"]].stripped_strings)
+            for x in dc.fields(AccountInfo)
+        }
+    )
 
 
 def parse_accounts(html: str) -> list[int]:
@@ -19,20 +75,3 @@ def parse_accounts(html: str) -> list[int]:
         accounts[1:] = sorted(accounts[1:])
 
     return accounts
-
-
-def parse_account(html: str) -> AccountInfo:
-    """Парсит главную страницу лицевого счета со сводной информацией"""
-
-    tags = parse_html_divclass(html, "text-col-")
-
-    return AccountInfo.from_dict(
-        {
-            field.name: next(tags[idx].stripped_strings)
-            for field, idx in zip(
-                dc.fields(AccountInfo),
-                (0, 1, 2, 3, 5, 7, 9, 11, 13, 14, 16, 18, 20, 22),
-                strict=True,
-            )
-        }
-    )

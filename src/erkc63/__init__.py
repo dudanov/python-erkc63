@@ -10,8 +10,8 @@ from .errors import (
     ParsingError,
     SessionRequired,
 )
+from .parsers.accounts import AccountInfo
 from .types import (
-    AccountInfo,
     Accrual,
     AccrualDetalization,
     MeterInfo,

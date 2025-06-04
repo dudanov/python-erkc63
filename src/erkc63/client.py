@@ -29,8 +29,8 @@ from .errors import (
     SessionRequired,
 )
 from .parsers import parse_account, parse_accounts, parse_meters, parse_token
+from .parsers.accounts import AccountInfo
 from .types import (
-    AccountInfo,
     Accrual,
     AccrualDetalization,
     Accruals,

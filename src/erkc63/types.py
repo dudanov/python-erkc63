@@ -51,47 +51,6 @@ class PublicAccountInfo:
         )
 
 
-@dc.dataclass(frozen=True, slots=True)
-class AccountInfo(DataClassDictMixin):
-    """Информация о лицевом счете"""
-
-    address: str
-    """Адрес жилого помещения"""
-    person: str
-    """Собственник"""
-    phone: str
-    """Телефон"""
-    email: str
-    """Электронная почта"""
-    account: int
-    """Лицевой счет"""
-    total_area: Decimal
-    """Общая площадь жилого помещения"""
-    people_registered: int
-    """Зарегистрировано"""
-    people_lives: int
-    """Проживает"""
-    ownership: str
-    """Право собственности"""
-    payment: Decimal
-    """К оплате"""
-    debt: Decimal
-    """Долг на начало периода"""
-    accrued: Decimal
-    """Начислено за период"""
-    recalculation: Decimal
-    """Перерасчет на начало периода"""
-    paid: Decimal
-    """Оплачено"""
-
-    class Config(BaseConfig):
-        serialization_strategy = {
-            Decimal: {"deserialize": lambda x: x.replace(" ", "")},
-            int: {"deserialize": lambda x: int(x) if x != "-" else 0},
-            str: {"deserialize": lambda x: " ".join(x.split())},
-        }
-
-
 @dc.dataclass(frozen=True)
 class MeterInfo(DataClassDictMixin):
     name: str
