@@ -44,7 +44,7 @@ class AccountInfo(DataClassDictMixin):
 
     @classmethod
     def from_html(cls, html: str):
-        """Парсит главную страницу лицевого счета со сводной информацией"""
+        """Конструктор из HTML главной страницы лицевого счета."""
 
         tags = parse_html_divclass(html, "text-col-")
 
@@ -63,8 +63,8 @@ class AccountInfo(DataClassDictMixin):
         }
 
 
-def parse_accounts(html: str) -> list[int]:
-    """Парсит меню выбора лицевого счета"""
+def parse_accounts(html: str) -> tuple[int, ...]:
+    """Возвращает список лицевых счетов из HTML страницы."""
 
     menu = parse_html_divclass(html, "dropdown-menu")[0]
     accounts = cast(list[Tag], menu("a")[:-2])  # нижние 2 ссылки не аккаунты
@@ -74,4 +74,4 @@ def parse_accounts(html: str) -> list[int]:
     if len(accounts) > 2:
         accounts[1:] = sorted(accounts[1:])
 
-    return accounts
+    return tuple(accounts)

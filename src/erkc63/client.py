@@ -174,7 +174,7 @@ class ErkcClient:
         _LOGGER.debug("CSRF токен: %s", self._token)
 
     def _update_accounts(self, html: str) -> None:
-        self._accounts = tuple(parse_accounts(html))
+        self._accounts = parse_accounts(html)
         _LOGGER.debug("Привязанные лицевые счета: %s", self._accounts)
 
     @property
