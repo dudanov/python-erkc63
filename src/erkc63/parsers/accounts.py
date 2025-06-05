@@ -28,8 +28,8 @@ class PublicAccountInfo(DataClassDictMixin):
             "penalty": "balancePeni",
         }
         serialization_strategy = {
-            Decimal: {"deserialize": to_decimal},
             str: {"deserialize": str_normalize},
+            Decimal: {"deserialize": to_decimal},
         }
 
     def __repr__(self) -> str:
@@ -45,24 +45,10 @@ class PublicAccountInfo(DataClassDictMixin):
 class AccountInfo(DataClassDictMixin):
     """Информация о лицевом счете"""
 
-    address: str = dc.field(metadata={"tag": 0})
-    """Адрес жилого помещения"""
-    person: str = dc.field(metadata={"tag": 1})
-    """Собственник"""
-    phone: str = dc.field(metadata={"tag": 2})
-    """Телефон"""
-    email: str = dc.field(metadata={"tag": 3})
-    """Электронная почта"""
     account: int = dc.field(metadata={"tag": 5})
     """Лицевой счет"""
-    total_area: Decimal = dc.field(metadata={"tag": 7})
-    """Общая площадь жилого помещения"""
-    people_registered: int = dc.field(metadata={"tag": 9})
-    """Зарегистрировано"""
-    people_lives: int = dc.field(metadata={"tag": 11})
-    """Проживает"""
-    ownership: str = dc.field(metadata={"tag": 13})
-    """Право собственности"""
+    address: str = dc.field(metadata={"tag": 0})
+    """Адрес жилого помещения"""
     payment: Decimal = dc.field(metadata={"tag": 14})
     """К оплате"""
     debt: Decimal = dc.field(metadata={"tag": 16})
@@ -73,12 +59,26 @@ class AccountInfo(DataClassDictMixin):
     """Перерасчет на начало периода"""
     paid: Decimal = dc.field(metadata={"tag": 22})
     """Оплачено"""
+    owner: str = dc.field(metadata={"tag": 1})
+    """Собственник"""
+    phone: str = dc.field(metadata={"tag": 2})
+    """Телефон"""
+    email: str = dc.field(metadata={"tag": 3})
+    """Электронная почта"""
+    total_area: Decimal = dc.field(metadata={"tag": 7})
+    """Общая площадь жилого помещения"""
+    people_registered: int = dc.field(metadata={"tag": 9})
+    """Зарегистрировано"""
+    people_lives: int = dc.field(metadata={"tag": 11})
+    """Проживает"""
+    ownership: str = dc.field(metadata={"tag": 13})
+    """Право собственности"""
 
     class Config:
         serialization_strategy = {
+            str: {"deserialize": str_normalize},
             Decimal: {"deserialize": to_decimal},
             int: {"deserialize": lambda x: int(x) if x != "-" else 0},
-            str: {"deserialize": str_normalize},
         }
 
     @classmethod
