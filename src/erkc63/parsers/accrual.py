@@ -188,7 +188,7 @@ class MonthAccrual(DataClassDictMixin):
     """Оплачено"""
     payment: Decimal
     """К оплате"""
-    details: Mapping[str, AccrualDetalization] | None = None
+    details: Mapping[str, AccrualDetalization] = dc.field(default_factory=dict)
     """Детализация услуг"""
 
     class Config(BaseConfig):
