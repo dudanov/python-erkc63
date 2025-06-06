@@ -824,12 +824,8 @@ class ErkcClient:
             json: dict[str, Any] = await x.json(loads=orjson.loads)
 
         _LOGGER.debug("JSON ответ: %s", json)
-        json["account"] = account
 
-        if json.pop("checkLS"):
-            return PublicAccountInfo.from_dict(json)
-
-        _LOGGER.info("Лицевой счет %d не найден.", account)
+        return PublicAccountInfo.from_json(json, account)
 
     @api(public=True)
     async def pub_accounts_info(

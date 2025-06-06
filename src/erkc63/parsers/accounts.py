@@ -1,6 +1,6 @@
 import dataclasses as dc
 from decimal import Decimal
-from typing import cast
+from typing import Any, Self, cast
 
 from bs4 import Tag
 from mashumaro import field_options
@@ -39,6 +39,14 @@ class PublicAccountInfo(DataClassDictMixin):
         )
     )
     """Пени"""
+
+    @classmethod
+    def from_json(cls, json: dict[str, Any], account: int) -> Self | None:
+        """Конструктор из JSON-ответа публичного API."""
+
+        if json["checkLS"]:
+            json["account"] = account
+            return cls.from_dict(json)
 
 
 @dc.dataclass(slots=True, kw_only=True)
@@ -82,7 +90,7 @@ class AccountInfo(DataClassDictMixin):
         }
 
     @classmethod
-    def from_html(cls, html: str):
+    def from_html(cls, html: str) -> Self:
         """Конструктор из HTML главной страницы лицевого счета."""
 
         tags = parse_html_divclass(html, "text-col-")
