@@ -120,7 +120,7 @@ class Accrual(DataClassDictMixin):
     @classmethod
     def from_json(
         cls,
-        json: list[list[str]],
+        json: list[list[Any]],
         account: int,
         limit: int | None = None,
     ) -> list[Self]:
@@ -144,8 +144,8 @@ class Accrual(DataClassDictMixin):
         return list(it.islice(_gen(), limit))
 
 
-@dc.dataclass
-class MonthAccrual:
+@dc.dataclass(slots=True, kw_only=True)
+class MonthAccrual(DataClassDictMixin):
     """
     Начисление.
 
@@ -166,6 +166,29 @@ class MonthAccrual:
     """К оплате"""
     details: Mapping[str, AccrualDetalization] | None = None
     """Детализация услуг"""
+
+    @classmethod
+    def from_json(
+        cls,
+        json: list[list[Any]],
+        account: int,
+        limit: int | None = None,
+    ) -> list[Self]:
+        def _gen() -> Iterator[Self]:
+            for args in json:
+                args.insert(0, account)
+                accrual = cls.from_dict(
+                    {field.name: v for field, v in zip(dc.fields(cls), args)}
+                )
+
+                # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
+                # при первом нулевом начислении прерываем цикл, так как далее все начисления тоже нулевые.
+                if not accrual.accrued:
+                    break
+
+                yield accrual
+
+        return list(it.islice(_gen(), limit))
 
 
 type Accruals = Accrual | MonthAccrual

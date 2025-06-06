@@ -514,6 +514,7 @@ class ErkcClient:
         start: dt.date | None = None,
         end: dt.date | None = None,
         account: int | str | None = None,
+        limit: int | None = None,
         include_details: bool = False,
     ) -> list[MonthAccrual]:
         """Запрос начислений за заданный период.
@@ -525,6 +526,7 @@ class ErkcClient:
             end: дата окончания периода (включается в ответ).
             account: номер лицевого счета. Если `None` - будет использоваться
                 основной лицевой счет личного кабинета.
+            limit: кол-во последних квитанций в ответе. По-умолчанию все квитанции за год.
             include_details: дополнительный запрос детализированных затрат на каждое
                 начисление в полученном результате. По-умолчанию: `False`.
         """
@@ -536,22 +538,7 @@ class ErkcClient:
 
         history = await self._history("accruals", account, start, end)
 
-        result: list[MonthAccrual] = []
-
-        for date, *decimals in history:
-            accrual = MonthAccrual(
-                account,
-                date_attr(date),
-                *map(to_decimal, decimals),
-                details=None,
-            )
-
-            # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
-            # при первом нулевом начислении прерываем цикл, так как далее все начисления тоже нулевые.
-            if not accrual.accrued:
-                break
-
-            result.append(accrual)
+        result = MonthAccrual.from_json(history, account, limit)
 
         if include_details:
             await self.update_accruals(result)
