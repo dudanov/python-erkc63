@@ -21,7 +21,8 @@ def _attr(x: str, attr: str) -> str:
 
 
 def _deserialize_date(x: str) -> dt.date:
-    return dt.datetime.strptime(_attr(x, "sort"), "%d.%m.%y").date()
+    x = _attr(x, "sort")
+    return dt.datetime.strptime(x, "%d.%m.%y").date()
 
 
 def _deserialize_receipt(x: str) -> str:
