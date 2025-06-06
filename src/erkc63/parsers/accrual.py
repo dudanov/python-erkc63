@@ -193,6 +193,13 @@ class MonthAccrual(DataClassDictMixin):
     details: Mapping[str, AccrualDetalization] | None = None
     """Детализация услуг"""
 
+    class Config(BaseConfig):
+        lazy_compilation = True
+        serialization_strategy = {
+            Decimal: {"deserialize": to_decimal},
+            dt.date: {"deserialize": _deserialize_date},
+        }
+
     @classmethod
     def from_json(
         cls,
