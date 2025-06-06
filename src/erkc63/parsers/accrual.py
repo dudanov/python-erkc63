@@ -161,10 +161,8 @@ class Accrual(DataClassDictMixin):
                 if x := next(group, None):
                     args.append(x[-1])
 
-                print(args)
-
                 yield cls.from_dict(
-                    {field.name: v for field, v in zip(dc.fields(cls), args)}
+                    {k.name: v for k, v in zip(dc.fields(cls), args)}
                 )
 
         return list(it.islice(_gen(), limit))
@@ -211,7 +209,7 @@ class MonthAccrual(DataClassDictMixin):
             for args in json:
                 args.insert(0, account)
                 accrual = cls.from_dict(
-                    {field.name: v for field, v in zip(dc.fields(cls), args)}
+                    {k.name: v for k, v in zip(dc.fields(cls), args)}
                 )
 
                 # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
