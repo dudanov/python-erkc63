@@ -25,18 +25,19 @@ from .errors import (
     AccountNotFound,
     AuthorizationError,
     AuthorizationRequired,
-    ParsingError,
     SessionRequired,
 )
 from .parsers import (
     AccountInfo,
+    Accrual,
+    Accruals,
+    MonthAccrual,
     PublicAccountInfo,
     PublicMeterInfo,
     parse_accounts,
     parse_token,
 )
 from .parsers.utils import (
-    data_attr,
     date_attr,
     date_last_accrual,
     date_to_str,
@@ -45,12 +46,8 @@ from .parsers.utils import (
     to_decimal,
 )
 from .types import (
-    Accrual,
-    AccrualDetalization,
-    Accruals,
     MeterInfoHistory,
     MeterValue,
-    MonthAccrual,
     Payment,
 )
 
@@ -404,35 +401,7 @@ class ErkcClient:
             year=year or date_last_accrual().year,
         )
 
-        db: dict[dt.date, Accrual] = {}
-
-        for data in resp:
-            date = date_attr(data[0])
-
-            if limit and limit == len(db) and date not in db:
-                break
-
-            record = db.setdefault(
-                date,
-                Accrual(
-                    account=account,
-                    date=date,
-                    payment=to_decimal(data[1]),
-                    penalty=to_decimal(data[2]),
-                ),
-            )
-
-            id = data_attr(data[5])
-
-            match data[3]:
-                case "общая":
-                    record.payment_id = id
-                case "пени":
-                    record.penalty_id = id
-                case _ as x:
-                    raise ParsingError(f"Неизвестный тип квитанции '{x}'.")
-
-        result = list(db.values())
+        result = Accrual.from_json(resp, account, limit)
 
         if include_details:
             await self.update_accruals(result)

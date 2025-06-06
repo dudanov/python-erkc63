@@ -12,12 +12,9 @@ from .errors import (
 )
 from .parsers import AccountInfo, PublicAccountInfo, PublicMeterInfo
 from .types import (
-    Accrual,
-    AccrualDetalization,
     MeterInfo,
     MeterInfoHistory,
     MeterValue,
-    MonthAccrual,
     Payment,
 )
 
@@ -25,8 +22,6 @@ __all__ = [
     "AccountBindingError",
     "AccountInfo",
     "AccountNotFound",
-    "Accrual",
-    "AccrualDetalization",
     "ApiError",
     "AuthorizationError",
     "AuthorizationRequired",
@@ -35,7 +30,6 @@ __all__ = [
     "MeterInfo",
     "MeterInfoHistory",
     "MeterValue",
-    "MonthAccrual",
     "ParsingError",
     "Payment",
     "PublicAccountInfo",
