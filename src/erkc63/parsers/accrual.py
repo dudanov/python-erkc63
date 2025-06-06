@@ -2,11 +2,29 @@ import dataclasses as dc
 import datetime as dt
 import itertools as it
 from decimal import Decimal
-from typing import Any, Iterator, Mapping, Self, cast
+from typing import Annotated, Any, Iterator, Mapping, Self, cast
 
+from mashumaro.config import BaseConfig
 from mashumaro.mixins.dict import DataClassDictMixin
 
 from ..errors import ErkcError
+from .utils import to_decimal
+
+ReceiptID = Annotated[str, "ReceiptID"]
+
+
+def _attr(x: str, attr: str) -> str:
+    attr = f' data-{attr}="'
+    x = x[x.find(attr) + len(attr) :]
+    return x[: x.find('"')]
+
+
+def _deserialize_date(x: str) -> dt.date:
+    return dt.datetime.strptime(_attr(x, "sort"), "%d.%m.%y").date()
+
+
+def _deserialize_receipt(x: str) -> str:
+    return _attr(x, "receipt")
 
 
 @dc.dataclass(frozen=True)
@@ -47,12 +65,20 @@ class Accrual(DataClassDictMixin):
     """Сумма"""
     penalty: Decimal
     """Пени"""
-    payment_id: str | None = None
+    payment_id: ReceiptID | None = None
     """Идентификатор квитанции для скачивания"""
-    penalty_id: str | None = None
+    penalty_id: ReceiptID | None = None
     """Идентификатор квитанции на пени для скачивания"""
     details: dict[str, AccrualDetalization] = dc.field(default_factory=dict)
     """Детализация услуг"""
+
+    class Config(BaseConfig):
+        lazy_compilation = True
+        serialization_strategy = {
+            Decimal: {"deserialize": to_decimal},
+            dt.date: {"deserialize": _deserialize_date},
+            ReceiptID: {"deserialize": _deserialize_receipt},
+        }
 
     def _sum(self, attr: str) -> Decimal:
         if not self.details:
@@ -114,7 +140,6 @@ class Accrual(DataClassDictMixin):
         """Тарифы по ресурсам"""
 
         assert self.details
-
         return {k: v.tariff for k, v in self.details.items()}
 
     @classmethod
