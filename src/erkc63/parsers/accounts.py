@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import cast
 
 from bs4 import Tag
+from mashumaro import field_options
 from mashumaro.mixins.dict import DataClassDictMixin
 
 from .parser import parse_html_divclass
@@ -15,22 +16,16 @@ class PublicAccountInfo(DataClassDictMixin):
 
     account: int
     """Номер лицевого счета"""
-    address: str
+    address: str = dc.field(metadata=field_options(deserialize=str_normalize))
     """Адрес"""
-    payment: Decimal
+    payment: Decimal = dc.field(
+        metadata=field_options(deserialize=to_decimal, alias="balanceSumma")
+    )
     """К оплате"""
-    penalty: Decimal
+    penalty: Decimal = dc.field(
+        metadata=field_options(deserialize=to_decimal, alias="balancePeni")
+    )
     """Пени"""
-
-    class Config:
-        aliases = {
-            "payment": "balanceSumma",
-            "penalty": "balancePeni",
-        }
-        serialization_strategy = {
-            str: {"deserialize": str_normalize},
-            Decimal: {"deserialize": to_decimal},
-        }
 
     def __repr__(self) -> str:
         return (
