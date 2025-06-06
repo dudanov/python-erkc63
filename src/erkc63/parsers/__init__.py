@@ -1,5 +1,5 @@
-from .accounts import AccountInfo, PublicAccountInfo, parse_accounts
-from .meters import PublicMeterInfo
+from .account import AccountInfo, PublicAccountInfo, parse_accounts
+from .meter import PublicMeterInfo
 from .token import parse_token
 
 __all__ = [
