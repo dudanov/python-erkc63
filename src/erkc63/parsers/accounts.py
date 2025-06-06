@@ -40,14 +40,6 @@ class PublicAccountInfo(DataClassDictMixin):
     )
     """Пени"""
 
-    def __repr__(self) -> str:
-        return (
-            f"Лицевой счет: {self.account}\n"
-            f"Адрес:        {self.address}\n"
-            f"К оплате:     {self.payment}\n"
-            f"Пени:         {self.penalty}\n"
-        )
-
 
 @dc.dataclass(slots=True, kw_only=True)
 class AccountInfo(DataClassDictMixin):
