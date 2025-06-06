@@ -16,14 +16,24 @@ class PublicAccountInfo(DataClassDictMixin):
 
     account: int
     """Номер лицевого счета"""
-    address: str = dc.field(metadata=field_options(deserialize=str_normalize))
+    address: str = dc.field(
+        metadata=field_options(
+            deserialize=str_normalize,
+        )
+    )
     """Адрес"""
     payment: Decimal = dc.field(
-        metadata=field_options(deserialize=to_decimal, alias="balanceSumma")
+        metadata=field_options(
+            deserialize=to_decimal,
+            alias="balanceSumma",
+        )
     )
     """К оплате"""
     penalty: Decimal = dc.field(
-        metadata=field_options(deserialize=to_decimal, alias="balancePeni")
+        metadata=field_options(
+            deserialize=to_decimal,
+            alias="balancePeni",
+        )
     )
     """Пени"""
 
