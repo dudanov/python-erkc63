@@ -22,49 +22,55 @@ def date_last_accrual(accrual_day: int = 25) -> dt.date:
     return dt.date(today.year - 1, 12, 1)
 
 
-def first_int(value: str) -> int:
+def first_int(x: str) -> int:
     """Возвращает первое целое число в строке."""
 
-    for idx, sym in enumerate(value):
+    for idx, sym in enumerate(x):
         if not sym.isdigit():
-            value = value[:idx]
+            x = x[:idx]
             break
 
-    return int(value)
+    return int(x)
 
 
-def to_decimal(value: Any) -> Decimal:
+def to_decimal(x: Any) -> Decimal:
     """Преобразует строку в число."""
 
-    return Decimal(str(value).replace(" ", "").replace(",", "."))
+    return Decimal(str(x).replace(" ", "").replace(",", "."))
 
 
-def str_to_date(value: str) -> dt.date:
+def str_to_date(x: str) -> dt.date:
     """Преобразует строку вида `dd.mm.yy` в дату."""
 
-    return dt.datetime.strptime(value, "%d.%m.%y").date()
+    return dt.datetime.strptime(x, "%d.%m.%y").date()
 
 
-def data_attr(value: str) -> str:
+def data_attr(x: str) -> str:
     """Извлекает строку из атрибута данных тэга."""
 
-    if m := re.search(r' data-\w+="([\w/.+=]+)"', value):
+    if m := re.search(r' data-\w+="([\w/.+=]+)"', x):
         return m.group(1)
 
     raise ValueError
 
 
-def date_attr(value: str) -> dt.date:
-    return str_to_date(data_attr(value))
+def date_attr(x: str) -> dt.date:
+    return str_to_date(data_attr(x))
 
 
-def date_to_str(value: dt.date) -> str:
+def date_to_str(x: dt.date) -> str:
     """Преобразует дату в строку вида `dd.mm.YYYY`."""
 
-    return value.strftime("%d.%m.%Y")
+    return x.strftime("%d.%m.%Y")
 
 
-def str_normalize(value: str) -> str:
+def str_date_to_iso(x: str) -> str:
+    """Преобразует дату `dd.mm.yy` в дату ISO `YYYY-mm-dd`."""
+
+    return "20{2}-{1}-{0}".format(*x.split("."))
+
+
+def str_normalize(x: str) -> str:
     """Нормализует строку, удаляя лишние пробелы."""
 
-    return " ".join(value.split())
+    return " ".join(x.split())
