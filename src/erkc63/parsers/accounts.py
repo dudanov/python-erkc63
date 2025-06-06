@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import Any, Self, cast
 
 from bs4 import Tag
+from mashumaro.config import BaseConfig
 from mashumaro.mixins.dict import DataClassDictMixin
 
 from .parser import parse_html_divclass
@@ -22,7 +23,7 @@ class PublicAccountInfo(DataClassDictMixin):
     penalty: Decimal
     """Пени"""
 
-    class Config:
+    class Config(BaseConfig):
         lazy_compilation = True
         aliases = {
             "payment": "balanceSumma",
@@ -75,7 +76,7 @@ class AccountInfo(DataClassDictMixin):
     ownership: str = dc.field(metadata={"tag": 13})
     """Право собственности"""
 
-    class Config:
+    class Config(BaseConfig):
         lazy_compilation = True
         serialization_strategy = {
             str: {"deserialize": str_normalize},
