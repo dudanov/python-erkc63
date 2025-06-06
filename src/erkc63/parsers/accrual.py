@@ -15,10 +15,9 @@ ReceiptID = Annotated[str, "ReceiptID"]
 
 def _attr(x: str, attr: str) -> str:
     attr = f' data-{attr}="'
-    start = x.find(attr) + len(attr)
-    end = x.find('"', start)
-
-    return x[start:end]
+    x1 = x.find(attr) + len(attr)
+    x2 = x.find('"', x1)
+    return x[x1:x2]
 
 
 def _deserialize_date(x: str) -> dt.date:
