@@ -31,6 +31,9 @@ class PublicMeterInfo(DataClassDictMixin):
     value: Decimal
     """Последнее показание"""
 
+    class Config:
+        lazy_compilation = True
+
     @classmethod
     def meters_from_html(cls, html: str) -> Mapping[int, Self]:
         """Возвращает словарь `идентификатор - информация о приборе учета`."""

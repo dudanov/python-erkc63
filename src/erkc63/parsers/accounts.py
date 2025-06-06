@@ -40,6 +40,9 @@ class PublicAccountInfo(DataClassDictMixin):
     )
     """Пени"""
 
+    class Config:
+        lazy_compilation = True
+
     @classmethod
     def from_json(cls, json: dict[str, Any], account: int) -> Self | None:
         """Конструктор из JSON-ответа публичного API."""
@@ -83,6 +86,7 @@ class AccountInfo(DataClassDictMixin):
     """Право собственности"""
 
     class Config:
+        lazy_compilation = True
         serialization_strategy = {
             str: {"deserialize": str_normalize},
             Decimal: {"deserialize": to_decimal},
