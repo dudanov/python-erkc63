@@ -6,6 +6,7 @@ from typing import Mapping, Self, cast
 
 from bs4 import Tag
 from mashumaro import DataClassDictMixin
+from mashumaro.config import BaseConfig
 
 from .parser import parse_html_divclass
 
@@ -31,7 +32,7 @@ class PublicMeterInfo(DataClassDictMixin):
     value: Decimal
     """Последнее показание"""
 
-    class Config:
+    class Config(BaseConfig):
         lazy_compilation = True
 
     @classmethod
