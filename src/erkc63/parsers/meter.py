@@ -5,10 +5,10 @@ from decimal import Decimal
 from typing import Mapping, Self, cast
 
 from bs4 import Tag
-from mashumaro import DataClassDictMixin
+from mashumaro import DataClassDictMixin, field_options
 from mashumaro.config import BaseConfig
 
-from .parser import parse_html_divclass
+from .parser import parse_dmy, parse_html_divclass
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,14 +20,12 @@ class PublicMeterInfo(DataClassDictMixin):
     name: str
     """Ресурс учета"""
     serial: str = dc.field(
-        metadata={"deserialize": lambda x: x[x.rfind("№") + 1 :].lstrip()}
+        metadata=field_options(
+            deserialize=lambda x: x[x.rfind("№") + 1 :].lstrip()
+        )
     )
     """Серийный номер"""
-    date: dt.date = dc.field(
-        metadata={
-            "deserialize": lambda x: "20{2}-{1}-{0}".format(*x[3:].split("."))
-        }
-    )
+    date: dt.date = dc.field(metadata=field_options(deserialize=parse_dmy))
     """Дата последнего показания"""
     value: Decimal
     """Последнее показание"""
