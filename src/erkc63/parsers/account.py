@@ -10,6 +10,10 @@ from .parser import parse_decimal, parse_html_divclass
 from .utils import str_normalize
 
 
+def parse_int(x: str) -> int:
+    return int(x) if x.isdecimal() else 0
+
+
 @dc.dataclass(slots=True, kw_only=True)
 class PublicAccountInfo(DataClassDictMixin):
     """Открытая информация о лицевом счете."""
@@ -81,7 +85,7 @@ class AccountInfo(DataClassDictMixin):
         serialization_strategy = {
             str: {"deserialize": str_normalize},
             Decimal: {"deserialize": parse_decimal},
-            int: {"deserialize": lambda x: int(x) if x != "-" else 0},
+            int: {"deserialize": parse_int},
         }
 
     @classmethod
