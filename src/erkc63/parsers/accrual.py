@@ -13,8 +13,25 @@ from .parser import parse_decimal, parse_dmy, parse_receipt
 ReceiptID = Annotated[str, "ReceiptID"]
 
 
+@dc.dataclass
+class AjaxBased(DataClassDictMixin):
+    """Базовый класс объектов передаваемых AJAX запросами"""
+
+    class Config(BaseConfig):
+        lazy_compilation = True
+        serialization_strategy = {
+            dt.date: {"deserialize": parse_dmy},
+            Decimal: {"deserialize": parse_decimal},
+            ReceiptID: {"deserialize": parse_receipt},
+        }
+
+    @classmethod
+    def from_args(cls, args: list[Any]) -> Self:
+        return cls.from_dict({k.name: v for k, v in zip(dc.fields(cls), args)})
+
+
 @dc.dataclass(slots=True, kw_only=True)
-class AccrualDetalization(DataClassDictMixin):
+class AccrualDetalization(AjaxBased):
     """Детализация услуги"""
 
     name: str
@@ -36,19 +53,11 @@ class AccrualDetalization(DataClassDictMixin):
     consumption: Decimal
     """Потреблено"""
 
-    class Config(BaseConfig):
-        lazy_compilation = True
-        serialization_strategy = {
-            Decimal: {"deserialize": parse_decimal},
-        }
-
     @classmethod
     def from_json(cls, json: list[list[Any]]) -> Mapping[str, Self]:
         def _gen() -> Iterator[tuple[str, Self]]:
             for args in json:
-                details = cls.from_dict(
-                    {k.name: v for k, v in zip(dc.fields(cls), args)}
-                )
+                details = cls.from_args(args)
 
                 yield details.name, details
 
@@ -56,7 +65,7 @@ class AccrualDetalization(DataClassDictMixin):
 
 
 @dc.dataclass(slots=True, kw_only=True)
-class Accrual(DataClassDictMixin):
+class Accrual(AjaxBased):
     """
     Квитанция.
 
@@ -78,14 +87,6 @@ class Accrual(DataClassDictMixin):
     details: Mapping[str, AccrualDetalization] = dc.field(default_factory=dict)
     """Детализация услуг"""
 
-    class Config(BaseConfig):
-        lazy_compilation = True
-        serialization_strategy = {
-            Decimal: {"deserialize": parse_decimal},
-            dt.date: {"deserialize": parse_dmy},
-            ReceiptID: {"deserialize": parse_receipt},
-        }
-
     @classmethod
     def from_json(
         cls,
@@ -104,9 +105,7 @@ class Accrual(DataClassDictMixin):
                 if x := next(group, None):
                     args.append(x[-1])
 
-                yield cls.from_dict(
-                    {k.name: v for k, v in zip(dc.fields(cls), args)}
-                )
+                yield cls.from_args(args)
 
         return list(it.islice(_gen(), limit))
 
@@ -174,7 +173,7 @@ class Accrual(DataClassDictMixin):
 
 
 @dc.dataclass(slots=True, kw_only=True)
-class MonthAccrual(DataClassDictMixin):
+class MonthAccrual(AjaxBased):
     """
     Начисление.
 
@@ -196,13 +195,6 @@ class MonthAccrual(DataClassDictMixin):
     details: Mapping[str, AccrualDetalization] = dc.field(default_factory=dict)
     """Детализация услуг"""
 
-    class Config(BaseConfig):
-        lazy_compilation = True
-        serialization_strategy = {
-            Decimal: {"deserialize": parse_decimal},
-            dt.date: {"deserialize": parse_dmy},
-        }
-
     @classmethod
     def from_json(
         cls,
@@ -213,9 +205,7 @@ class MonthAccrual(DataClassDictMixin):
         def _gen() -> Iterator[Self]:
             for args in json:
                 args.insert(0, account)
-                accrual = cls.from_dict(
-                    {k.name: v for k, v in zip(dc.fields(cls), args)}
-                )
+                accrual = cls.from_args(args)
 
                 # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
                 # при первом нулевом начислении прерываем цикл, так как далее все начисления тоже нулевые.
