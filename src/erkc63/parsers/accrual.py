@@ -8,25 +8,10 @@ from mashumaro.config import BaseConfig
 from mashumaro.mixins.dict import DataClassDictMixin
 
 from ..errors import ErkcError
+from .parser import parse_dmy, parse_receipt
 from .utils import to_decimal
 
 ReceiptID = Annotated[str, "ReceiptID"]
-
-
-def _attr(x: str, attr: str) -> str:
-    attr = f' data-{attr}="'
-    x1 = x.find(attr) + len(attr)
-    x2 = x.find('"', x1)
-    return x[x1:x2]
-
-
-def _deserialize_date(x: str) -> dt.date:
-    d, m, y = map(int, _attr(x, "sort").split("."))
-    return dt.date(y + 2000, m, d)
-
-
-def _deserialize_receipt(x: str) -> str:
-    return _attr(x, "receipt")
 
 
 @dc.dataclass(slots=True, kw_only=True)
@@ -98,8 +83,8 @@ class Accrual(DataClassDictMixin):
         lazy_compilation = True
         serialization_strategy = {
             Decimal: {"deserialize": to_decimal},
-            dt.date: {"deserialize": _deserialize_date},
-            ReceiptID: {"deserialize": _deserialize_receipt},
+            dt.date: {"deserialize": parse_dmy},
+            ReceiptID: {"deserialize": parse_receipt},
         }
 
     @classmethod
@@ -216,7 +201,7 @@ class MonthAccrual(DataClassDictMixin):
         lazy_compilation = True
         serialization_strategy = {
             Decimal: {"deserialize": to_decimal},
-            dt.date: {"deserialize": _deserialize_date},
+            dt.date: {"deserialize": parse_dmy},
         }
 
     @classmethod
