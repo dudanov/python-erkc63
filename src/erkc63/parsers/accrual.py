@@ -29,10 +29,12 @@ def _deserialize_receipt(x: str) -> str:
     return _attr(x, "receipt")
 
 
-@dc.dataclass(frozen=True)
-class AccrualDetalization:
+@dc.dataclass(slots=True, kw_only=True)
+class AccrualDetalization(DataClassDictMixin):
     """Детализация услуги"""
 
+    name: str
+    """Название услуги"""
     tariff: Decimal
     """Тариф"""
     debt: Decimal
@@ -47,8 +49,24 @@ class AccrualDetalization:
     """Оплачено"""
     payment: Decimal
     """К оплате"""
-    volume: Decimal
-    """Объем"""
+    consumption: Decimal
+    """Потреблено"""
+
+    class Config(BaseConfig):
+        lazy_compilation = True
+        serialization_strategy = {
+            Decimal: {"deserialize": to_decimal},
+        }
+
+    @classmethod
+    def from_json(cls, json: list[list[Any]]) -> list[Self]:
+        def _gen() -> Iterator[Self]:
+            for args in json:
+                yield cls.from_dict(
+                    {k.name: v for k, v in zip(dc.fields(cls), args)}
+                )
+
+        return list(_gen())
 
 
 @dc.dataclass(slots=True, kw_only=True)
@@ -81,6 +99,30 @@ class Accrual(DataClassDictMixin):
             dt.date: {"deserialize": _deserialize_date},
             ReceiptID: {"deserialize": _deserialize_receipt},
         }
+
+    @classmethod
+    def from_json(
+        cls,
+        json: list[list[Any]],
+        account: int,
+        limit: int | None = None,
+    ) -> list[Self]:
+        def _gen() -> Iterator[Self]:
+            # группируем результат запроса по дате (поле 0)
+            for _, group in it.groupby(json, lambda k: k[0]):
+                # основная запись
+                args: list[Any] = next(group)
+                args = [account, *args[:3], args[-1]]
+
+                # если есть запись пени - добавим в конец списка аргументов
+                if x := next(group, None):
+                    args.append(x[-1])
+
+                yield cls.from_dict(
+                    {k.name: v for k, v in zip(dc.fields(cls), args)}
+                )
+
+        return list(it.islice(_gen(), limit))
 
     def _sum(self, attr: str) -> Decimal:
         if not self.details:
@@ -143,30 +185,6 @@ class Accrual(DataClassDictMixin):
 
         assert self.details
         return {k: v.tariff for k, v in self.details.items()}
-
-    @classmethod
-    def from_json(
-        cls,
-        json: list[list[Any]],
-        account: int,
-        limit: int | None = None,
-    ) -> list[Self]:
-        def _gen() -> Iterator[Self]:
-            # группируем результат запроса по дате (поле 0)
-            for _, group in it.groupby(json, lambda k: k[0]):
-                # основная запись
-                args: list[Any] = next(group)
-                args = [account, *args[:3], args[-1]]
-
-                # если есть запись пени - добавим в конец списка аргументов
-                if x := next(group, None):
-                    args.append(x[-1])
-
-                yield cls.from_dict(
-                    {k.name: v for k, v in zip(dc.fields(cls), args)}
-                )
-
-        return list(it.islice(_gen(), limit))
 
 
 @dc.dataclass(slots=True, kw_only=True)

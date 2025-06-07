@@ -30,6 +30,7 @@ from .errors import (
 from .parsers import (
     AccountInfo,
     Accrual,
+    AccrualDetalization,
     Accruals,
     MonthAccrual,
     PublicAccountInfo,
@@ -41,7 +42,6 @@ from .parsers.utils import (
     date_attr,
     date_last_accrual,
     date_to_str,
-    str_normalize,
     str_to_date,
     to_decimal,
 )
@@ -416,15 +416,14 @@ class ErkcClient:
             accrual: квитанция/начисление для обновления.
         """
 
-        resp: list[list[str]] = await self._ajax(
+        json: list[list[str]] = await self._ajax(
             "accrualsDetalization",
             accrual.account,
             month=accrual.date.strftime("01.%m.%y"),
         )
 
         accrual.details = {
-            str_normalize(x[0]): AccrualDetalization(*map(to_decimal, x[1:]))
-            for x in resp
+            x.name: x for x in AccrualDetalization.from_json(json)
         }
 
     @api(auth_required=True)

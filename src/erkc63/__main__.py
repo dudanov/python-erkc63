@@ -22,7 +22,7 @@ async def main():
         # x = await cli.year_accruals(include_details=True)
 
         # await cli.qr_codes(x[1])
-        dd = await cli.year_accruals()
+        dd = await cli.year_accruals(2024, include_details=True)
         print(dd)
 
 
