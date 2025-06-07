@@ -21,11 +21,14 @@ def parse_attr(x: str, attr: str) -> str:
     attr = f' data-{attr}="'
     x1 = x.find(attr) + len(attr)
     x2 = x.find('"', x1)
+
     return x[x1:x2]
 
 
 def parse_dmy(x: str) -> dt.date:
-    d, m, y = map(int, parse_attr(x, "sort").split("."))
+    x = parse_attr(x, "sort")
+    d, m, y = map(int, x.split("."))
+
     return dt.date(y + 2000, m, d)
 
 
