@@ -1,7 +1,4 @@
 import datetime as dt
-import re
-from decimal import Decimal
-from typing import Any
 
 
 def date_first_day(value: dt.date) -> dt.date:
@@ -33,29 +30,10 @@ def first_int(x: str) -> int:
     return int(x)
 
 
-def to_decimal(x: Any) -> Decimal:
-    """Преобразует строку в число."""
-
-    return Decimal(str(x).replace(" ", "").replace(",", "."))
-
-
 def str_to_date(x: str) -> dt.date:
     """Преобразует строку вида `dd.mm.yy` в дату."""
 
     return dt.datetime.strptime(x, "%d.%m.%y").date()
-
-
-def data_attr(x: str) -> str:
-    """Извлекает строку из атрибута данных тэга."""
-
-    if m := re.search(r' data-\w+="([\w/.+=]+)"', x):
-        return m.group(1)
-
-    raise ValueError
-
-
-def date_attr(x: str) -> dt.date:
-    return str_to_date(data_attr(x))
 
 
 def date_to_str(x: dt.date) -> str:

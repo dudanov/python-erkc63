@@ -8,8 +8,7 @@ from mashumaro.config import BaseConfig
 from mashumaro.mixins.dict import DataClassDictMixin
 
 from ..errors import ErkcError
-from .parser import parse_dmy, parse_receipt
-from .utils import to_decimal
+from .parser import parse_decimal, parse_dmy, parse_receipt
 
 ReceiptID = Annotated[str, "ReceiptID"]
 
@@ -40,7 +39,7 @@ class AccrualDetalization(DataClassDictMixin):
     class Config(BaseConfig):
         lazy_compilation = True
         serialization_strategy = {
-            Decimal: {"deserialize": to_decimal},
+            Decimal: {"deserialize": parse_decimal},
         }
 
     @classmethod
@@ -82,7 +81,7 @@ class Accrual(DataClassDictMixin):
     class Config(BaseConfig):
         lazy_compilation = True
         serialization_strategy = {
-            Decimal: {"deserialize": to_decimal},
+            Decimal: {"deserialize": parse_decimal},
             dt.date: {"deserialize": parse_dmy},
             ReceiptID: {"deserialize": parse_receipt},
         }
@@ -200,7 +199,7 @@ class MonthAccrual(DataClassDictMixin):
     class Config(BaseConfig):
         lazy_compilation = True
         serialization_strategy = {
-            Decimal: {"deserialize": to_decimal},
+            Decimal: {"deserialize": parse_decimal},
             dt.date: {"deserialize": parse_dmy},
         }
 

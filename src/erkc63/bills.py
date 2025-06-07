@@ -7,7 +7,8 @@ from PIL import Image as PILImage
 from PIL.Image import Image, Palette
 from pymupdf import Document, Identity, Matrix, Page, Pixmap
 
-from .parsers.utils import str_normalize, to_decimal
+from .parsers.parser import parse_decimal
+from .parsers.utils import str_normalize
 
 PdfSupported = Literal["erkc", "peni"]
 QrSupported = Literal["erkc", "kapremont", "peni"]
@@ -115,12 +116,12 @@ class QrCodes:
                 page, "img4", max_rect
             )
 
-            dd = to_decimal(
+            dd = parse_decimal(
                 page.get_textbox((680, 460, 720, 470))
             )  # сумма начисления за капремонт
             print(dd)
 
-            dd = to_decimal(
+            dd = parse_decimal(
                 page.get_textbox((786, 460, 820, 470))
             )  # сумма начисления за капремонт
             print(dd)
@@ -128,7 +129,9 @@ class QrCodes:
             dd = str_normalize(page.get_textbox((375, 75, 420, 81)))  # ЕЛС
             print(dd)
 
-            dd = to_decimal(page.get_textbox((150, 165, 225, 177)))  # к оплате
+            dd = parse_decimal(
+                page.get_textbox((150, 165, 225, 177))
+            )  # к оплате
             print(dd)
 
         if pdf_peni:

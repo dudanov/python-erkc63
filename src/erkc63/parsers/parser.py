@@ -1,5 +1,6 @@
 import datetime as dt
-from typing import cast
+from decimal import Decimal
+from typing import Any, cast
 
 from bs4 import BeautifulSoup, Tag
 from bs4.filter import SoupStrainer
@@ -30,3 +31,9 @@ def parse_dmy(x: str) -> dt.date:
 
 def parse_receipt(x: str) -> str:
     return parse_attr(x, "receipt")
+
+
+def parse_decimal(x: Any) -> Decimal:
+    """Преобразует строку в число."""
+
+    return Decimal(str(x).replace(" ", "").replace(",", "."))

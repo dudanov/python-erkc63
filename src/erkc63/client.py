@@ -38,13 +38,7 @@ from .parsers import (
     parse_accounts,
     parse_token,
 )
-from .parsers.utils import (
-    date_attr,
-    date_last_accrual,
-    date_to_str,
-    str_to_date,
-    to_decimal,
-)
+from .parsers.utils import date_last_accrual, date_to_str, str_to_date
 from .types import (
     MeterInfoHistory,
     MeterValue,

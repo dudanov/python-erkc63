@@ -6,8 +6,8 @@ from bs4 import Tag
 from mashumaro.config import BaseConfig
 from mashumaro.mixins.dict import DataClassDictMixin
 
-from .parser import parse_html_divclass
-from .utils import str_normalize, to_decimal
+from .parser import parse_decimal, parse_html_divclass
+from .utils import str_normalize
 
 
 @dc.dataclass(slots=True, kw_only=True)
@@ -31,7 +31,7 @@ class PublicAccountInfo(DataClassDictMixin):
         }
         serialization_strategy = {
             str: {"deserialize": str_normalize},
-            Decimal: {"deserialize": to_decimal},
+            Decimal: {"deserialize": parse_decimal},
         }
 
     @classmethod
@@ -80,7 +80,7 @@ class AccountInfo(DataClassDictMixin):
         lazy_compilation = True
         serialization_strategy = {
             str: {"deserialize": str_normalize},
-            Decimal: {"deserialize": to_decimal},
+            Decimal: {"deserialize": parse_decimal},
             int: {"deserialize": lambda x: int(x) if x != "-" else 0},
         }
 
