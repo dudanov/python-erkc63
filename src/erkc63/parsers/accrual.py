@@ -59,14 +59,16 @@ class AccrualDetalization(DataClassDictMixin):
         }
 
     @classmethod
-    def from_json(cls, json: list[list[Any]]) -> list[Self]:
-        def _gen() -> Iterator[Self]:
+    def from_json(cls, json: list[list[Any]]) -> Mapping[str, Self]:
+        def _gen() -> Iterator[tuple[str, Self]]:
             for args in json:
-                yield cls.from_dict(
+                details = cls.from_dict(
                     {k.name: v for k, v in zip(dc.fields(cls), args)}
                 )
 
-        return list(_gen())
+                yield details.name, details
+
+        return dict(_gen())
 
 
 @dc.dataclass(slots=True, kw_only=True)
@@ -89,7 +91,7 @@ class Accrual(DataClassDictMixin):
     """Идентификатор квитанции для скачивания"""
     penalty_id: ReceiptID | None = None
     """Идентификатор квитанции на пени для скачивания"""
-    details: dict[str, AccrualDetalization] = dc.field(default_factory=dict)
+    details: Mapping[str, AccrualDetalization] = dc.field(default_factory=dict)
     """Детализация услуг"""
 
     class Config(BaseConfig):

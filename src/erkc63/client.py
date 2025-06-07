@@ -422,9 +422,7 @@ class ErkcClient:
             month=accrual.date.strftime("01.%m.%y"),
         )
 
-        accrual.details = {
-            x.name: x for x in AccrualDetalization.from_json(json)
-        }
+        accrual.details = AccrualDetalization.from_json(json)
 
     @api(auth_required=True)
     async def update_accruals(self, accruals: Iterable[Accruals]) -> None:
