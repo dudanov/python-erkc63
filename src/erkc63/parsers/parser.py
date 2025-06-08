@@ -19,8 +19,8 @@ def parse_html_divclass(html: str, cls: str) -> list[Tag]:
 
 def parse_attr(x: str, attr: str) -> str:
     attr = f' data-{attr}="'
-    x1 = x.find(attr) + len(attr)
-    x2 = x.find('"', x1)
+    x1 = x.index(attr) + len(attr)
+    x2 = x.index('"', x1)
 
     return x[x1:x2]
 
