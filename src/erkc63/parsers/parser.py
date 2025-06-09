@@ -11,7 +11,7 @@ def parse_html_divclass(html: str, cls: str) -> list[Tag]:
 
     x = SoupStrainer(
         name="div",
-        class_=lambda x: x is not None and x.find(cls) != -1,
+        class_=lambda x: x is not None and cls in x.split(),
     )
 
     return cast(list[Tag], BeautifulSoup(html, "lxml", parse_only=x).contents)
