@@ -8,7 +8,7 @@ from bs4 import Tag
 from mashumaro import DataClassDictMixin, field_options
 from mashumaro.config import BaseConfig
 
-from .parser import ajax_dmy, parse_html_divclass
+from .parser import parse_dmy, parse_html_divclass
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,6 +16,10 @@ _LOGGER = logging.getLogger(__name__)
 def parse_serial(x: str) -> str:
     start = x.rindex("№") + 1
     return x[start:].lstrip()
+
+
+def parse_date(x: str) -> dt.date:
+    return parse_dmy(x[3:])
 
 
 @dc.dataclass(slots=True, kw_only=True)
@@ -26,7 +30,7 @@ class PublicMeterInfo(DataClassDictMixin):
     """Ресурс учета"""
     serial: str = dc.field(metadata=field_options(deserialize=parse_serial))
     """Серийный номер"""
-    date: dt.date = dc.field(metadata=field_options(deserialize=ajax_dmy))
+    date: dt.date = dc.field(metadata=field_options(deserialize=parse_date))
     """Дата последнего показания"""
     value: Decimal
     """Последнее показание"""

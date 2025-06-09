@@ -18,6 +18,14 @@ def parse_html_divclass(html: str, cls_prefix: str) -> list[Tag]:
     return cast(list[Tag], BeautifulSoup(html, "lxml", parse_only=x).contents)
 
 
+def parse_dmy(x: str) -> dt.date:
+    """Возвращает дату из строки вида `dd.mm.yy`"""
+
+    d, m, y = map(int, x.split("."))
+
+    return dt.date(2000 + y, m, d)
+
+
 def ajax_attr(tag: str, attr: str) -> str:
     """Возвращает атрибут данных из тега AJAX-запроса"""
 
@@ -30,9 +38,7 @@ def ajax_attr(tag: str, attr: str) -> str:
 def ajax_dmy(tag: str) -> dt.date:
     """Возвращает дату из атрибута тега AJAX-запроса вида `dd.mm.yy`"""
 
-    d, m, y = map(int, ajax_attr(tag, "sort").split("."))
-
-    return dt.date(2000 + y, m, d)
+    return parse_dmy(ajax_attr(tag, "sort"))
 
 
 def ajax_receipt(tag: str) -> str:
