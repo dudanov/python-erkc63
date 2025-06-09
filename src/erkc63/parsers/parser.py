@@ -7,34 +7,38 @@ from bs4.filter import SoupStrainer
 
 
 def parse_html_divclass(html: str, cls_prefix: str) -> list[Tag]:
-    """Возвращает список тегов `div` указанного класса"""
+    """Возвращает список тегов `div`, имеющих класс с указанным префиксом"""
 
     x = SoupStrainer(
         name="div",
         class_=lambda x: x is not None
-        and any(x.startswith(cls_prefix) for x in x.split()),
+        and any(k.startswith(cls_prefix) for k in x.split()),
     )
 
     return cast(list[Tag], BeautifulSoup(html, "lxml", parse_only=x).contents)
 
 
-def parse_attr(x: str, attr: str) -> str:
+def ajax_attr(tag: str, attr: str) -> str:
+    """Возвращает из тега AJAX-запроса атрибут данных"""
+
     attr = f' data-{attr}="'
-    x1 = x.index(attr) + len(attr)
-    x2 = x.index('"', x1)
+    x2 = tag.index('"', x1 := tag.index(attr) + len(attr))
 
-    return x[x1:x2]
-
-
-def parse_dmy(x: str) -> dt.date:
-    x = parse_attr(x, "sort")
-    d, m, y = map(int, x.split("."))
-
-    return dt.date(y + 2000, m, d)
+    return tag[x1:x2]
 
 
-def parse_receipt(x: str) -> str:
-    return parse_attr(x, "receipt")
+def ajax_dmy(tag: str) -> dt.date:
+    """Возвращает из тега AJAX-запроса дату"""
+
+    d, m, y = map(int, ajax_attr(tag, "sort").split("."))
+
+    return dt.date(2000 + y, m, d)
+
+
+def ajax_receipt(x: str) -> str:
+    """Возвращает из тега AJAX-запроса идентификатор запроса квитанции"""
+
+    return ajax_attr(x, "receipt")
 
 
 def parse_decimal(x: Any) -> Decimal:

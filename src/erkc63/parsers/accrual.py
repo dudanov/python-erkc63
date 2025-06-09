@@ -8,7 +8,7 @@ from mashumaro.config import BaseConfig
 from mashumaro.mixins.dict import DataClassDictMixin
 
 from ..errors import ErkcError
-from .parser import parse_decimal, parse_dmy, parse_receipt
+from .parser import ajax_dmy, ajax_receipt, parse_decimal
 
 ReceiptID = Annotated[str, "ReceiptID"]
 
@@ -20,9 +20,9 @@ class AjaxBased(DataClassDictMixin):
     class Config(BaseConfig):
         lazy_compilation = True
         serialization_strategy = {
-            dt.date: {"deserialize": parse_dmy},
+            dt.date: {"deserialize": ajax_dmy},
             Decimal: {"deserialize": parse_decimal},
-            ReceiptID: {"deserialize": parse_receipt},
+            ReceiptID: {"deserialize": ajax_receipt},
         }
 
     @classmethod
