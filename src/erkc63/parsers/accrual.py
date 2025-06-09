@@ -8,7 +8,8 @@ from mashumaro.config import BaseConfig
 from mashumaro.mixins.dict import DataClassDictMixin
 
 from ..errors import ErkcError
-from .parser import ajax_dmy, ajax_receipt, parse_decimal
+from .ajax import ajax_dmy, ajax_receipt
+from .utils import parse_decimal
 
 ReceiptID = Annotated[str, "ReceiptID"]
 

@@ -6,8 +6,8 @@ from bs4 import Tag
 from mashumaro.config import BaseConfig
 from mashumaro.mixins.dict import DataClassDictMixin
 
-from .parser import parse_decimal, parse_html_divclass
-from .utils import str_normalize
+from .parser import parse_html_divclass
+from .utils import parse_decimal, str_normalize
 
 
 def parse_int(x: str) -> int:

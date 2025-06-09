@@ -7,8 +7,7 @@ from PIL import Image as PILImage
 from PIL.Image import Image, Palette
 from pymupdf import Document, Identity, Matrix, Page, Pixmap
 
-from .parsers.parser import parse_decimal
-from .parsers.utils import str_normalize
+from .parsers.utils import parse_decimal, str_normalize
 
 PdfSupported = Literal["erkc", "peni"]
 QrSupported = Literal["erkc", "kapremont", "peni"]

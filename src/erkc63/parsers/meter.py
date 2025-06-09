@@ -8,7 +8,8 @@ from bs4 import Tag
 from mashumaro import DataClassDictMixin, field_options
 from mashumaro.config import BaseConfig
 
-from .parser import parse_dmy, parse_html_divclass
+from .parser import parse_html_divclass
+from .utils import parse_dmy
 
 _LOGGER = logging.getLogger(__name__)
 

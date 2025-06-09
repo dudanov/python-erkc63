@@ -1,10 +1,6 @@
 import datetime as dt
-
-
-def date_first_day(value: dt.date) -> dt.date:
-    """Возвращает дату первого числа месяца."""
-
-    return dt.date(value.year, value.month, 1)
+from decimal import Decimal
+from typing import Any
 
 
 def date_last_accrual(accrual_day: int = 25) -> dt.date:
@@ -19,17 +15,6 @@ def date_last_accrual(accrual_day: int = 25) -> dt.date:
     return dt.date(today.year - 1, 12, 1)
 
 
-def first_int(x: str) -> int:
-    """Возвращает первое целое число в строке."""
-
-    for idx, sym in enumerate(x):
-        if not sym.isdigit():
-            x = x[:idx]
-            break
-
-    return int(x)
-
-
 def str_to_date(x: str) -> dt.date:
     """Преобразует строку вида `dd.mm.yy` в дату."""
 
@@ -42,13 +27,21 @@ def date_to_str(x: dt.date) -> str:
     return x.strftime("%d.%m.%Y")
 
 
-def str_date_to_iso(x: str) -> str:
-    """Преобразует дату `dd.mm.yy` в дату ISO `YYYY-mm-dd`."""
-
-    return "20{2}-{1}-{0}".format(*x.split("."))
-
-
 def str_normalize(x: str) -> str:
     """Нормализует строку, удаляя лишние пробелы."""
 
     return " ".join(x.split())
+
+
+def parse_dmy(x: str) -> dt.date:
+    """Возвращает дату из строки вида `dd.mm.yy`"""
+
+    d, m, y = map(int, x.split("."))
+
+    return dt.date(2000 + y, m, d)
+
+
+def parse_decimal(x: Any) -> Decimal:
+    """Преобразует строку в число"""
+
+    return Decimal(str(x).replace(" ", "").replace(",", "."))
