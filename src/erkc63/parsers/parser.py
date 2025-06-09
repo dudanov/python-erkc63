@@ -35,10 +35,10 @@ def ajax_dmy(tag: str) -> dt.date:
     return dt.date(2000 + y, m, d)
 
 
-def ajax_receipt(x: str) -> str:
+def ajax_receipt(tag: str) -> str:
     """Возвращает из тега AJAX-запроса идентификатор запроса квитанции"""
 
-    return ajax_attr(x, "receipt")
+    return ajax_attr(tag, "receipt")
 
 
 def parse_decimal(x: Any) -> Decimal:
