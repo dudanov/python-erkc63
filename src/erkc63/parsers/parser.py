@@ -6,12 +6,13 @@ from bs4 import BeautifulSoup, Tag
 from bs4.filter import SoupStrainer
 
 
-def parse_html_divclass(html: str, cls: str) -> list[Tag]:
+def parse_html_divclass(html: str, cls_prefix: str) -> list[Tag]:
     """Возвращает список тегов `div` указанного класса"""
 
     x = SoupStrainer(
         name="div",
-        class_=lambda x: x is not None and cls in x.split(),
+        class_=lambda x: x is not None
+        and any(x.startswith(cls_prefix) for x in x.split()),
     )
 
     return cast(list[Tag], BeautifulSoup(html, "lxml", parse_only=x).contents)
