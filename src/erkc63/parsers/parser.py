@@ -28,7 +28,7 @@ def ajax_attr(tag: str, attr: str) -> str:
 
 
 def ajax_dmy(tag: str) -> dt.date:
-    """Возвращает дату из тега AJAX-запроса"""
+    """Возвращает дату из атрибута тега AJAX-запроса вида `dd.mm.yy`"""
 
     d, m, y = map(int, ajax_attr(tag, "sort").split("."))
 
