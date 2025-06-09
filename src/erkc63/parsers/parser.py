@@ -19,7 +19,7 @@ def parse_html_divclass(html: str, cls_prefix: str) -> list[Tag]:
 
 
 def ajax_attr(tag: str, attr: str) -> str:
-    """Возвращает из тега AJAX-запроса атрибут данных"""
+    """Возвращает атрибут данных из тега AJAX-запроса"""
 
     attr = f' data-{attr}="'
     x2 = tag.index('"', x1 := tag.index(attr) + len(attr))
@@ -28,7 +28,7 @@ def ajax_attr(tag: str, attr: str) -> str:
 
 
 def ajax_dmy(tag: str) -> dt.date:
-    """Возвращает из тега AJAX-запроса дату"""
+    """Возвращает дату из тега AJAX-запроса"""
 
     d, m, y = map(int, ajax_attr(tag, "sort").split("."))
 
@@ -42,6 +42,6 @@ def ajax_receipt(x: str) -> str:
 
 
 def parse_decimal(x: Any) -> Decimal:
-    """Преобразует строку в число."""
+    """Преобразует строку в число"""
 
     return Decimal(str(x).replace(" ", "").replace(",", "."))
