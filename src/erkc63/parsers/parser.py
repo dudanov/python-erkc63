@@ -22,9 +22,9 @@ def ajax_attr(tag: str, attr: str) -> str:
     """Возвращает атрибут данных из тега AJAX-запроса"""
 
     attr = f' data-{attr}="'
-    x2 = tag.index('"', x1 := tag.index(attr) + len(attr))
+    end = tag.index('"', start := tag.index(attr) + len(attr))
 
-    return tag[x1:x2]
+    return tag[start:end]
 
 
 def ajax_dmy(tag: str) -> dt.date:
