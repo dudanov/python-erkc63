@@ -2,20 +2,20 @@ import dataclasses as dc
 import datetime as dt
 import itertools as it
 from decimal import Decimal
-from typing import Annotated, Any, Iterable, Iterator, Mapping, Self, cast
+from typing import Annotated, Any, Iterator, Mapping, Self, cast
 
 from mashumaro.config import BaseConfig
-from mashumaro.mixins.dict import DataClassDictMixin
 
 from ..errors import ErkcError
 from .ajax import ajax_dmy, ajax_receipt
+from .parser import ModelBase
 from .utils import parse_decimal
 
 ReceiptID = Annotated[str, "ReceiptID"]
 
 
-@dc.dataclass
-class AjaxBased(DataClassDictMixin):
+@dc.dataclass(slots=True, kw_only=True)
+class AjaxBase(ModelBase):
     """Базовый класс объектов передаваемых AJAX запросами"""
 
     class Config(BaseConfig):
@@ -26,22 +26,9 @@ class AjaxBased(DataClassDictMixin):
             ReceiptID: {"deserialize": ajax_receipt},
         }
 
-    @classmethod
-    def from_args(
-        cls,
-        args: list[Any],
-        indexes: Iterable[int] | None = None,
-    ) -> Self:
-        fields = (x.name for x in dc.fields(cls))
-
-        if indexes is None:
-            return cls.from_dict(dict(zip(fields, args)))
-
-        return cls.from_dict({k: args[idx] for k, idx in zip(fields, indexes)})
-
 
 @dc.dataclass(slots=True, kw_only=True)
-class AccrualDetalization(AjaxBased):
+class AccrualDetalization(AjaxBase):
     """Детализация услуги"""
 
     name: str
@@ -75,7 +62,7 @@ class AccrualDetalization(AjaxBased):
 
 
 @dc.dataclass(slots=True, kw_only=True)
-class Accrual(AjaxBased):
+class Accrual(AjaxBase):
     """
     Квитанция.
 
@@ -183,7 +170,7 @@ class Accrual(AjaxBased):
 
 
 @dc.dataclass(slots=True, kw_only=True)
-class MonthAccrual(AjaxBased):
+class MonthAccrual(AjaxBase):
     """
     Начисление.
 

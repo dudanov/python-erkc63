@@ -5,10 +5,10 @@ from decimal import Decimal
 from typing import Mapping, Self, cast
 
 from bs4 import Tag
-from mashumaro import DataClassDictMixin, field_options
+from mashumaro import field_options
 from mashumaro.config import BaseConfig
 
-from .parser import parse_html_divclass
+from .parser import ModelBase, parse_html_divclass
 from .utils import parse_dmy
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ def parse_date(x: str) -> dt.date:
 
 
 @dc.dataclass(slots=True, kw_only=True)
-class PublicMeterInfo(DataClassDictMixin):
+class PublicMeterInfo(ModelBase):
     """Информация о приборе учета."""
 
     name: str
@@ -52,8 +52,7 @@ class PublicMeterInfo(DataClassDictMixin):
                 _LOGGER.debug("Parsing meter data: %s", data)
 
                 id = int(cast(str, cast(Tag, meter("input")[1])["value"]))
-                data = {k.name: v for k, v in zip(dc.fields(cls), data)}
 
-                yield id, cls.from_dict(data)
+                yield id, cls.from_args(data)
 
         return dict(_items())
