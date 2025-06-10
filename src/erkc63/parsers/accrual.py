@@ -2,7 +2,7 @@ import dataclasses as dc
 import datetime as dt
 import itertools as it
 from decimal import Decimal
-from typing import Annotated, Any, Iterator, Mapping, Self, cast
+from typing import Annotated, Any, Iterable, Iterator, Mapping, Self, cast
 
 from mashumaro.config import BaseConfig
 from mashumaro.mixins.dict import DataClassDictMixin
@@ -27,8 +27,17 @@ class AjaxBased(DataClassDictMixin):
         }
 
     @classmethod
-    def from_args(cls, args: list[Any]) -> Self:
-        return cls.from_dict({k.name: v for k, v in zip(dc.fields(cls), args)})
+    def from_args(
+        cls,
+        args: list[Any],
+        indexes: Iterable[int] | None = None,
+    ) -> Self:
+        fields = (x.name for x in dc.fields(cls))
+
+        if indexes is None:
+            return cls.from_dict(dict(zip(fields, args)))
+
+        return cls.from_dict({k: args[idx] for k, idx in zip(fields, indexes)})
 
 
 @dc.dataclass(slots=True, kw_only=True)
