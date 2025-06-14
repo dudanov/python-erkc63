@@ -72,7 +72,9 @@ class AccountInfo(ModelBase):
 
         return cls.from_dict(
             {
-                x.name: next(tags[x.metadata["tag"]].stripped_strings)
+                x.name: next(
+                    tags[cast(int, x.metadata["tag"])].stripped_strings
+                )
                 for x in dc.fields(cls)
             }
         )
