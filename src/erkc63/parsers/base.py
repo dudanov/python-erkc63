@@ -11,6 +11,12 @@ type AjaxDate = Annotated[dt.date, "AjaxDate"]
 type AjaxReceipt = Annotated[str, "AjaxReceipt"]
 type JsonDecimal = Annotated[Decimal, "JsonDecimal"]
 type NullableInt = Annotated[int, "NullableInt"]
+type Serial = Annotated[str, "Serial"]
+
+
+def _parse_serial(x: str) -> str:
+    start = x.rindex("№") + 1
+    return x[start:].lstrip()
 
 
 def _parse_int(x: str) -> int:
@@ -21,11 +27,9 @@ def _parse_decimal(x: Any) -> Decimal:
     return Decimal(str(x).replace(" ", ""))
 
 
-def parse_dmy(x: str) -> dt.date:
-    """Возвращает дату из строки вида `dd.mm.yy`"""
-
-    d, m, y = map(int, x.split("."))
-
+def _parse_dmy(x: str) -> dt.date:
+    start = x.rfind(" ") + 1
+    d, m, y = map(int, x[start:].split("."))
     return dt.date(2000 + y, m, d)
 
 
@@ -34,29 +38,20 @@ def _parse_json_decimal(x: str) -> Decimal:
 
 
 def _ajax_attr(x: str, attr: str) -> str:
-    """Возвращает атрибут данных из тега AJAX-запроса"""
-
     attr = f' data-{attr}="'
     end = x.index('"', start := x.index(attr) + len(attr))
-
     return x[start:end]
 
 
 def _ajax_dmy(x: str) -> dt.date:
-    """Возвращает дату из атрибута тега AJAX-запроса вида `dd.mm.yy`"""
-
-    return parse_dmy(_ajax_attr(x, "sort"))
+    return _parse_dmy(_ajax_attr(x, "sort"))
 
 
 def _ajax_receipt(x: str) -> str:
-    """Возвращает из тега AJAX-запроса идентификатор запроса квитанции"""
-
     return _ajax_attr(x, "receipt")
 
 
 def _str_normalize(x: str) -> str:
-    """Нормализует строку, удаляя лишние пробелы."""
-
     return " ".join(x.split())
 
 
@@ -69,8 +64,10 @@ class ModelBase(DataClassDictMixin):
             AjaxDate: {"deserialize": _ajax_dmy},
             AjaxReceipt: {"deserialize": _ajax_receipt},
             Decimal: {"deserialize": _parse_decimal},
+            dt.date: {"deserialize": _parse_dmy},
             JsonDecimal: {"deserialize": _parse_json_decimal},
             NullableInt: {"deserialize": _parse_int},
+            Serial: {"deserialize": _parse_serial},
         }
 
     @classmethod

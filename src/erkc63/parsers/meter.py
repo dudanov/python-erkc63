@@ -5,21 +5,11 @@ from decimal import Decimal
 from typing import Mapping, Self, cast
 
 from bs4 import Tag
-from mashumaro import field_options
 
-from .base import ModelBase, parse_dmy
+from .base import ModelBase, Serial
 from .parser import parse_html_divclass
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def parse_serial(x: str) -> str:
-    start = x.rindex("№") + 1
-    return x[start:].lstrip()
-
-
-def parse_date(x: str) -> dt.date:
-    return parse_dmy(x[3:])
 
 
 @dc.dataclass(slots=True, kw_only=True)
@@ -28,9 +18,9 @@ class PublicMeterInfo(ModelBase):
 
     name: str
     """Ресурс учета"""
-    serial: str = dc.field(metadata=field_options(deserialize=parse_serial))
+    serial: Serial
     """Серийный номер"""
-    date: dt.date = dc.field(metadata=field_options(deserialize=parse_date))
+    date: dt.date
     """Дата последнего показания"""
     value: Decimal
     """Последнее показание"""
