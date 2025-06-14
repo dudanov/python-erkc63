@@ -33,14 +33,6 @@ def str_normalize(x: str) -> str:
     return " ".join(x.split())
 
 
-def parse_dmy(x: str) -> dt.date:
-    """Возвращает дату из строки вида `dd.mm.yy`"""
-
-    d, m, y = map(int, x.split("."))
-
-    return dt.date(2000 + y, m, d)
-
-
 def parse_decimal(x: Any) -> Decimal:
     """Преобразует строку в число"""
 

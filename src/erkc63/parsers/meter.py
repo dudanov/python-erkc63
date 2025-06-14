@@ -6,10 +6,9 @@ from typing import Mapping, Self, cast
 
 from bs4 import Tag
 from mashumaro import field_options
-from mashumaro.config import BaseConfig
 
-from .parser import ModelBase, parse_html_divclass
-from .utils import parse_dmy
+from .base import ModelBase, parse_dmy
+from .parser import parse_html_divclass
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,9 +34,6 @@ class PublicMeterInfo(ModelBase):
     """Дата последнего показания"""
     value: Decimal
     """Последнее показание"""
-
-    class Config(BaseConfig):
-        lazy_compilation = True
 
     @classmethod
     def meters_from_html(cls, html: str) -> Mapping[int, Self]:

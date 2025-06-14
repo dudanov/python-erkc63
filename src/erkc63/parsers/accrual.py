@@ -1,34 +1,14 @@
 import dataclasses as dc
-import datetime as dt
 import itertools as it
 from decimal import Decimal
-from typing import Annotated, Any, Iterator, Mapping, Self, cast
-
-from mashumaro.config import BaseConfig
+from typing import Any, Iterator, Mapping, Self, cast
 
 from ..errors import ErkcError
-from .ajax import ajax_dmy, ajax_receipt
-from .parser import ModelBase
-from .utils import parse_decimal
-
-ReceiptID = Annotated[str, "ReceiptID"]
+from .base import AjaxDate, AjaxReceipt, ModelBase
 
 
 @dc.dataclass(slots=True, kw_only=True)
-class AjaxBase(ModelBase):
-    """Базовый класс объектов передаваемых AJAX запросами"""
-
-    class Config(BaseConfig):
-        lazy_compilation = True
-        serialization_strategy = {
-            dt.date: {"deserialize": ajax_dmy},
-            Decimal: {"deserialize": parse_decimal},
-            ReceiptID: {"deserialize": ajax_receipt},
-        }
-
-
-@dc.dataclass(slots=True, kw_only=True)
-class AccrualDetalization(AjaxBase):
+class AccrualDetalization(ModelBase):
     """Детализация услуги"""
 
     name: str
@@ -62,7 +42,7 @@ class AccrualDetalization(AjaxBase):
 
 
 @dc.dataclass(slots=True, kw_only=True)
-class Accrual(AjaxBase):
+class Accrual(ModelBase):
     """
     Квитанция.
 
@@ -71,15 +51,15 @@ class Accrual(AjaxBase):
 
     account: int
     """Лицевой счет"""
-    date: dt.date
+    date: AjaxDate
     """Дата формирования"""
     payment: Decimal
     """Сумма"""
     penalty: Decimal
     """Пени"""
-    payment_id: ReceiptID | None = None
+    payment_id: AjaxReceipt | None = None
     """Идентификатор квитанции для скачивания"""
-    penalty_id: ReceiptID | None = None
+    penalty_id: AjaxReceipt | None = None
     """Идентификатор квитанции на пени для скачивания"""
     details: Mapping[str, AccrualDetalization] = dc.field(default_factory=dict)
     """Детализация услуг"""
@@ -170,7 +150,7 @@ class Accrual(AjaxBase):
 
 
 @dc.dataclass(slots=True, kw_only=True)
-class MonthAccrual(AjaxBase):
+class MonthAccrual(ModelBase):
     """
     Начисление.
 
@@ -179,7 +159,7 @@ class MonthAccrual(AjaxBase):
 
     account: int
     """Лицевой счет"""
-    date: dt.date
+    date: AjaxDate
     """Дата"""
     debt: Decimal
     """Долг на начало расчетного периода"""

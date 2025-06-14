@@ -1,42 +1,26 @@
 import dataclasses as dc
 from decimal import Decimal
-from typing import Any, Self, cast
+from typing import Annotated, Any, Self, cast
 
 from bs4 import Tag
-from mashumaro.config import BaseConfig
-from mashumaro.mixins.dict import DataClassDictMixin
+from mashumaro.types import Alias
 
+from .base import Address, JsonDecimal, ModelBase
 from .parser import parse_html_divclass
-from .utils import parse_decimal, str_normalize
-
-
-def parse_int(x: str) -> int:
-    return int(x) if x.isdecimal() else 0
 
 
 @dc.dataclass(slots=True, kw_only=True)
-class PublicAccountInfo(DataClassDictMixin):
+class PublicAccountInfo(ModelBase):
     """Открытая информация о лицевом счете."""
 
     account: int
     """Номер лицевого счета"""
-    address: str
+    address: Address
     """Адрес"""
-    payment: Decimal
+    payment: Annotated[JsonDecimal, Alias("balanceSumma")]
     """К оплате"""
-    penalty: Decimal
+    penalty: Annotated[JsonDecimal, Alias("balancePeni")]
     """Пени"""
-
-    class Config(BaseConfig):
-        lazy_compilation = True
-        aliases = {
-            "payment": "balanceSumma",
-            "penalty": "balancePeni",
-        }
-        serialization_strategy = {
-            str: {"deserialize": str_normalize},
-            Decimal: {"deserialize": parse_decimal},
-        }
 
     @classmethod
     def from_json(cls, json: dict[str, Any], account: int) -> Self | None:
@@ -48,12 +32,12 @@ class PublicAccountInfo(DataClassDictMixin):
 
 
 @dc.dataclass(slots=True, kw_only=True)
-class AccountInfo(DataClassDictMixin):
+class AccountInfo(ModelBase):
     """Информация о лицевом счете"""
 
     account: int = dc.field(metadata={"tag": 5})
     """Лицевой счет"""
-    address: str = dc.field(metadata={"tag": 0})
+    address: Address = dc.field(metadata={"tag": 0})
     """Адрес жилого помещения"""
     payment: Decimal = dc.field(metadata={"tag": 14})
     """К оплате"""
@@ -79,14 +63,6 @@ class AccountInfo(DataClassDictMixin):
     """Проживает"""
     ownership: str = dc.field(metadata={"tag": 13})
     """Право собственности"""
-
-    class Config(BaseConfig):
-        lazy_compilation = True
-        serialization_strategy = {
-            str: {"deserialize": str_normalize},
-            Decimal: {"deserialize": parse_decimal},
-            int: {"deserialize": parse_int},
-        }
 
     @classmethod
     def from_html(cls, html: str) -> Self:
