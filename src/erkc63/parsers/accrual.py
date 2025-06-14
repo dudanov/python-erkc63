@@ -34,7 +34,7 @@ class AccrualDetalization(ModelBase):
     def from_json(cls, json: list[list[Any]]) -> Mapping[str, Self]:
         def _gen() -> Iterator[tuple[str, Self]]:
             for args in json:
-                details = cls.from_args(args)
+                details = cls.from_args(*args)
 
                 yield details.name, details
 
@@ -75,14 +75,13 @@ class Accrual(ModelBase):
             # группируем результат запроса по дате (поле 0)
             for _, group in it.groupby(json, lambda k: k[0]):
                 # основная запись
-                args: list[Any] = next(group)
-                args = [account, *args[:3], args[-1]]
+                args = next(group)
 
                 # если есть запись пени - добавим в конец списка аргументов
                 if x := next(group, None):
-                    args.append(x[-1])
+                    x = x[-1]
 
-                yield cls.from_args(args)
+                yield cls.from_args(account, *args[:3], args[-1], x)
 
         return list(it.islice(_gen(), limit))
 
@@ -181,8 +180,7 @@ class MonthAccrual(ModelBase):
     ) -> list[Self]:
         def _gen() -> Iterator[Self]:
             for args in json:
-                args.insert(0, account)
-                accrual = cls.from_args(args)
+                accrual = cls.from_args(account, *args)
 
                 # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
                 # при первом нулевом начислении прерываем цикл, так как далее все начисления тоже нулевые.

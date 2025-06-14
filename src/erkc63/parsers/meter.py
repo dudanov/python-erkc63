@@ -39,6 +39,6 @@ class PublicMeterInfo(ModelBase):
 
                 id = int(cast(str, cast(Tag, meter("input")[1])["value"]))
 
-                yield id, cls.from_args(data)
+                yield id, cls.from_args(*data)
 
         return dict(_items())

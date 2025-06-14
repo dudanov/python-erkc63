@@ -1,7 +1,7 @@
 import dataclasses as dc
 import datetime as dt
 from decimal import Decimal
-from typing import Annotated, Any, Iterable, Self, Sequence
+from typing import Annotated, Any, Self
 
 from mashumaro import DataClassDictMixin
 from mashumaro.config import BaseConfig
@@ -71,14 +71,6 @@ class ModelBase(DataClassDictMixin):
         }
 
     @classmethod
-    def from_args(
-        cls,
-        args: Sequence[Any],
-        indexes: Iterable[int] | None = None,
-    ) -> Self:
+    def from_args(cls, *args: Any) -> Self:
         fields = (x.name for x in dc.fields(cls))
-
-        if indexes is None:
-            return cls.from_dict(dict(zip(fields, args)))
-
-        return cls.from_dict({k: args[idx] for k, idx in zip(fields, indexes)})
+        return cls.from_dict(dict(zip(fields, args)))
