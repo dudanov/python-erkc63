@@ -10,6 +10,7 @@ type Address = Annotated[str, "Address"]
 type AjaxDate = Annotated[dt.date, "AjaxDate"]
 type AjaxReceipt = Annotated[str, "AjaxReceipt"]
 type JsonDecimal = Annotated[Decimal, "JsonDecimal"]
+type NullableInt = Annotated[int, "NullableInt"]
 
 
 def _parse_int(x: str) -> int:
@@ -69,6 +70,7 @@ class ModelBase(DataClassDictMixin):
             AjaxReceipt: {"deserialize": _ajax_receipt},
             Decimal: {"deserialize": _parse_decimal},
             JsonDecimal: {"deserialize": _parse_json_decimal},
+            NullableInt: {"deserialize": _parse_int},
         }
 
     @classmethod

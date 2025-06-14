@@ -5,7 +5,7 @@ from typing import Annotated, Any, Self, cast
 from bs4 import Tag
 from mashumaro.types import Alias
 
-from .base import Address, JsonDecimal, ModelBase
+from .base import Address, JsonDecimal, ModelBase, NullableInt
 from .parser import parse_html_divclass
 
 
@@ -57,9 +57,9 @@ class AccountInfo(ModelBase):
     """Электронная почта"""
     total_area: Decimal = dc.field(metadata={"tag": 7})
     """Общая площадь жилого помещения"""
-    people_registered: int = dc.field(metadata={"tag": 9})
+    people_registered: NullableInt = dc.field(metadata={"tag": 9})
     """Зарегистрировано"""
-    people_lives: int = dc.field(metadata={"tag": 11})
+    people_lives: NullableInt = dc.field(metadata={"tag": 11})
     """Проживает"""
     ownership: str = dc.field(metadata={"tag": 13})
     """Право собственности"""
