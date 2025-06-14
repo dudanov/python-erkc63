@@ -28,8 +28,7 @@ def _parse_decimal(x: Any) -> Decimal:
 
 
 def _parse_dmy(x: str) -> dt.date:
-    start = x.rfind(" ") + 1
-    d, m, y = map(int, x[start:].split("."))
+    d, m, y = map(int, x[-8:].split("."))
     return dt.date(2000 + y, m, d)
 
 
