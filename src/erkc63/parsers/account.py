@@ -35,33 +35,33 @@ class PublicAccountInfo(ModelBase):
 class AccountInfo(ModelBase):
     """Информация о лицевом счете"""
 
-    account: int = dc.field(metadata={"tag": 5})
+    account: int  # 5
     """Лицевой счет"""
-    address: Address = dc.field(metadata={"tag": 0})
+    address: Address  # 0
     """Адрес жилого помещения"""
-    payment: Decimal = dc.field(metadata={"tag": 14})
+    payment: Decimal  # 14
     """К оплате"""
-    debt: Decimal = dc.field(metadata={"tag": 16})
+    debt: Decimal  # 16
     """Долг на начало периода"""
-    accrued: Decimal = dc.field(metadata={"tag": 18})
+    accrued: Decimal  # 18
     """Начислено за период"""
-    recalculation: Decimal = dc.field(metadata={"tag": 20})
+    recalculation: Decimal  # 20
     """Перерасчет на начало периода"""
-    paid: Decimal = dc.field(metadata={"tag": 22})
+    paid: Decimal  # 22
     """Оплачено"""
-    owner: str = dc.field(metadata={"tag": 1})
+    owner: str  # 1
     """Собственник"""
-    phone: str = dc.field(metadata={"tag": 2})
+    phone: str  # 2
     """Телефон"""
-    email: str = dc.field(metadata={"tag": 3})
+    email: str  # 3
     """Электронная почта"""
-    total_area: Decimal = dc.field(metadata={"tag": 7})
+    total_area: Decimal  # 7
     """Общая площадь жилого помещения"""
-    people_registered: NullableInt = dc.field(metadata={"tag": 9})
+    people_registered: NullableInt  # 9
     """Зарегистрировано"""
-    people_lives: NullableInt = dc.field(metadata={"tag": 11})
+    people_lives: NullableInt  # 11
     """Проживает"""
-    ownership: str = dc.field(metadata={"tag": 13})
+    ownership: str  # 13
     """Право собственности"""
 
     @classmethod
@@ -69,15 +69,12 @@ class AccountInfo(ModelBase):
         """Конструктор из HTML главной страницы лицевого счета."""
 
         tags = parse_html_divclass(html, "text-col-")
-
-        return cls.from_dict(
-            {
-                x.name: next(
-                    tags[cast(int, x.metadata["tag"])].stripped_strings
-                )
-                for x in dc.fields(cls)
-            }
+        args = (
+            next(tags[x].stripped_strings)
+            for x in [5, 0, 14, 16, 18, 20, 22, 1, 2, 3, 7, 9, 11, 13]
         )
+
+        return cls.from_args(*args)
 
 
 def parse_accounts(html: str) -> tuple[int, ...]:
