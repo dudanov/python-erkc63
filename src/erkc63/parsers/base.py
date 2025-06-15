@@ -7,8 +7,8 @@ from mashumaro import DataClassDictMixin
 from mashumaro.config import BaseConfig
 from mashumaro.types import SerializationStrategy
 
-type Address = Annotated[str, "Address"]
-"""Адрес жилого помещения."""
+type NormalizedString = Annotated[str, "NormalizedString"]
+"""Нормализованная строка, в которой удалены лишние пробелы."""
 type AjaxDate = Annotated[dt.date, "AjaxDate"]
 """Дата, полученная из AJAX-ответа."""
 type AjaxReceipt = Annotated[str, "AjaxReceipt"]
@@ -70,7 +70,7 @@ class ModelBase(DataClassDictMixin):
     class Config(BaseConfig):
         lazy_compilation = True
         serialization_strategy = {
-            Address: NormalizeStrategy(),
+            NormalizedString: NormalizeStrategy(),
             AjaxDate: DateStrategy(ajax=True),
             AjaxReceipt: AjaxStrategy("receipt"),
             Decimal: DecimalStrategy(),

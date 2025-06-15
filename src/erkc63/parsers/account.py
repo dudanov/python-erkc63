@@ -5,7 +5,7 @@ from typing import Annotated, Any, Self, cast
 from bs4 import Tag
 from mashumaro.types import Alias
 
-from .base import Address, ModelBase, NullableInt
+from .base import ModelBase, NormalizedString, NullableInt
 from .parser import parse_html_divclass
 
 
@@ -15,7 +15,7 @@ class PublicAccountInfo(ModelBase):
 
     account: int
     """Номер лицевого счета"""
-    address: Address
+    address: NormalizedString
     """Адрес"""
     payment: Annotated[Decimal, Alias("balanceSumma")]
     """К оплате"""
@@ -37,7 +37,7 @@ class AccountInfo(ModelBase):
 
     account: int  # 5
     """Лицевой счет"""
-    address: Address  # 0
+    address: NormalizedString  # 0
     """Адрес жилого помещения"""
     payment: Decimal  # 14
     """К оплате"""
