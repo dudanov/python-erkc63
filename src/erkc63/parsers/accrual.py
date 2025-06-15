@@ -74,14 +74,10 @@ class Accrual(ModelBase):
         def _gen() -> Iterator[Self]:
             # группируем результат запроса по дате (поле 0)
             for _, group in it.groupby(json, lambda k: k[0]):
-                # основная запись
-                args = next(group)
+                # основная запись и опциональная запись пени
+                a, b = next(group), next(group, None)
 
-                # если есть запись пени - добавим в конец списка аргументов
-                if (x := next(group, None)) is not None:
-                    x = x[-1]
-
-                yield cls.from_args(account, *args[:3], args[-1], x)
+                yield cls.from_args(account, *a[:3], a[-1], b and b[-1])
 
         return list(it.islice(_gen(), limit))
 
