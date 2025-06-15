@@ -57,9 +57,9 @@ class Accrual(ModelBase):
     """Сумма"""
     penalty: Decimal
     """Пени"""
-    payment_id: AjaxReceipt | None = None
+    payment_id: AjaxReceipt | None
     """Идентификатор квитанции для скачивания"""
-    penalty_id: AjaxReceipt | None = None
+    penalty_id: AjaxReceipt | None
     """Идентификатор квитанции на пени для скачивания"""
     details: Mapping[str, AccrualDetalization] = dc.field(default_factory=dict)
     """Детализация услуг"""
