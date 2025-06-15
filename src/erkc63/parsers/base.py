@@ -5,53 +5,64 @@ from typing import Annotated, Any, Self
 
 from mashumaro import DataClassDictMixin
 from mashumaro.config import BaseConfig
+from mashumaro.types import SerializationStrategy
 
 type Address = Annotated[str, "Address"]
+"""Адрес жилого помещения."""
 type AjaxDate = Annotated[dt.date, "AjaxDate"]
+"""Дата, полученная из AJAX-ответа."""
 type AjaxReceipt = Annotated[str, "AjaxReceipt"]
-type JsonDecimal = Annotated[Decimal, "JsonDecimal"]
+"""Идентификатор на скачивание PDF квитанции."""
 type NullableInt = Annotated[int, "NullableInt"]
+"""Целое число, у которого символ `-` означает 0."""
 type Serial = Annotated[str, "Serial"]
+"""Серийный номер счетчика, начинающийся с символа `№`."""
 
 
-def _parse_serial(x: str) -> str:
-    start = x.rindex("№") + 1
-    return x[start:].lstrip()
+class DecimalStrategy(SerializationStrategy, use_annotations=True):
+    def deserialize(self, value: str) -> Decimal:
+        return Decimal(value.replace(" ", "").replace(",", "."))
 
 
-def _parse_int(x: str) -> int:
-    return int(x) if x.isdecimal() else 0
+class MeterSerialStrategy(SerializationStrategy):
+    def deserialize(self, value: str) -> str:
+        start = value.rindex("№") + 1
+
+        return value[start:].lstrip()
 
 
-def _parse_decimal(x: Any) -> Decimal:
-    return Decimal(str(x).replace(" ", ""))
+class NullableIntStrategy(SerializationStrategy):
+    def deserialize(self, value: str) -> int:
+        return int(value) if value.isdecimal() else 0
 
 
-def _parse_dmy(x: str) -> dt.date:
-    d, m, y = map(int, x[-8:].split("."))
-    return dt.date(2000 + y, m, d)
+class NormalizeStrategy(SerializationStrategy):
+    def deserialize(self, value: str) -> str:
+        return " ".join(value.split())
 
 
-def _parse_json_decimal(x: str) -> Decimal:
-    return Decimal(x.replace(" ", "").replace(",", "."))
+class AjaxAttrStrategy(SerializationStrategy):
+    def __init__(self, attr: str):
+        self.attr = f' data-{attr}="'
+
+    def deserialize(self, value: str) -> str:
+        start = value.index(self.attr) + len(self.attr)
+        end = value.index('"', start)
+
+        return value[start:end]
 
 
-def _ajax_attr(x: str, attr: str) -> str:
-    attr = f' data-{attr}="'
-    end = x.index('"', start := x.index(attr) + len(attr))
-    return x[start:end]
+class DateStrategy(SerializationStrategy):
+    def __init__(self, *, ajax: bool = False):
+        self.ajax = AjaxAttrStrategy("sort") if ajax else None
 
+    def deserialize(self, value: str) -> dt.date:
+        if self.ajax:
+            value = self.ajax.deserialize(value)
 
-def _ajax_dmy(x: str) -> dt.date:
-    return _parse_dmy(_ajax_attr(x, "sort"))
+        d, m, y = map(int, value[-8:].split("."))
 
-
-def _ajax_receipt(x: str) -> str:
-    return _ajax_attr(x, "receipt")
-
-
-def _str_normalize(x: str) -> str:
-    return " ".join(x.split())
+        return dt.date(2000 + y, m, d)
 
 
 @dc.dataclass
@@ -59,14 +70,13 @@ class ModelBase(DataClassDictMixin):
     class Config(BaseConfig):
         lazy_compilation = True
         serialization_strategy = {
-            Address: {"deserialize": _str_normalize},
-            AjaxDate: {"deserialize": _ajax_dmy},
-            AjaxReceipt: {"deserialize": _ajax_receipt},
-            Decimal: {"deserialize": _parse_decimal},
-            dt.date: {"deserialize": _parse_dmy},
-            JsonDecimal: {"deserialize": _parse_json_decimal},
-            NullableInt: {"deserialize": _parse_int},
-            Serial: {"deserialize": _parse_serial},
+            Address: NormalizeStrategy(),
+            AjaxDate: DateStrategy(ajax=True),
+            AjaxReceipt: AjaxAttrStrategy("receipt"),
+            Decimal: DecimalStrategy(),
+            dt.date: DateStrategy(),
+            NullableInt: NullableIntStrategy(),
+            Serial: MeterSerialStrategy(),
         }
 
     @classmethod

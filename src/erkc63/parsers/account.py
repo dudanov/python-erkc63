@@ -5,7 +5,7 @@ from typing import Annotated, Any, Self, cast
 from bs4 import Tag
 from mashumaro.types import Alias
 
-from .base import Address, JsonDecimal, ModelBase, NullableInt
+from .base import Address, ModelBase, NullableInt
 from .parser import parse_html_divclass
 
 
@@ -17,9 +17,9 @@ class PublicAccountInfo(ModelBase):
     """Номер лицевого счета"""
     address: Address
     """Адрес"""
-    payment: Annotated[JsonDecimal, Alias("balanceSumma")]
+    payment: Annotated[Decimal, Alias("balanceSumma")]
     """К оплате"""
-    penalty: Annotated[JsonDecimal, Alias("balancePeni")]
+    penalty: Annotated[Decimal, Alias("balancePeni")]
     """Пени"""
 
     @classmethod
