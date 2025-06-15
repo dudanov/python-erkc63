@@ -41,7 +41,7 @@ class NormalizeStrategy(SerializationStrategy):
         return " ".join(value.split())
 
 
-class AjaxAttrStrategy(SerializationStrategy):
+class AjaxStrategy(SerializationStrategy):
     def __init__(self, attr: str):
         self.attr = f' data-{attr}="'
 
@@ -54,7 +54,7 @@ class AjaxAttrStrategy(SerializationStrategy):
 
 class DateStrategy(SerializationStrategy):
     def __init__(self, *, ajax: bool = False):
-        self.ajax = AjaxAttrStrategy("sort") if ajax else None
+        self.ajax = AjaxStrategy("sort") if ajax else None
 
     def deserialize(self, value: str) -> dt.date:
         if self.ajax:
@@ -72,7 +72,7 @@ class ModelBase(DataClassDictMixin):
         serialization_strategy = {
             Address: NormalizeStrategy(),
             AjaxDate: DateStrategy(ajax=True),
-            AjaxReceipt: AjaxAttrStrategy("receipt"),
+            AjaxReceipt: AjaxStrategy("receipt"),
             Decimal: DecimalStrategy(),
             dt.date: DateStrategy(),
             NullableInt: NullableIntStrategy(),
