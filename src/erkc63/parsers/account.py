@@ -80,7 +80,7 @@ class AccountInfo(ModelBase):
 def parse_accounts(html: str) -> tuple[int, ...]:
     """Возвращает список лицевых счетов из HTML страницы."""
 
-    menu = parse_html_divclass(html, "dropdown-menu")[0]
+    (menu,) = parse_html_divclass(html, "dropdown-menu")
     accounts = cast(list[Tag], menu("a")[:-2])  # нижние 2 ссылки не аккаунты
     accounts = [int(cast(str, x.string)) for x in accounts]
 

@@ -78,7 +78,7 @@ class Accrual(ModelBase):
                 args = next(group)
 
                 # если есть запись пени - добавим в конец списка аргументов
-                if x := next(group, None):
+                if (x := next(group, None)) is not None:
                     x = x[-1]
 
                 yield cls.from_args(account, *args[:3], args[-1], x)
