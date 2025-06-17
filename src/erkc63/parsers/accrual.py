@@ -28,14 +28,13 @@ class AccrualDetalization(ModelBase):
     payment: Decimal
     """К оплате"""
     consumption: Decimal
-    """Потреблено"""
+    """Потребление"""
 
     @classmethod
     def from_json(cls, json: list[list[Any]]) -> Mapping[str, Self]:
         def _gen() -> Iterator[tuple[str, Self]]:
             for args in json:
                 details = cls.from_args(*args)
-
                 yield details.name, details
 
         return dict(_gen())
@@ -76,7 +75,6 @@ class Accrual(ModelBase):
             for _, group in it.groupby(json, lambda k: k[0]):
                 # основная запись и опциональная запись пени
                 a, b = next(group), next(group, None)
-
                 yield cls.from_args(account, *a[:3], a[-1], b and b[-1])
 
         return list(it.islice(_gen(), limit))
