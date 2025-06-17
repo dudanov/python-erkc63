@@ -1,6 +1,4 @@
 import datetime as dt
-from decimal import Decimal
-from typing import Any
 
 
 def date_last_accrual(accrual_day: int = 25) -> dt.date:
@@ -25,15 +23,3 @@ def date_to_str(x: dt.date) -> str:
     """Преобразует дату в строку вида `dd.mm.YYYY`."""
 
     return x.strftime("%d.%m.%Y")
-
-
-def str_normalize(x: str) -> str:
-    """Нормализует строку, удаляя лишние пробелы."""
-
-    return " ".join(x.split())
-
-
-def parse_decimal(x: Any) -> Decimal:
-    """Преобразует строку в число"""
-
-    return Decimal(str(x).replace(" ", "").replace(",", "."))
