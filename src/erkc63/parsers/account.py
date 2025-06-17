@@ -1,8 +1,7 @@
 import dataclasses as dc
 from decimal import Decimal
-from typing import Annotated, Any, Self, cast
+from typing import Annotated, Any, Self
 
-from bs4 import Tag
 from mashumaro.types import Alias
 
 from .base import ModelBase, NormalizedString, NullableInt
@@ -75,17 +74,3 @@ class AccountInfo(ModelBase):
         )
 
         return cls.from_args(*args)
-
-
-def parse_accounts(html: str) -> tuple[int, ...]:
-    """Возвращает список лицевых счетов из HTML страницы."""
-
-    (menu,) = parse_html_divclass(html, "dropdown-menu")
-    accounts = cast(list[Tag], menu("a")[:-2])  # нижние 2 ссылки не аккаунты
-    accounts = [int(cast(str, x.string)) for x in accounts]
-
-    # сортировка вторичных счетов
-    if len(accounts) > 2:
-        accounts[1:] = sorted(accounts[1:])
-
-    return tuple(accounts)
