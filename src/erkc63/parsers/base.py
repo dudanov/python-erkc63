@@ -27,7 +27,6 @@ class DecimalStrategy(SerializationStrategy, use_annotations=True):
 class MeterSerialStrategy(SerializationStrategy):
     def deserialize(self, value: str) -> str:
         start = value.rindex("№") + 1
-
         return value[start:].lstrip()
 
 
@@ -48,7 +47,6 @@ class AjaxStrategy(SerializationStrategy):
     def deserialize(self, value: str) -> str:
         start = value.index(self.attr) + len(self.attr)
         end = value.index('"', start)
-
         return value[start:end]
 
 
@@ -61,7 +59,6 @@ class DateStrategy(SerializationStrategy):
             value = self.ajax.deserialize(value)
 
         d, m, y = map(int, value[-8:].split("."))
-
         return dt.date(2000 + y, m, d)
 
 
