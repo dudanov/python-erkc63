@@ -7,6 +7,8 @@ from mashumaro import DataClassDictMixin
 from mashumaro.config import BaseConfig
 from mashumaro.types import SerializationStrategy
 
+from .utils import ajax_attr, str_to_date
+
 type NormalizedString = Annotated[str, "NormalizedString"]
 """Нормализованная строка, в которой удалены лишние пробелы."""
 type AjaxDate = Annotated[dt.date, "AjaxDate"]
@@ -42,12 +44,10 @@ class NormalizeStrategy(SerializationStrategy):
 
 class AjaxStrategy(SerializationStrategy):
     def __init__(self, attr: str):
-        self.attr = f' data-{attr}="'
+        self.attr = attr
 
     def deserialize(self, value: str) -> str:
-        start = value.index(self.attr) + len(self.attr)
-        end = value.index('"', start)
-        return value[start:end]
+        return ajax_attr(value, self.attr)
 
 
 class DateStrategy(SerializationStrategy):
@@ -58,8 +58,7 @@ class DateStrategy(SerializationStrategy):
         if self.ajax:
             value = self.ajax.deserialize(value)
 
-        d, m, y = map(int, value[-8:].split("."))
-        return dt.date(2000 + y, m, d)
+        return str_to_date(value)
 
 
 @dc.dataclass

@@ -32,18 +32,17 @@ from .parsers import (
     Accrual,
     AccrualDetalization,
     Accruals,
+    MeterInfoHistory,
+    MeterValue,
     MonthAccrual,
     PublicAccountInfo,
     PublicMeterInfo,
+    ajax_attr,
     parse_accounts,
     parse_token,
 )
 from .parsers.utils import date_last_accrual, date_to_str, str_to_date
-from .types import (
-    MeterInfoHistory,
-    MeterValue,
-    Payment,
-)
+from .types import Payment
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -449,54 +448,36 @@ class ErkcClient:
         """
 
         start, end = start or _MIN_DATE, end or _MAX_DATE
-
         assert start <= end
 
-        db: dict[tuple, list[MeterValue]] = {}
+        db: dict[str, list[MeterValue]] = {}
+        unique = set()
 
         while True:
-            _LOGGER.debug("Requesting meters history from %s to %s", start, end)
+            _LOGGER.debug("Запрос истории счетчиков с %s по %s", start, end)
+
             history = await self._history("counters", account, start, end)
 
             # Лимит записей ответа сервера - 25. Контроль превышения на случай изменения API.
             assert (num := len(history)) <= 25
 
-            # Множество для проверки содержания в ответе данных от одной даты.
-            unique_dates = set()
+            if not num:
+                break
 
-            for _, key, date, value, consumption, source in history:
-                key = tuple(key.split(", счетчик №", 1))
-                unique_dates.add(end := str_to_date(date[27:35]))
-                db.setdefault(key, []).append(
-                    MeterValue(
-                        date=end,
-                        value=Decimal(value),
-                        consumption=Decimal(consumption),
-                        source=source,
-                    )
-                )
+            for x in history:
+                # Ключ уникальности: (счетчик, дата).
+                if (key := tuple(x[1:3])) in unique:
+                    continue
+
+                unique.add(key)
+                db.setdefault(x[1], []).append(MeterValue.from_args(*x[2:]))
 
             if num < 25:
                 break
 
-            # Возможен баг: если в один день число записей больше лимита,
-            # то сервер не сможет вернуть полный результат ни при каких условиях.
-            # Этот случай крайне маловероятен, но выполнена проверка и обход ситуации.
-            if len(unique_dates) == 1:
-                _LOGGER.warning("Результат может содержать неполные данные")
+            end = str_to_date(ajax_attr(x[2], "sort"))
 
-                if start == end:
-                    break
-
-                end -= dt.timedelta(days=1)
-
-                _LOGGER.warning("Применен обход")
-
-        # Исключаем дублирование записей из наложенных ответов и конвертируем в кортеж
-        return [
-            MeterInfoHistory(*k, history=list(dict.fromkeys(v)))
-            for k, v in db.items()
-        ]
+        return [MeterInfoHistory.from_string(k, v) for k, v in db.items()]
 
     @api(auth_required=True)
     async def accruals_history(

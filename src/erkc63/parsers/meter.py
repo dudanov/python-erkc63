@@ -6,7 +6,7 @@ from typing import Mapping, Self, cast
 
 from bs4 import Tag
 
-from .base import ModelBase, Serial
+from .base import AjaxDate, ModelBase, Serial
 from .parser import parse_html_divclass
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,3 +42,35 @@ class PublicMeterInfo(ModelBase):
                 yield id, cls.from_args(*data)
 
         return dict(_items())
+
+
+@dc.dataclass(slots=True, kw_only=True)
+class MeterValue(ModelBase):
+    """Показание счетчика"""
+
+    date: AjaxDate
+    """Дата"""
+    value: Decimal
+    """Значение"""
+    consumption: Decimal
+    """Расход"""
+    source: str
+    """Источник"""
+
+
+@dc.dataclass(slots=True, kw_only=True)
+class MeterInfoHistory(ModelBase):
+    """Счетчик с архивом показаний"""
+
+    name: str
+    """Ресурс учета"""
+    serial: Serial
+    """Серийный номер"""
+    history: list[MeterValue] = dc.field(default_factory=list)
+    """Архив показаний"""
+
+    @classmethod
+    def from_string(cls, key: str, history: list[MeterValue]) -> Self:
+        x = cls.from_args(*key.split(",", 1))
+        x.history = history
+        return x
