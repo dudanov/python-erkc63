@@ -19,9 +19,11 @@ type NullableInt = Annotated[int, "NullableInt"]
 """Целое число, у которого символ `-` означает 0."""
 type Serial = Annotated[str, "Serial"]
 """Серийный номер счетчика, начинающийся с символа `№`."""
+type DecimalString = Annotated[Decimal, "DecimalString"]
+"""Десятичная строка, представляющая число с плавающей запятой."""
 
 
-class DecimalStrategy(SerializationStrategy, use_annotations=True):
+class DecimalStrategy(SerializationStrategy):
     def deserialize(self, value: str) -> Decimal:
         return Decimal(value.replace(" ", "").replace(",", "."))
 
@@ -69,7 +71,7 @@ class ModelBase(DataClassDictMixin):
             NormalizedString: NormalizeStrategy(),
             AjaxDate: DateStrategy(ajax=True),
             AjaxReceipt: AjaxStrategy("receipt"),
-            Decimal: DecimalStrategy(),
+            DecimalString: DecimalStrategy(),
             dt.date: DateStrategy(),
             NullableInt: NullableIntStrategy(),
             Serial: MeterSerialStrategy(),

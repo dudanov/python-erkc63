@@ -451,7 +451,6 @@ class ErkcClient:
         assert start <= end
 
         db: dict[str, list[MeterValue]] = {}
-        unique = set()
 
         while True:
             _LOGGER.debug("Запрос истории счетчиков с %s по %s", start, end)
@@ -465,11 +464,6 @@ class ErkcClient:
                 break
 
             for x in history:
-                # Ключ уникальности: (счетчик, дата).
-                if (key := tuple(x[1:3])) in unique:
-                    continue
-
-                unique.add(key)
                 db.setdefault(x[1], []).append(MeterValue.from_args(*x[2:]))
 
             if num < 25:

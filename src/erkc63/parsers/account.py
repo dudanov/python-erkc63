@@ -1,10 +1,9 @@
 import dataclasses as dc
-from decimal import Decimal
 from typing import Annotated, Any, Self
 
 from mashumaro.types import Alias
 
-from .base import ModelBase, NormalizedString, NullableInt
+from .base import DecimalString, ModelBase, NormalizedString, NullableInt
 from .parser import parse_html_divclass
 
 
@@ -16,9 +15,9 @@ class PublicAccountInfo(ModelBase):
     """Номер лицевого счета"""
     address: NormalizedString
     """Адрес"""
-    payment: Annotated[Decimal, Alias("balanceSumma")]
+    payment: Annotated[DecimalString, Alias("balanceSumma")]
     """К оплате"""
-    penalty: Annotated[Decimal, Alias("balancePeni")]
+    penalty: Annotated[DecimalString, Alias("balancePeni")]
     """Пени"""
 
     @classmethod
@@ -38,15 +37,15 @@ class AccountInfo(ModelBase):
     """Лицевой счет"""
     address: NormalizedString  # 0
     """Адрес жилого помещения"""
-    payment: Decimal  # 14
+    payment: DecimalString  # 14
     """К оплате"""
-    debt: Decimal  # 16
+    debt: DecimalString  # 16
     """Долг на начало периода"""
-    accrued: Decimal  # 18
+    accrued: DecimalString  # 18
     """Начислено за период"""
-    recalculation: Decimal  # 20
+    recalculation: DecimalString  # 20
     """Перерасчет на начало периода"""
-    paid: Decimal  # 22
+    paid: DecimalString  # 22
     """Оплачено"""
     owner: str  # 1
     """Собственник"""
@@ -54,7 +53,7 @@ class AccountInfo(ModelBase):
     """Телефон"""
     email: str  # 3
     """Электронная почта"""
-    total_area: Decimal  # 7
+    total_area: DecimalString  # 7
     """Общая площадь жилого помещения"""
     people_registered: NullableInt  # 9
     """Зарегистрировано"""

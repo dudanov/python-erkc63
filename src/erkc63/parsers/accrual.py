@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import Any, Iterator, Mapping, Self, cast
 
 from ..errors import ErkcError
-from .base import AjaxDate, AjaxReceipt, ModelBase
+from .base import AjaxDate, AjaxReceipt, DecimalString, ModelBase
 
 
 @dc.dataclass(slots=True, kw_only=True)
@@ -13,19 +13,19 @@ class AccrualDetalization(ModelBase):
 
     name: str
     """Название услуги"""
-    tariff: Decimal
+    tariff: DecimalString
     """Тариф"""
-    debt: Decimal
+    debt: DecimalString
     """Долг на начало расчетного периода"""
-    accrued: Decimal
+    accrued: DecimalString
     """Начислено за расчетный период"""
-    recalculation: Decimal
+    recalculation: DecimalString
     """Перерасчет"""
-    quality: Decimal
+    quality: DecimalString
     """Снято за качество"""
-    paid: Decimal
+    paid: DecimalString
     """Оплачено"""
-    payment: Decimal
+    payment: DecimalString
     """К оплате"""
     consumption: Decimal
     """Потребление"""
@@ -52,9 +52,9 @@ class Accrual(ModelBase):
     """Лицевой счет"""
     date: AjaxDate
     """Дата формирования"""
-    payment: Decimal
+    payment: DecimalString
     """Сумма"""
-    penalty: Decimal
+    penalty: DecimalString
     """Пени"""
     payment_id: AjaxReceipt | None
     """Идентификатор квитанции для скачивания"""
@@ -154,13 +154,13 @@ class MonthAccrual(ModelBase):
     """Лицевой счет"""
     date: AjaxDate
     """Дата"""
-    debt: Decimal
+    debt: DecimalString
     """Долг на начало расчетного периода"""
-    accrued: Decimal
+    accrued: DecimalString
     """Начислено"""
-    paid: Decimal
+    paid: DecimalString
     """Оплачено"""
-    payment: Decimal
+    payment: DecimalString
     """К оплате"""
     details: Mapping[str, AccrualDetalization] = dc.field(default_factory=dict)
     """Детализация услуг"""

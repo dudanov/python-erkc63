@@ -6,7 +6,7 @@ from typing import Mapping, Self, cast
 
 from bs4 import Tag
 
-from .base import AjaxDate, ModelBase, Serial
+from .base import AjaxDate, DecimalString, ModelBase, Serial
 from .parser import parse_html_divclass
 
 _LOGGER = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ class PublicMeterInfo(ModelBase):
     """Серийный номер"""
     date: dt.date
     """Дата последнего показания"""
-    value: Decimal
+    value: DecimalString
     """Последнее показание"""
 
     @classmethod
@@ -57,6 +57,10 @@ class MeterValue(ModelBase):
     source: str
     """Источник"""
 
+    @property
+    def previous(self) -> Decimal:
+        return self.value - self.consumption
+
 
 @dc.dataclass(slots=True, kw_only=True)
 class MeterInfoHistory(ModelBase):
@@ -66,15 +70,26 @@ class MeterInfoHistory(ModelBase):
     """Ресурс учета"""
     serial: Serial
     """Серийный номер"""
-    history: list[MeterValue] = dc.field(default_factory=list)
+    history: tuple[MeterValue, ...] = dc.field(default_factory=tuple)
     """Архив показаний"""
 
     @classmethod
     def from_tuple(cls, value: tuple[str, list[MeterValue]]) -> Self:
         """Создает объект из кортежа, полученного из кэша."""
 
-        k, v = value
-        x = cls.from_args(*k.split(",", 1))
-        x.history = v
+        k, hist = value
 
-        return x
+        result = cls.from_args(*k.split(",", 1))
+
+        if not hist:
+            return result
+
+        last = hist[-1]
+        hist = [v for v in hist[:-1] if v.consumption]
+
+        if last.consumption or not hist or hist[-1].previous == last.value:
+            hist.append(last)
+
+        result.history = tuple(hist)
+
+        return result

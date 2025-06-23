@@ -23,7 +23,12 @@ async def main():
 
         # await cli.qr_codes(x[1])
         dd = await cli.meters_history()
-        print(dd)
+        for meter in dd:
+            print(meter.name, meter.serial)
+            for value in meter.history:
+                print(
+                    f"  {value.date} {value.value} {value.consumption} {value.source}"
+                )
 
 
 #        for x in await cli.accruals_history():
