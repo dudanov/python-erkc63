@@ -77,19 +77,19 @@ class MeterInfoHistory(ModelBase):
     def from_tuple(cls, value: tuple[str, list[MeterValue]]) -> Self:
         """Создает объект из кортежа, полученного из кэша."""
 
-        k, hist = value
+        k, history = value
 
         result = cls.from_args(*k.split(",", 1))
 
-        if not hist:
+        if not history:
             return result
 
-        last = hist[-1]
-        hist = [v for v in hist[:-1] if v.consumption]
+        last = history[-1]
+        history = [v for v in history if v.consumption]
 
-        if last.consumption or not hist or hist[-1].previous == last.value:
-            hist.append(last)
+        if not history or history[-1].previous == last.value:
+            history.append(last)
 
-        result.history = tuple(hist)
+        result.history = tuple(history)
 
         return result
