@@ -70,7 +70,11 @@ class MeterInfoHistory(ModelBase):
     """Архив показаний"""
 
     @classmethod
-    def from_string(cls, key: str, history: list[MeterValue]) -> Self:
-        x = cls.from_args(*key.split(",", 1))
-        x.history = history
+    def from_tuple(cls, value: tuple[str, list[MeterValue]]) -> Self:
+        """Создает объект из кортежа, полученного из кэша."""
+
+        k, v = value
+        x = cls.from_args(*k.split(",", 1))
+        x.history = v
+
         return x

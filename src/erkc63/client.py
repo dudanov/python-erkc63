@@ -477,7 +477,7 @@ class ErkcClient:
 
             end = str_to_date(ajax_attr(x[2], "sort"))
 
-        return [MeterInfoHistory.from_string(k, v) for k, v in db.items()]
+        return list(map(MeterInfoHistory.from_tuple, db.items()))
 
     @api(auth_required=True)
     async def accruals_history(
