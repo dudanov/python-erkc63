@@ -81,7 +81,7 @@ class MeterInfoHistory(ModelBase):
 
         key, history = value
 
-        def _filter():
+        def _history():
             for _, group in it.groupby(history, lambda x: x.date):
                 if not (result := next(group)).consumption:
                     for x in group:
@@ -91,4 +91,4 @@ class MeterInfoHistory(ModelBase):
 
                 yield result
 
-        return cls.from_args(*key.split(",", 1), _filter())
+        return cls.from_args(*key.split(",", 1), _history())
