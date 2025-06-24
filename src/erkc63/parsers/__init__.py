@@ -23,7 +23,7 @@ def date_last_accrual(accrual_day: int = 25) -> dt.date:
 def date_to_str(x: dt.date) -> str:
     """Преобразует дату в строку вида `dd.mm.YYYY`."""
 
-    return x.strftime("%d.%m.%Y")
+    return f"{x.day:02}.{x.month:02}.{x.year}"
 
 
 __all__ = [
