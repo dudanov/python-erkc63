@@ -30,8 +30,8 @@ def ajax_attr(value: str, attr: str) -> str:
     return value[start:end]
 
 
-def dmy_to_date(x: str) -> dt.date:
-    d, m, y = map(int, x[-8:].split("."))
+def dmy_to_date(value: str) -> dt.date:
+    d, m, y = map(int, value[-8:].split("."))
     return dt.date(2000 + y, m, d)
 
 
