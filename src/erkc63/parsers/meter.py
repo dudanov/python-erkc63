@@ -1,5 +1,6 @@
 import dataclasses as dc
 import datetime as dt
+import itertools as it
 import logging
 from decimal import Decimal
 from typing import Mapping, Self, cast
@@ -81,15 +82,16 @@ class MeterInfoHistory(ModelBase):
 
         result = cls.from_args(*key.split(",", 1))
 
-        if not history:
-            return result
+        def _filter():
+            for _, group in it.groupby(history, lambda x: x.date):
+                if not (result := next(group)).consumption:
+                    for x in group:
+                        if x.consumption:
+                            result = x
+                            break
 
-        last = history[-1]
-        history = [x for x in history if x.consumption]
+                yield result
 
-        if not history or history[-1].previous == last.value:
-            history.append(last)
-
-        result.history = tuple(history)
+        result.history = tuple(_filter())
 
         return result
