@@ -460,20 +460,17 @@ class ErkcClient:
             history = await self._history("counters", account, start, end)
 
             # Лимит записей ответа сервера - 25. Контроль превышения на случай изменения API.
-            assert (num := len(history)) <= 25
-
-            if not num:
-                break
+            assert (num := len(history)) <= 25, (
+                "Превышен лимит записей ответа сервера. Возможно изменен API."
+            )
 
             for x in history:
                 lst = db.setdefault(x[1], [])
                 end = str_to_date(ajax_attr(x[2], "sort"))
                 lst.append(MeterValue.from_args(end, *x[3:]))
 
-            if num < 25:
-                break
-
-        return list(map(MeterInfoHistory.from_tuple, db.items()))
+            if num != 25:
+                return list(map(MeterInfoHistory.from_tuple, db.items()))
 
     @api(auth_required=True)
     async def accruals_history(
