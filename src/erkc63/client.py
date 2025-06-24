@@ -462,7 +462,8 @@ class ErkcClient:
             history = await self._history("counters", account, start, end)
 
             assert (num := len(history)) <= API_LIMIT, (
-                "Превышен лимит записей ответа сервера. Возможно изменен API."
+                f"Превышен лимит в {API_LIMIT} записей ответа сервера. "
+                f"Получено {num}. Возможно изменен API."
             )
 
             for x in history:
