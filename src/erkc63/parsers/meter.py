@@ -76,7 +76,8 @@ class MeterInfoHistory(ModelBase):
 
     @classmethod
     def from_tuple(cls, value: tuple[str, list[MeterValue]]) -> Self:
-        """Создает объект из кортежа, полученного из кэша."""
+        """Создает объект из кортежа ключа счетчика
+        (ресурс, серийный номер) и списка показаний."""
 
         key, history = value
 
