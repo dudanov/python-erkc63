@@ -3,7 +3,7 @@ import datetime as dt
 import itertools as it
 import logging
 from decimal import Decimal
-from typing import Mapping, Self, cast
+from typing import Iterator, Mapping, Self, cast
 
 from bs4 import Tag
 
@@ -58,10 +58,6 @@ class MeterValue(ModelBase):
     source: str
     """Источник"""
 
-    @property
-    def previous(self) -> Decimal:
-        return self.value - self.consumption
-
 
 @dc.dataclass(slots=True, kw_only=True)
 class MeterInfoHistory(ModelBase):
@@ -81,7 +77,7 @@ class MeterInfoHistory(ModelBase):
 
         key, history = value
 
-        def _history():
+        def _history() -> Iterator[MeterValue]:
             for _, group in it.groupby(history, lambda x: x.date):
                 if not (result := next(group)).consumption:
                     for x in group:
