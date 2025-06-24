@@ -7,20 +7,13 @@ from mashumaro import DataClassDictMixin, pass_through
 from mashumaro.config import BaseConfig
 from mashumaro.types import SerializationStrategy
 
-type NormalizedString = Annotated[str, "NormalizedString"]
-"""Нормализованная строка, в которой удалены лишние пробелы."""
 type DateAjax = Annotated[dt.date, "DateAjax"]
-"""Дата, полученная из AJAX-ответа."""
 type DateString = Annotated[dt.date, "DateString"]
-"""Дата, в виде строки `%d.%m.%y`."""
-type ReceiptAjax = Annotated[str, "ReceiptAjax"]
-"""Идентификатор на скачивание PDF квитанции."""
-type IntNullable = Annotated[int, "IntNullable"]
-"""Целое число, у которого символ `-` означает 0."""
-type Serial = Annotated[str, "Serial"]
-"""Серийный номер счетчика, начинающийся с символа `№`."""
 type DecimalString = Annotated[Decimal, "DecimalString"]
-"""Десятичная строка, представляющая число с плавающей запятой."""
+type IntNullable = Annotated[int, "IntNullable"]
+type NormalizedString = Annotated[str, "NormalizedString"]
+type ReceiptAjax = Annotated[str, "ReceiptAjax"]
+type Serial = Annotated[str, "Serial"]
 
 
 def ajax_attr(value: str, attr: str) -> str:
