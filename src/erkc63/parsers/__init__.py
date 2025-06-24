@@ -20,7 +20,7 @@ def date_last_accrual(accrual_day: int = 25) -> dt.date:
     return dt.date(today.year - 1, 12, 1)
 
 
-def date_to_str(x: dt.date) -> str:
+def date_to_dmy(x: dt.date) -> str:
     """Преобразует дату в строку вида `dd.mm.YYYY`."""
 
     return f"{x.day:02}.{x.month:02}.{x.year}"
@@ -33,7 +33,7 @@ __all__ = [
     "Accruals",
     "ajax_attr",
     "date_last_accrual",
-    "date_to_str",
+    "date_to_dmy",
     "dmy_to_date",
     "MeterHistory",
     "MeterValue",

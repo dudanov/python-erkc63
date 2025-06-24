@@ -40,7 +40,7 @@ from .parsers import (
     PublicAccountInfo,
     ajax_attr,
     date_last_accrual,
-    date_to_str,
+    date_to_dmy,
     dmy_to_date,
     parse_accounts,
     parse_token,
@@ -162,7 +162,7 @@ class ErkcClient:
     def _history(
         self, what: str, account: int | str | None, start: dt.date, end: dt.date
     ) -> Coroutine[Any, Any, list[list[Any]]]:
-        params = {"from": date_to_str(start), "to": date_to_str(end)}
+        params = {"from": date_to_dmy(start), "to": date_to_dmy(end)}
         return self._ajax(f"{what}History", account, **params)
 
     def _update_token(self, html: str) -> None:
