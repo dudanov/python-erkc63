@@ -30,9 +30,7 @@ def ajax_attr(value: str, attr: str) -> str:
     return value[start:end]
 
 
-def str_to_date(x: str) -> dt.date:
-    """Преобразует строку вида `dd.mm.yy` в дату."""
-
+def dmy_to_date(x: str) -> dt.date:
     d, m, y = map(int, x[-8:].split("."))
     return dt.date(2000 + y, m, d)
 
@@ -41,7 +39,6 @@ class DecimalStrategy(SerializationStrategy):
     def deserialize(self, value: str) -> Decimal:
         value = value.replace(" ", "")
         value = value.replace(",", ".")
-
         return Decimal(value)
 
 
@@ -74,7 +71,7 @@ class DateStrategy(SerializationStrategy):
         if self.ajax:
             value = ajax_attr(value, "sort")
 
-        return str_to_date(value)
+        return dmy_to_date(value)
 
 
 @dc.dataclass

@@ -41,9 +41,9 @@ from .parsers import (
     ajax_attr,
     date_last_accrual,
     date_to_str,
+    dmy_to_date,
     parse_accounts,
     parse_token,
-    str_to_date,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -468,7 +468,7 @@ class ErkcClient:
 
             for x in history:
                 lst = db.setdefault(x[1], [])
-                end = str_to_date(ajax_attr(x[2], "sort"))
+                end = dmy_to_date(ajax_attr(x[2], "sort"))
                 lst.append(MeterValue.from_args(end, *x[3:]))
 
             if num != API_LIMIT:
