@@ -71,7 +71,7 @@ class MeterInfoHistory(ModelBase):
     """Ресурс учета"""
     serial: Serial
     """Серийный номер"""
-    history: tuple[MeterValue, ...] = dc.field(metadata={"deserialize": tuple})
+    history: list[MeterValue] = dc.field(metadata={"deserialize": list})
     """Архив показаний"""
 
     @classmethod
