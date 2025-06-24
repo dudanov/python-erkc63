@@ -39,7 +39,10 @@ def str_to_date(x: str) -> dt.date:
 
 class DecimalStrategy(SerializationStrategy):
     def deserialize(self, value: str) -> Decimal:
-        return Decimal(value.replace(" ", "").replace(",", "."))
+        value = value.replace(" ", "")
+        value = value.replace(",", ".")
+
+        return Decimal(value)
 
 
 class MeterSerialStrategy(SerializationStrategy):
