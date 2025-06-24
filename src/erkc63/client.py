@@ -159,7 +159,7 @@ class ErkcClient:
 
     def _history(
         self, what: str, account: int | str | None, start: dt.date, end: dt.date
-    ) -> Coroutine[Any, Any, list[list[str]]]:
+    ) -> Coroutine[Any, Any, list[list[Any]]]:
         params = {"from": date_to_str(start), "to": date_to_str(end)}
         return self._ajax(f"{what}History", account, **params)
 
@@ -464,12 +464,12 @@ class ErkcClient:
                 break
 
             for x in history:
-                db.setdefault(x[1], []).append(MeterValue.from_args(*x[2:]))
+                lst = db.setdefault(x[1], [])
+                end = str_to_date(ajax_attr(x[2], "sort"))
+                lst.append(MeterValue.from_args(end, *x[3:]))
 
             if num < 25:
                 break
-
-            end = str_to_date(ajax_attr(x[2], "sort"))
 
         return list(map(MeterInfoHistory.from_tuple, db.items()))
 

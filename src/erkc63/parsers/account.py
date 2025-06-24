@@ -3,7 +3,7 @@ from typing import Annotated, Any, Self
 
 from mashumaro.types import Alias
 
-from .base import DecimalString, ModelBase, NormalizedString, NullableInt
+from .base import DecimalString, IntNullable, ModelBase, NormalizedString
 from .parser import parse_html_divclass
 
 
@@ -55,9 +55,9 @@ class AccountInfo(ModelBase):
     """Электронная почта"""
     total_area: DecimalString  # 7
     """Общая площадь жилого помещения"""
-    people_registered: NullableInt  # 9
+    people_registered: IntNullable  # 9
     """Зарегистрировано"""
-    people_lives: NullableInt  # 11
+    people_lives: IntNullable  # 11
     """Проживает"""
     ownership: str  # 13
     """Право собственности"""

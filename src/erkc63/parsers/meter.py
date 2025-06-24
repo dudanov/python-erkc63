@@ -7,7 +7,7 @@ from typing import Mapping, Self, cast
 
 from bs4 import Tag
 
-from .base import AjaxDate, DecimalString, ModelBase, Serial
+from .base import DateString, DecimalString, ModelBase, Serial
 from .parser import parse_html_divclass
 
 _LOGGER = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class PublicMeterInfo(ModelBase):
     """Ресурс учета"""
     serial: Serial
     """Серийный номер"""
-    date: dt.date
+    date: DateString
     """Дата последнего показания"""
     value: DecimalString
     """Последнее показание"""
@@ -49,7 +49,7 @@ class PublicMeterInfo(ModelBase):
 class MeterValue(ModelBase):
     """Показание счетчика"""
 
-    date: AjaxDate
+    date: dt.date
     """Дата"""
     value: Decimal
     """Значение"""

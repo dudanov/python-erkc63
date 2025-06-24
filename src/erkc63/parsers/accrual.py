@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import Any, Iterator, Mapping, Self, cast
 
 from ..errors import ErkcError
-from .base import AjaxDate, AjaxReceipt, DecimalString, ModelBase
+from .base import DateAjax, DecimalString, ModelBase, ReceiptAjax
 
 
 @dc.dataclass(slots=True, kw_only=True)
@@ -50,15 +50,15 @@ class Accrual(ModelBase):
 
     account: int
     """Лицевой счет"""
-    date: AjaxDate
+    date: DateAjax
     """Дата формирования"""
     payment: DecimalString
     """Сумма"""
     penalty: DecimalString
     """Пени"""
-    payment_id: AjaxReceipt | None
+    payment_id: ReceiptAjax | None
     """Идентификатор квитанции для скачивания"""
-    penalty_id: AjaxReceipt | None
+    penalty_id: ReceiptAjax | None
     """Идентификатор квитанции на пени для скачивания"""
     details: Mapping[str, AccrualDetalization] = dc.field(default_factory=dict)
     """Детализация услуг"""
@@ -152,7 +152,7 @@ class MonthAccrual(ModelBase):
 
     account: int
     """Лицевой счет"""
-    date: AjaxDate
+    date: DateAjax
     """Дата"""
     debt: DecimalString
     """Долг на начало расчетного периода"""

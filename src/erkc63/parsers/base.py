@@ -3,7 +3,7 @@ import datetime as dt
 from decimal import Decimal
 from typing import Annotated, Any, Self
 
-from mashumaro import DataClassDictMixin
+from mashumaro import DataClassDictMixin, pass_through
 from mashumaro.config import BaseConfig
 from mashumaro.types import SerializationStrategy
 
@@ -11,11 +11,13 @@ from .utils import ajax_attr, str_to_date
 
 type NormalizedString = Annotated[str, "NormalizedString"]
 """Нормализованная строка, в которой удалены лишние пробелы."""
-type AjaxDate = Annotated[dt.date, "AjaxDate"]
+type DateAjax = Annotated[dt.date, "DateAjax"]
 """Дата, полученная из AJAX-ответа."""
-type AjaxReceipt = Annotated[str, "AjaxReceipt"]
+type DateString = Annotated[dt.date, "DateString"]
+"""Дата, в виде строки `%d.%m.%y`."""
+type ReceiptAjax = Annotated[str, "ReceiptAjax"]
 """Идентификатор на скачивание PDF квитанции."""
-type NullableInt = Annotated[int, "NullableInt"]
+type IntNullable = Annotated[int, "IntNullable"]
 """Целое число, у которого символ `-` означает 0."""
 type Serial = Annotated[str, "Serial"]
 """Серийный номер счетчика, начинающийся с символа `№`."""
@@ -34,7 +36,7 @@ class MeterSerialStrategy(SerializationStrategy):
         return value[start:].lstrip()
 
 
-class NullableIntStrategy(SerializationStrategy):
+class IntNullableStrategy(SerializationStrategy):
     def deserialize(self, value: str) -> int:
         return int(value) if value.isdecimal() else 0
 
@@ -68,12 +70,13 @@ class ModelBase(DataClassDictMixin):
     class Config(BaseConfig):
         lazy_compilation = True
         serialization_strategy = {
-            NormalizedString: NormalizeStrategy(),
-            AjaxDate: DateStrategy(ajax=True),
-            AjaxReceipt: AjaxStrategy("receipt"),
+            DateAjax: DateStrategy(ajax=True),
+            DateString: DateStrategy(),
             DecimalString: DecimalStrategy(),
-            dt.date: DateStrategy(),
-            NullableInt: NullableIntStrategy(),
+            dt.date: pass_through,
+            IntNullable: IntNullableStrategy(),
+            NormalizedString: NormalizeStrategy(),
+            ReceiptAjax: AjaxStrategy("receipt"),
             Serial: MeterSerialStrategy(),
         }
 
