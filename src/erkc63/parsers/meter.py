@@ -71,7 +71,7 @@ class MeterInfoHistory(ModelBase):
     """Ресурс учета"""
     serial: Serial
     """Серийный номер"""
-    history: tuple[MeterValue, ...] = dc.field(default_factory=tuple)
+    history: tuple[MeterValue, ...] = dc.field(metadata={"deserialize": tuple})
     """Архив показаний"""
 
     @classmethod
@@ -79,8 +79,6 @@ class MeterInfoHistory(ModelBase):
         """Создает объект из кортежа, полученного из кэша."""
 
         key, history = value
-
-        result = cls.from_args(*key.split(",", 1))
 
         def _filter():
             for _, group in it.groupby(history, lambda x: x.date):
@@ -92,6 +90,4 @@ class MeterInfoHistory(ModelBase):
 
                 yield result
 
-        result.history = tuple(_filter())
-
-        return result
+        return cls.from_args(*key.split(",", 1), _filter())
