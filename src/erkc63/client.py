@@ -449,6 +449,8 @@ class ErkcClient:
             account: номер лицевого счета. Если `None` - будет использоваться основной лицевой счет личного кабинета.
         """
 
+        API_LIMIT = 25  # лимит записей ответа сервера
+
         start, end = start or _MIN_DATE, end or _MAX_DATE
         assert start <= end
 
@@ -459,8 +461,7 @@ class ErkcClient:
 
             history = await self._history("counters", account, start, end)
 
-            # Лимит записей ответа сервера - 25. Контроль превышения на случай изменения API.
-            assert (num := len(history)) <= 25, (
+            assert (num := len(history)) <= API_LIMIT, (
                 "Превышен лимит записей ответа сервера. Возможно изменен API."
             )
 
@@ -469,7 +470,7 @@ class ErkcClient:
                 end = str_to_date(ajax_attr(x[2], "sort"))
                 lst.append(MeterValue.from_args(end, *x[3:]))
 
-            if num != 25:
+            if num != API_LIMIT:
                 return list(map(MeterInfoHistory.from_tuple, db.items()))
 
     @api(auth_required=True)
