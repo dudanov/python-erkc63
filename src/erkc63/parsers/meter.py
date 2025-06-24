@@ -67,18 +67,18 @@ class MeterHistory(ModelBase):
     """Ресурс учета"""
     serial: Serial
     """Серийный номер"""
-    history: list[MeterValue] = dc.field(metadata={"deserialize": list})
+    values: list[MeterValue] = dc.field(metadata={"deserialize": list})
     """История показаний"""
 
     @classmethod
-    def from_tuple(cls, value: tuple[str, list[MeterValue]]) -> Self:
+    def from_tuple(cls, x: tuple[str, list[MeterValue]]) -> Self:
         """Создает объект из кортежа ключа прибора учета
         (ресурс, серийный номер) и списка показаний."""
 
-        key, history = value
+        key, values = x
 
-        def _history() -> Iterator[MeterValue]:
-            for _, group in it.groupby(history, lambda x: x.date):
+        def _values() -> Iterator[MeterValue]:
+            for _, group in it.groupby(values, lambda x: x.date):
                 if not (result := next(group)).consumption:
                     for x in group:
                         if x.consumption:
@@ -87,4 +87,4 @@ class MeterHistory(ModelBase):
 
                 yield result
 
-        return cls.from_args(*key.split(",", 1), _history())
+        return cls.from_args(*key.split(",", 1), _values())
