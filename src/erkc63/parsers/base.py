@@ -46,21 +46,18 @@ class NormalizeStrategy(SerializationStrategy):
         return " ".join(value.split())
 
 
-class AjaxStrategy(SerializationStrategy):
-    def __init__(self, attr: str):
-        self.attr = attr
-
+class ReceiptStrategy(SerializationStrategy):
     def deserialize(self, value: str) -> str:
-        return ajax_attr(value, self.attr)
+        return ajax_attr(value, "receipt")
 
 
 class DateStrategy(SerializationStrategy):
     def __init__(self, *, ajax: bool = False):
-        self.ajax = AjaxStrategy("sort") if ajax else None
+        self.ajax = ajax
 
     def deserialize(self, value: str) -> dt.date:
         if self.ajax:
-            value = self.ajax.deserialize(value)
+            value = ajax_attr(value, "sort")
 
         return str_to_date(value)
 
@@ -76,7 +73,7 @@ class ModelBase(DataClassDictMixin):
             dt.date: pass_through,
             IntNullable: IntNullableStrategy(),
             NormalizedString: NormalizeStrategy(),
-            ReceiptAjax: AjaxStrategy("receipt"),
+            ReceiptAjax: ReceiptStrategy(),
             Serial: MeterSerialStrategy(),
         }
 
