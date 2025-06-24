@@ -14,12 +14,9 @@ from .parsers import (
     AccountInfo,
     MeterInfoHistory,
     MeterValue,
+    Payment,
     PublicAccountInfo,
     PublicMeterInfo,
-)
-from .types import (
-    MeterInfo,
-    Payment,
 )
 
 __all__ = [
@@ -31,7 +28,6 @@ __all__ = [
     "AuthorizationRequired",
     "ErkcClient",
     "ErkcError",
-    "MeterInfo",
     "MeterInfoHistory",
     "MeterValue",
     "ParsingError",

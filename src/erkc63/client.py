@@ -35,6 +35,7 @@ from .parsers import (
     MeterInfoHistory,
     MeterValue,
     MonthAccrual,
+    Payment,
     PublicAccountInfo,
     PublicMeterInfo,
     ajax_attr,
@@ -44,7 +45,6 @@ from .parsers import (
     parse_token,
     str_to_date,
 )
-from .types import Payment
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -535,13 +535,11 @@ class ErkcClient:
 
         assert start <= end
 
-        x = await self._history("payments", account, start, end)
-        payments = (
-            Payment(date_attr(x0), to_decimal(x1), x3) for x0, x1, x3 in x
-        )
+        history = await self._history("payments", account, start, end)
+        result = (Payment.from_args(*x) for x in history)
 
         # Ответ содержит нулевые платежи (внутренние перерасчеты). Применим фильтр.
-        return [x for x in payments if x.payment]
+        return [x for x in result if x.payment]
 
     @api(auth_required=True)
     async def account_info(

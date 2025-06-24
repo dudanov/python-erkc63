@@ -22,13 +22,12 @@ async def main():
         # x = await cli.year_accruals(include_details=True)
 
         # await cli.qr_codes(x[1])
-        dd = await cli.meters_history()
-        for meter in dd:
-            print(meter.name, meter.serial)
-            for value in meter.history:
-                print(
-                    f"  {value.date} {value.value} {value.consumption} {value.source}"
-                )
+        dd = await cli.payments_history()
+        for payment in dd:
+            print(payment)
+            # print(payment.details)
+            # print(payment.payment_id)
+            # print(payment.penalty_id)
 
 
 #        for x in await cli.accruals_history():
