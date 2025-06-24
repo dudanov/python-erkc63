@@ -3,7 +3,7 @@ import datetime as dt
 from .account import AccountInfo, PublicAccountInfo
 from .accrual import Accrual, AccrualDetalization, Accruals, MonthAccrual
 from .base import ajax_attr, dmy_to_date
-from .meter import MeterInfoHistory, MeterValue, PublicMeterInfo
+from .meter import MeterHistory, MeterInfo, MeterValue
 from .parser import parse_accounts, parse_token
 from .payment import Payment
 
@@ -35,12 +35,12 @@ __all__ = [
     "date_last_accrual",
     "date_to_str",
     "dmy_to_date",
-    "MeterInfoHistory",
+    "MeterHistory",
     "MeterValue",
     "MonthAccrual",
     "parse_accounts",
     "parse_token",
     "Payment",
     "PublicAccountInfo",
-    "PublicMeterInfo",
+    "MeterInfo",
 ]

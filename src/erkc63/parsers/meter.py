@@ -14,8 +14,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @dc.dataclass(slots=True, kw_only=True)
-class PublicMeterInfo(ModelBase):
-    """Информация о приборе учета."""
+class MeterInfo(ModelBase):
+    """Информация о приборе учета"""
 
     name: str
     """Ресурс учета"""
@@ -47,7 +47,7 @@ class PublicMeterInfo(ModelBase):
 
 @dc.dataclass(slots=True, kw_only=True)
 class MeterValue(ModelBase):
-    """Показание счетчика"""
+    """Показание прибора учета"""
 
     date: dt.date
     """Дата"""
@@ -60,19 +60,19 @@ class MeterValue(ModelBase):
 
 
 @dc.dataclass(slots=True, kw_only=True)
-class MeterInfoHistory(ModelBase):
-    """Счетчик с архивом показаний"""
+class MeterHistory(ModelBase):
+    """История показаний прибора учета"""
 
     name: str
     """Ресурс учета"""
     serial: Serial
     """Серийный номер"""
     history: list[MeterValue] = dc.field(metadata={"deserialize": list})
-    """Архив показаний"""
+    """История показаний"""
 
     @classmethod
     def from_tuple(cls, value: tuple[str, list[MeterValue]]) -> Self:
-        """Создает объект из кортежа ключа счетчика
+        """Создает объект из кортежа ключа прибора учета
         (ресурс, серийный номер) и списка показаний."""
 
         key, history = value

@@ -12,11 +12,11 @@ from .errors import (
 )
 from .parsers import (
     AccountInfo,
-    MeterInfoHistory,
+    MeterHistory,
+    MeterInfo,
     MeterValue,
     Payment,
     PublicAccountInfo,
-    PublicMeterInfo,
 )
 
 __all__ = [
@@ -28,12 +28,12 @@ __all__ = [
     "AuthorizationRequired",
     "ErkcClient",
     "ErkcError",
-    "MeterInfoHistory",
+    "MeterHistory",
     "MeterValue",
     "ParsingError",
     "Payment",
     "PublicAccountInfo",
-    "PublicMeterInfo",
+    "MeterInfo",
     "QrCodes",
     "SessionRequired",
 ]

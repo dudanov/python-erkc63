@@ -32,12 +32,12 @@ from .parsers import (
     Accrual,
     AccrualDetalization,
     Accruals,
-    MeterInfoHistory,
+    MeterHistory,
+    MeterInfo,
     MeterValue,
     MonthAccrual,
     Payment,
     PublicAccountInfo,
-    PublicMeterInfo,
     ajax_attr,
     date_last_accrual,
     date_to_str,
@@ -438,7 +438,7 @@ class ErkcClient:
         start: dt.date | None = None,
         end: dt.date | None = None,
         account: int | str | None = None,
-    ) -> list[MeterInfoHistory]:
+    ) -> list[MeterHistory]:
         """Запрос счетчиков лицевого счета с историей показаний.
 
         Если даты не уточняются - результат будет включать все доступные показания.
@@ -472,7 +472,7 @@ class ErkcClient:
                 lst.append(MeterValue.from_args(end, *x[3:]))
 
             if num != API_LIMIT:
-                return list(map(MeterInfoHistory.from_tuple, db.items()))
+                return list(map(MeterHistory.from_tuple, db.items()))
 
     @api(auth_required=True)
     async def accruals_history(
@@ -626,7 +626,7 @@ class ErkcClient:
             return
 
         async with self._get(path) as x:
-            meters = PublicMeterInfo.meters_from_html(await x.text())
+            meters = MeterInfo.meters_from_html(await x.text())
 
         data: dict[str, Any] = {}
 
@@ -656,7 +656,7 @@ class ErkcClient:
     @api(auth_required=True)
     async def meters_info(
         self, account: int | str | None = None
-    ) -> Mapping[int, PublicMeterInfo]:
+    ) -> Mapping[int, MeterInfo]:
         """Запрос информации о приборах учета по лицевому счету.
 
         Возвращает словарь `идентификатор - информация о приборе учета`.
@@ -669,7 +669,7 @@ class ErkcClient:
         """
 
         async with self._get(f"account/{self._account(account)}/counters") as x:
-            return PublicMeterInfo.meters_from_html(await x.text())
+            return MeterInfo.meters_from_html(await x.text())
 
     @api(auth_required=True)
     async def set_meters_values(
@@ -692,7 +692,7 @@ class ErkcClient:
     @api(public=True)
     async def pub_meters_info(
         self, account: int | str
-    ) -> Mapping[int, PublicMeterInfo]:
+    ) -> Mapping[int, MeterInfo]:
         """Запрос публичной информации о приборах учета по лицевому счету.
 
         Возвращает словарь `идентификатор - информация о приборе учета`.
@@ -710,7 +710,7 @@ class ErkcClient:
         assert (account := int(account)) > 0
 
         async with self._get(f"counters/{account}") as x:
-            return PublicMeterInfo.meters_from_html(await x.text())
+            return MeterInfo.meters_from_html(await x.text())
 
     @api(public=True)
     async def pub_set_meters_values(
