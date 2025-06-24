@@ -7,8 +7,6 @@ from mashumaro import DataClassDictMixin, pass_through
 from mashumaro.config import BaseConfig
 from mashumaro.types import SerializationStrategy
 
-from .utils import ajax_attr, str_to_date
-
 type NormalizedString = Annotated[str, "NormalizedString"]
 """Нормализованная строка, в которой удалены лишние пробелы."""
 type DateAjax = Annotated[dt.date, "DateAjax"]
@@ -23,6 +21,20 @@ type Serial = Annotated[str, "Serial"]
 """Серийный номер счетчика, начинающийся с символа `№`."""
 type DecimalString = Annotated[Decimal, "DecimalString"]
 """Десятичная строка, представляющая число с плавающей запятой."""
+
+
+def ajax_attr(value: str, attr: str) -> str:
+    attr = f' data-{attr}="'
+    start = value.index(attr) + len(attr)
+    end = value.index('"', start)
+    return value[start:end]
+
+
+def str_to_date(x: str) -> dt.date:
+    """Преобразует строку вида `dd.mm.yy` в дату."""
+
+    d, m, y = map(int, x[-8:].split("."))
+    return dt.date(2000 + y, m, d)
 
 
 class DecimalStrategy(SerializationStrategy):
