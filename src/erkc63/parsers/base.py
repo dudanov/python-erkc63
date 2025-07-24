@@ -7,13 +7,13 @@ from mashumaro import DataClassDictMixin, pass_through
 from mashumaro.config import BaseConfig
 from mashumaro.types import SerializationStrategy
 
-type DateAjax = Annotated[dt.date, "DateAjax"]
-type DateString = Annotated[dt.date, "DateString"]
-type DecimalString = Annotated[Decimal, "DecimalString"]
-type IntNullable = Annotated[int, "IntNullable"]
-type NormalizedString = Annotated[str, "NormalizedString"]
-type ReceiptAjax = Annotated[str, "ReceiptAjax"]
-type Serial = Annotated[str, "Serial"]
+DateAjax = Annotated[dt.date, "DateAjax"]
+DateString = Annotated[dt.date, "DateString"]
+DecimalString = Annotated[Decimal, "DecimalString"]
+IntNullable = Annotated[int, "IntNullable"]
+NormalizedString = Annotated[str, "NormalizedString"]
+ReceiptAjax = Annotated[str, "ReceiptAjax"]
+Serial = Annotated[str, "Serial"]
 
 
 def ajax_attr(value: str, attr: str) -> str:

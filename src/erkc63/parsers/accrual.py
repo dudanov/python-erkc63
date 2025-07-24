@@ -186,4 +186,4 @@ class MonthAccrual(ModelBase):
         return list(it.islice(_gen(), limit))
 
 
-type Accruals = Accrual | MonthAccrual
+Accruals = Accrual | MonthAccrual

@@ -1,4 +1,3 @@
-from .bills import QrCodes
 from .client import ErkcClient
 from .errors import (
     AccountBindingError,
@@ -34,6 +33,5 @@ __all__ = [
     "Payment",
     "PublicAccountInfo",
     "MeterInfo",
-    "QrCodes",
     "SessionRequired",
 ]

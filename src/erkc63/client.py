@@ -19,7 +19,6 @@ import aiohttp
 import orjson
 import yarl
 
-from .bills import QrCodes
 from .errors import (
     AccountBindingError,
     AccountNotFound,
@@ -45,6 +44,15 @@ from .parsers import (
     parse_accounts,
     parse_token,
 )
+
+try:
+    from .bills import QrCodes
+
+    QR_SUPPORT = True
+
+except ImportError:
+    QR_SUPPORT = False
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -310,7 +318,7 @@ class ErkcClient:
 
         Parameters:
             accrual: Объект квитанции.
-            peni: Загрузить квитанцию для оплаты пени.
+            penalty: Загрузить квитанцию для оплаты пени.
 
         Returns:
             Данные в формате `PDF` при успехе или `None` при неудаче.
@@ -355,6 +363,11 @@ class ErkcClient:
         Returns:
             Возвращает объект `QrCodes`.
         """
+
+        if not QR_SUPPORT:
+            raise RuntimeError(
+                "Для поддержки работы с QR-кодами требуется установить `erkc63` с опцией `qrcode`."
+            )
 
         async with asyncio.TaskGroup() as tg:
             tasks = [
