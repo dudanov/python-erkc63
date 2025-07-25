@@ -22,12 +22,14 @@ async def main():
         # x = await cli.year_accruals(include_details=True)
 
         # await cli.qr_codes(x[1])
-        dd = await cli.payments_history()
+        dd = await cli.year_accruals()
         for payment in dd:
-            print(payment)
+            rr = await cli.qr_codes(payment)
+            rr.qr_erkc(paid=True)
+
             # print(payment.details)
             # print(payment.payment_id)
-            # print(payment.penalty_id)
+            # print(payment.peni_id)
 
 
 #        for x in await cli.accruals_history():

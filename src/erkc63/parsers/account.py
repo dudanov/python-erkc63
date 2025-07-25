@@ -17,7 +17,7 @@ class PublicAccountInfo(ModelBase):
     """Адрес"""
     payment: Annotated[DecimalString, Alias("balanceSumma")]
     """К оплате"""
-    penalty: Annotated[DecimalString, Alias("balancePeni")]
+    peni: Annotated[DecimalString, Alias("balancePeni")]
     """Пени"""
 
     @classmethod

@@ -45,13 +45,13 @@ from .parsers import (
     parse_token,
 )
 
-try:
-    from .bills import QrCodes
+QRCODE_SUPPORT = True
 
-    QR_SUPPORT = True
+try:
+    from .parsers.qrcode import QrCodes
 
 except ImportError:
-    QR_SUPPORT = False
+    QRCODE_SUPPORT = False
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -312,19 +312,19 @@ class ErkcClient:
         self,
         accrual: Accrual,
         *,
-        penalty: bool = False,
+        peni: bool = False,
     ) -> bytes | None:
         """Загрузка квитанции в формате PDF.
 
         Parameters:
             accrual: Объект квитанции.
-            penalty: Загрузить квитанцию для оплаты пени.
+            peni: Загрузить квитанцию для оплаты пени.
 
         Returns:
             Данные в формате `PDF` при успехе или `None` при неудаче.
         """
 
-        if not (id := accrual.penalty_id if penalty else accrual.payment_id):
+        if not (id := accrual.peni_id if peni else accrual.payment_id):
             return
 
         try:
@@ -364,15 +364,15 @@ class ErkcClient:
             Возвращает объект `QrCodes`.
         """
 
-        if not QR_SUPPORT:
+        if not QRCODE_SUPPORT:
             raise RuntimeError(
                 "Для поддержки работы с QR-кодами требуется установить `erkc63` с опцией `qrcode`."
             )
 
         async with asyncio.TaskGroup() as tg:
             tasks = [
-                tg.create_task(self.download_pdf(accrual, penalty=False)),
-                tg.create_task(self.download_pdf(accrual, penalty=True)),
+                tg.create_task(self.download_pdf(accrual, peni=False)),
+                tg.create_task(self.download_pdf(accrual, peni=True)),
             ]
 
         result = (x.result() for x in tasks)

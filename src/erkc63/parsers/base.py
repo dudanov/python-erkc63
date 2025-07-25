@@ -28,11 +28,19 @@ def dmy_to_date(value: str) -> dt.date:
     return dt.date(2000 + y, m, d)
 
 
+def decimal(value: str) -> Decimal:
+    value = value.replace(" ", "")
+    value = value.replace(",", ".")
+    return Decimal(value)
+
+
+def normalize(value: str) -> str:
+    return " ".join(value.split())
+
+
 class DecimalStrategy(SerializationStrategy):
     def deserialize(self, value: str) -> Decimal:
-        value = value.replace(" ", "")
-        value = value.replace(",", ".")
-        return Decimal(value)
+        return decimal(value)
 
 
 class MeterSerialStrategy(SerializationStrategy):
@@ -48,7 +56,7 @@ class IntNullableStrategy(SerializationStrategy):
 
 class NormalizeStrategy(SerializationStrategy):
     def deserialize(self, value: str) -> str:
-        return " ".join(value.split())
+        return normalize(value)
 
 
 class ReceiptStrategy(SerializationStrategy):
