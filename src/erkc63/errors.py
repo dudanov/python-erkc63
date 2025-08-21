@@ -14,11 +14,11 @@ class AccountBindingError(ApiError):
     pass
 
 
-class AuthorizationError(ApiError):
+class AuthenticationError(ApiError):
     pass
 
 
-class AuthorizationRequired(ApiError):
+class AuthenticationRequired(ApiError):
     pass
 
 

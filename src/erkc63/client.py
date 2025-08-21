@@ -22,8 +22,8 @@ import yarl
 from .errors import (
     AccountBindingError,
     AccountNotFound,
-    AuthorizationError,
-    AuthorizationRequired,
+    AuthenticationError,
+    AuthenticationRequired,
     SessionRequired,
 )
 from .parsers import (
@@ -81,13 +81,13 @@ def api[T, **P](
 
             if public:
                 if self.authorized:
-                    raise AuthorizationRequired(
-                        "Публичный API работает без авторизации."
+                    raise AuthenticationRequired(
+                        "Публичный API работает без аутентификации."
                     )
 
             elif auth_required:
                 if not self.authorized:
-                    raise AuthorizationRequired("Требуется авторизация.")
+                    raise AuthenticationRequired("Требуется аутентификация.")
 
             return func(self, *args, **kwargs)
 
@@ -204,7 +204,7 @@ class ErkcClient:
         """Привязанные лицевые счета."""
 
         if self._accounts is None:
-            raise AuthorizationRequired("Не авторизован в личном кабинете.")
+            raise AuthenticationRequired("Не авторизован в личном кабинете.")
 
         return self._accounts
 
@@ -238,12 +238,12 @@ class ErkcClient:
         """Открыть сессию с опциональной авторизацией в личном кабинете.
 
         Parameters:
-            login: E-mail личного кабинета. Опционально. Будет сохранен в клиенте в случае успешной авторизации.
-            password: Пароль личного кабинета. Опционально. Будет сохранен в клиенте в случае успешной авторизации.
+            login: E-mail личного кабинета. Опционально. Будет сохранен в клиенте в случае успешной аутентификации.
+            password: Пароль личного кабинета. Опционально. Будет сохранен в клиенте в случае успешной аутентификации.
             auth: Авторизоваться при открытии. Если не указано, берет из клиента.
 
         Raises:
-            AuthorizationError: При ошибке авторизации.
+            AuthorizationError: При ошибке аутентификации.
         """
 
         if not self.opened:
@@ -258,24 +258,24 @@ class ErkcClient:
         if not auth or self.authorized:
             return
 
-        _LOGGER.debug("Авторизация.")
+        _LOGGER.debug("Аутентификация.")
 
         login, password = login or self._login, password or self._password
 
         if not (login and password):
-            raise AuthorizationError("Не указаны параметры входа.")
+            raise AuthenticationError("Не указаны параметры входа.")
 
-        _LOGGER.debug("Авторизация в личном кабинете %s", login)
+        _LOGGER.debug("Аутентификация в личном кабинете %s", login)
 
         async with self._post("login", login=login, password=password) as x:
             if x.url == x.history[0].url:
-                raise AuthorizationError(
-                    "Ошибка авторизации. Проверьте данные входа."
+                raise AuthenticationError(
+                    "Ошибка аутентификации. Проверьте данные входа."
                 )
 
             self._update_accounts(await x.text())
 
-        _LOGGER.debug("Авторизация в личном кабинете %s успешна.", login)
+        _LOGGER.debug("Аутентификация в личном кабинете %s успешна.", login)
 
         # Сохраняем актуальную пару логин-пароль
         self._login, self._password = login, password
@@ -654,7 +654,7 @@ class ErkcClient:
 
         data: dict[str, Any] = {}
 
-        # Если используем без авторизации - извлечем номер лицевого счета
+        # Если используем без аутентификации - извлечем номер лицевого счета
         # из пути запроса и добавим в данные запроса
         if not path.startswith("account"):
             data["ls"] = int(path.rsplit("/", 1)[-1])
@@ -742,7 +742,7 @@ class ErkcClient:
         account: int | str,
         values: Mapping[int, Decimal],
     ) -> None:
-        """Передача новых показаний приборов учета без авторизации.
+        """Передача новых показаний приборов учета без аутентификации.
 
         Parameters:
             account: номер лицевого счета.
