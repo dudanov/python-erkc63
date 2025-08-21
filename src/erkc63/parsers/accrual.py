@@ -1,7 +1,7 @@
 import dataclasses as dc
 import itertools as it
 from decimal import Decimal
-from typing import Any, Iterator, List, Mapping, Self, Tuple, cast
+from typing import Any, Iterator, Mapping, Self, cast
 
 from ..errors import ErkcError
 from .base import DateAjax, DecimalString, ModelBase, ReceiptAjax
@@ -31,8 +31,8 @@ class AccrualDetalization(ModelBase):
     """Потребление"""
 
     @classmethod
-    def from_json(cls, json: List[List[Any]]) -> Mapping[str, Self]:
-        def _gen() -> Iterator[Tuple[str, Self]]:
+    def from_json(cls, json: list[list[Any]]) -> Mapping[str, Self]:
+        def _gen() -> Iterator[tuple[str, Self]]:
             for args in json:
                 details = cls.from_args(*args)
                 yield details.name, details
@@ -66,10 +66,10 @@ class Accrual(ModelBase):
     @classmethod
     def from_json(
         cls,
-        json: List[List[Any]],
+        json: list[list[Any]],
         account: int,
         limit: int | None = None,
-    ) -> List[Self]:
+    ) -> list[Self]:
         def _gen() -> Iterator[Self]:
             # группируем результат запроса по дате (поле 0)
             for _, group in it.groupby(json, lambda k: k[0]):
@@ -168,10 +168,10 @@ class MonthAccrual(ModelBase):
     @classmethod
     def from_json(
         cls,
-        json: List[List[Any]],
+        json: list[list[Any]],
         account: int,
         limit: int | None = None,
-    ) -> List[Self]:
+    ) -> list[Self]:
         def _gen() -> Iterator[Self]:
             for args in json:
                 accrual = cls.from_args(account, *args)

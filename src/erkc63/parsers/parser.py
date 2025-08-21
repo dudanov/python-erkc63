@@ -1,5 +1,5 @@
 import importlib.util
-from typing import List, Tuple, cast
+from typing import cast
 
 from bs4 import BeautifulSoup, Tag
 from bs4.filter import SoupStrainer
@@ -11,12 +11,12 @@ else:
     HTML_PARSER = "html.parser"
 
 
-def _parse_tags(html: str, ss: SoupStrainer) -> List[Tag]:
+def _parse_tags(html: str, ss: SoupStrainer) -> list[Tag]:
     soup = BeautifulSoup(html, HTML_PARSER, parse_only=ss)
-    return cast(List[Tag], soup.contents)
+    return cast(list[Tag], soup.contents)
 
 
-def parse_html_divclass(html: str, cls_prefix: str) -> List[Tag]:
+def parse_html_divclass(html: str, cls_prefix: str) -> list[Tag]:
     """Возвращает список тегов `div`, имеющих класс с указанным префиксом"""
 
     ss = SoupStrainer(
@@ -28,11 +28,11 @@ def parse_html_divclass(html: str, cls_prefix: str) -> List[Tag]:
     return _parse_tags(html, ss)
 
 
-def parse_accounts(html: str) -> Tuple[int, ...]:
+def parse_accounts(html: str) -> tuple[int, ...]:
     """Возвращает список лицевых счетов из HTML страницы."""
 
     menu = parse_html_divclass(html, "dropdown-menu")[0]
-    accounts = cast(List[Tag], menu("a")[:-2])  # нижние 2 ссылки не аккаунты
+    accounts = cast(list[Tag], menu("a")[:-2])  # нижние 2 ссылки не аккаунты
     accounts = [int(cast(str, x.string)) for x in accounts]
 
     # сортировка вторичных счетов

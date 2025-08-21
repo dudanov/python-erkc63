@@ -2,7 +2,7 @@ import asyncio
 import io
 from functools import partial
 from importlib import resources
-from typing import Dict, Literal, Tuple
+from typing import Literal
 
 import aiofiles
 from PIL import Image as PILImage
@@ -56,7 +56,7 @@ def image_set_paid(image: Image, paid_scale: float) -> Image:
 def get_image_from_page(
     page: Page,
     image_name: str,
-    max_rect: Tuple[int, int] = (3840, 2160),
+    max_rect: tuple[int, int] = (3840, 2160),
 ) -> Image:
     """Извлекает изображение со страницы `PDF` в `Image`."""
 
@@ -74,7 +74,7 @@ def get_image_from_page(
 
 def page_to_png(
     page: Page,
-    max_rect: Tuple[int, int] = (3840, 2160),
+    max_rect: tuple[int, int] = (3840, 2160),
 ) -> bytes:
     """
     Рендерит страницу `PDF` в `Image`.
@@ -91,8 +91,8 @@ def page_to_png(
 
 
 class QrCodes:
-    _pdf: Dict[PdfSupported, bytes]
-    _qrcode: Dict[QrSupported, Image]
+    _pdf: dict[PdfSupported, bytes]
+    _qrcode: dict[QrSupported, Image]
     _paid_scale: float
 
     def __init__(
@@ -100,7 +100,7 @@ class QrCodes:
         pdf_erkc: bytes | None,
         pdf_peni: bytes | None,
         *,
-        max_rect: Tuple[int, int] = (3840, 2160),
+        max_rect: tuple[int, int] = (3840, 2160),
         paid_scale: float = 0.65,
     ):
         assert 0 < paid_scale <= 1
