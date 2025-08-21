@@ -324,7 +324,16 @@ class ErkcClient:
             Данные в формате `PDF` при успехе или `None` при неудаче.
         """
 
-        if not (id := accrual.peni_id if peni else accrual.payment_id):
+        if peni:
+            id = accrual.peni_id
+            _LOGGER.debug("Запрос квитанции пени.")
+
+        else:
+            id = accrual.payment_id
+            _LOGGER.debug("Запрос основной квитанции.")
+
+        if id is None:
+            _LOGGER.debug("Идентификатор квитанции отсутствует.")
             return
 
         try:
@@ -339,9 +348,10 @@ class ErkcClient:
                     filename,
                     x.content_length,
                 )
+
                 return await x.read()
 
-        except Exception:
+        except aiohttp.ClientResponseError:
             _LOGGER.debug("Ошибка загрузки квитанции.")
             return
 
@@ -366,7 +376,7 @@ class ErkcClient:
 
         if not QRCODE_SUPPORT:
             raise RuntimeError(
-                "Для поддержки работы с QR-кодами требуется установить `erkc63` с опцией `qrcode`."
+                "Для поддержки QR-кодов установите с опцией 'qrcode'."
             )
 
         async with asyncio.TaskGroup() as tg:
