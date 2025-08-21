@@ -221,7 +221,8 @@ class ErkcClient:
         if account is None:
             return self.account
 
-        assert (account := int(account)) > 0
+        if (account := int(account)) <= 0:
+            raise ValueError("Номер лицевого счета должен быть больше нуля.")
 
         if account in self.accounts:
             return account
