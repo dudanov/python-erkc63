@@ -1,5 +1,5 @@
 import dataclasses as dc
-from typing import Annotated, Any, Self
+from typing import Annotated, Any, Dict, Self
 
 from mashumaro.types import Alias
 
@@ -21,7 +21,7 @@ class PublicAccountInfo(ModelBase):
     """Пени"""
 
     @classmethod
-    def from_json(cls, json: dict[str, Any], account: int) -> Self | None:
+    def from_json(cls, json: Dict[str, Any], account: int) -> Self | None:
         """Конструктор из JSON-ответа публичного API."""
 
         if json["checkLS"]:

@@ -3,7 +3,7 @@ import datetime as dt
 import itertools as it
 import logging
 from decimal import Decimal
-from typing import Iterator, Mapping, Self, cast
+from typing import Iterator, List, Mapping, Self, Tuple, cast
 
 from bs4 import Tag
 
@@ -67,11 +67,11 @@ class MeterHistory(ModelBase):
     """Ресурс учета"""
     serial: Serial
     """Серийный номер"""
-    values: list[MeterValue] = dc.field(metadata={"deserialize": list})
+    values: List[MeterValue] = dc.field(metadata={"deserialize": list})
     """История показаний"""
 
     @classmethod
-    def from_tuple(cls, x: tuple[str, list[MeterValue]]) -> Self:
+    def from_tuple(cls, x: Tuple[str, List[MeterValue]]) -> Self:
         """Создает объект из кортежа ключа прибора учета
         (ресурс, серийный номер) и списка показаний."""
 

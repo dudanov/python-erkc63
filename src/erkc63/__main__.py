@@ -1,13 +1,14 @@
 import asyncio
 import json
 import logging
+from typing import Mapping
 
 from .client import ErkcClient
 
 logging.basicConfig(level=logging.DEBUG)
 
 with open("secrets.json") as f:
-    secrets: dict[str, str] = json.load(f)
+    secrets: Mapping[str, str] = json.load(f)
 
 
 async def main():

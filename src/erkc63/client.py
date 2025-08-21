@@ -10,9 +10,12 @@ from typing import (
     Callable,
     Concatenate,
     Coroutine,
+    Dict,
     Iterable,
+    List,
     Mapping,
     Self,
+    Tuple,
 )
 
 import aiohttp
@@ -103,7 +106,7 @@ class ErkcClient:
     _login: str | None
     _password: str | None
     _token: str | None
-    _accounts: tuple[int, ...] | None
+    _accounts: Tuple[int, ...] | None
 
     def __init__(
         self,
@@ -169,7 +172,7 @@ class ErkcClient:
 
     def _history(
         self, what: str, account: int | str | None, start: dt.date, end: dt.date
-    ) -> Coroutine[Any, Any, list[list[Any]]]:
+    ) -> Coroutine[Any, Any, List[List[Any]]]:
         params = {"from": date_to_dmy(start), "to": date_to_dmy(end)}
         return self._ajax(f"{what}History", account, **params)
 
@@ -200,7 +203,7 @@ class ErkcClient:
         return self._accounts is not None
 
     @property
-    def accounts(self) -> tuple[int, ...]:
+    def accounts(self) -> Tuple[int, ...]:
         """Привязанные лицевые счета."""
 
         if self._accounts is None:
@@ -350,7 +353,7 @@ class ErkcClient:
         self,
         accrual: Accrual,
         *,
-        max_rect: tuple[int, int] = (3840, 2160),
+        max_rect: Tuple[int, int] = (3840, 2160),
         paid_scale: float = 0.65,
     ) -> QrCodes:
         """Загружает PDF квитанции и извлекает QR коды оплаты.
@@ -387,7 +390,7 @@ class ErkcClient:
         account: int | str | None = None,
         limit: int | None = None,
         include_details: bool = False,
-    ) -> list[Accrual]:
+    ) -> List[Accrual]:
         """Запрос квитанций лицевого счета за год.
 
         Если год не уточняется - используется текущий.
@@ -403,7 +406,7 @@ class ErkcClient:
 
         account = self._account(account)
 
-        resp: list[list[str]] = await self._ajax(
+        resp: List[List[str]] = await self._ajax(
             func="getReceipts",
             account=account,
             year=year or date_last_accrual().year,
@@ -424,7 +427,7 @@ class ErkcClient:
             accrual: квитанция/начисление для обновления.
         """
 
-        json: list[list[str]] = await self._ajax(
+        json: List[List[str]] = await self._ajax(
             "accrualsDetalization",
             accrual.account,
             month=accrual.date.strftime("01.%m.%y"),
@@ -451,7 +454,7 @@ class ErkcClient:
         start: dt.date | None = None,
         end: dt.date | None = None,
         account: int | str | None = None,
-    ) -> list[MeterHistory]:
+    ) -> List[MeterHistory]:
         """Запрос счетчиков лицевого счета с историей показаний.
 
         Если даты не уточняются - результат будет включать все доступные показания.
@@ -467,7 +470,7 @@ class ErkcClient:
         start, end = start or _MIN_DATE, end or _MAX_DATE
         assert start <= end
 
-        db: dict[str, list[MeterValue]] = {}
+        db: Dict[str, List[MeterValue]] = {}
 
         while True:
             _LOGGER.debug("Запрос истории счетчиков с %s по %s", start, end)
@@ -496,7 +499,7 @@ class ErkcClient:
         account: int | str | None = None,
         limit: int | None = None,
         include_details: bool = False,
-    ) -> list[MonthAccrual]:
+    ) -> List[MonthAccrual]:
         """Запрос начислений за заданный период.
 
         Если даты не уточняются - результат будет включать все доступные показания.
@@ -532,7 +535,7 @@ class ErkcClient:
         start: dt.date | None = None,
         end: dt.date | None = None,
         account: int | str | None = None,
-    ) -> list[Payment]:
+    ) -> List[Payment]:
         """Запрос истории платежей за заданный период.
 
         Если даты не уточняются - результат будет включать все доступные показания.
@@ -641,7 +644,7 @@ class ErkcClient:
         async with self._get(path) as x:
             meters = MeterInfo.meters_from_html(await x.text())
 
-        data: dict[str, Any] = {}
+        data: Dict[str, Any] = {}
 
         # Если используем без авторизации - извлечем номер лицевого счета
         # из пути запроса и добавим в данные запроса
@@ -755,7 +758,7 @@ class ErkcClient:
         assert (account := int(account)) > 0
 
         async with self._get("payment/checkLS", ls=account) as x:
-            json: dict[str, Any] = await x.json(loads=orjson.loads)
+            json: Dict[str, Any] = await x.json(loads=orjson.loads)
 
         _LOGGER.debug("JSON ответ: %s", json)
 
