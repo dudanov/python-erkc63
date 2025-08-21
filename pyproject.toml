@@ -14,8 +14,7 @@ requires-python = ">=3.12,<3.14"
 dependencies = [
   "aiofiles>=24.0",
   "aiohttp>=3.10",
-  "beautifulsoup4>=4.12",
-  "lxml>=5.3",
+  "beautifulsoup4>=4.13",
   "mashumaro>=3.16",
   "orjson>=3.10",
 ]
@@ -44,9 +43,12 @@ classifiers = [
 "Source Code" = "https://github.com/dudanov/python-erkc63.git"
 
 [project.optional-dependencies]
+lxml = [
+  "lxml>=5.3",
+]
 qrcode = [
-  "pillow >= 11.0",
-  "pymupdf >= 1.25",
+  "pillow>=11.0",
+  "pymupdf>=1.25",
 ]
 
 [tool.uv]
