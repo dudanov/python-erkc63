@@ -249,7 +249,7 @@ class ErkcClient:
             auth: Авторизоваться при открытии. Если не указано, берет из клиента.
 
         Raises:
-            AuthorizationError: При ошибке аутентификации.
+            AuthenticationError: При ошибке аутентификации.
         """
 
         if not self.opened:
