@@ -92,5 +92,4 @@ class ModelBase(DataClassDictMixin):
 
     @classmethod
     def from_args(cls, *args: Any) -> Self:
-        fields = (x.name for x in dc.fields(cls))
-        return cls.from_dict(dict(zip(fields, args)))
+        return cls.from_dict({k.name: v for k, v in zip(dc.fields(cls), args)})
