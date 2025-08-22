@@ -221,8 +221,14 @@ class ErkcClient:
         if account is None:
             return self.account
 
-        if (account := int(account)) <= 0:
-            raise ValueError("Номер лицевого счета должен быть больше нуля.")
+        try:
+            account = int(account)
+
+        except ValueError as e:
+            raise ValueError(f"Строка '{account}' не является числом.") from e
+
+        if account <= 0:
+            raise ValueError("Лицевой счет должен быть больше нуля.")
 
         if account in self.accounts:
             return account
