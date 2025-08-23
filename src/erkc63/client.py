@@ -256,7 +256,9 @@ class ErkcClient:
             _LOGGER.debug("Открытие сессии.")
 
             async with self._get("login") as x:
-                self._update_token(await x.text())
+                html = await x.text()
+
+            self._update_token(html)
 
         if auth is None:
             auth = self._auth
@@ -303,8 +305,9 @@ class ErkcClient:
                 async with self._get("logout") as x:
                     # выход из аккаунта выполняет редирект на
                     # страницу входа с новым токеном сессии
-                    self._update_token(await x.text())
+                    html = await x.text()
 
+                self._update_token(html)
                 self._accounts = None
 
         finally:
