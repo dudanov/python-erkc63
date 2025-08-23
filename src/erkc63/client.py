@@ -80,13 +80,13 @@ def api[T, **P](
                 raise SessionRequired("Сессия не открыта.")
 
             if public:
-                if self.authorized:
+                if self.authenticated:
                     raise AuthenticationRequired(
                         "Публичный API работает без аутентификации."
                     )
 
             elif auth_required:
-                if not self.authorized:
+                if not self.authenticated:
                     raise AuthenticationRequired("Требуется аутентификация.")
 
             return func(self, *args, **kwargs)
@@ -194,8 +194,8 @@ class ErkcClient:
         return self._token is not None
 
     @property
-    def authorized(self) -> bool:
-        """Клиент авторизован."""
+    def authenticated(self) -> bool:
+        """Клиент аутентифицирован."""
 
         return self._accounts is not None
 
@@ -204,7 +204,7 @@ class ErkcClient:
         """Привязанные лицевые счета."""
 
         if self._accounts is None:
-            raise AuthenticationRequired("Не авторизован в личном кабинете.")
+            raise AuthenticationRequired("Аутентификация не пройдена.")
 
         return self._accounts
 
@@ -261,7 +261,7 @@ class ErkcClient:
         if auth is None:
             auth = self._auth
 
-        if not auth or self.authorized:
+        if not auth or self.authenticated:
             return
 
         _LOGGER.debug("Аутентификация.")
@@ -297,7 +297,7 @@ class ErkcClient:
             close_connector = self._close_connector
 
         try:
-            if self.authorized:
+            if self.authenticated:
                 _LOGGER.debug("Выход из личного кабинета %s.", self._login)
 
                 async with self._get("logout") as x:
