@@ -1,7 +1,7 @@
 import dataclasses as dc
-from typing import Annotated, Any, Self
+from typing import Any, Self
 
-from mashumaro.types import Alias
+from mashumaro import field_options
 
 from .base import DecimalString, IntNullable, ModelBase, NormalizedString
 from .parser import parse_html_divclass
@@ -15,9 +15,11 @@ class PublicAccountInfo(ModelBase):
     """Номер лицевого счета"""
     address: NormalizedString
     """Адрес"""
-    payment: Annotated[DecimalString, Alias("balanceSumma")]
+    payment: DecimalString = dc.field(
+        metadata=field_options(alias="balanceSumma")
+    )
     """К оплате"""
-    peni: Annotated[DecimalString, Alias("balancePeni")]
+    peni: DecimalString = dc.field(metadata=field_options(alias="balancePeni"))
     """Пени"""
 
     @classmethod
