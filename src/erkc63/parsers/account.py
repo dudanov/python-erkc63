@@ -7,7 +7,7 @@ from .base import DecimalString, IntNullable, ModelBase, NormalizedString
 from .parser import parse_html_divclass
 
 
-@dc.dataclass(slots=True, kw_only=True)
+@dc.dataclass(slots=True)
 class PublicAccountInfo(ModelBase):
     """Открытая информация о лицевом счете."""
 
@@ -31,7 +31,7 @@ class PublicAccountInfo(ModelBase):
             return cls.from_dict(json)
 
 
-@dc.dataclass(slots=True, kw_only=True)
+@dc.dataclass(slots=True)
 class AccountInfo(ModelBase):
     """Информация о лицевом счете"""
 

@@ -3,7 +3,7 @@ import dataclasses as dc
 from .base import DateAjax, DecimalString, ModelBase
 
 
-@dc.dataclass(slots=True, kw_only=True)
+@dc.dataclass(slots=True)
 class Payment(ModelBase):
     """
     Платеж.

@@ -13,7 +13,7 @@ from .parser import parse_html_divclass
 _LOGGER = logging.getLogger(__name__)
 
 
-@dc.dataclass(slots=True, kw_only=True)
+@dc.dataclass(slots=True)
 class MeterInfo(ModelBase):
     """Информация о приборе учета"""
 
@@ -45,7 +45,7 @@ class MeterInfo(ModelBase):
         return dict(_items())
 
 
-@dc.dataclass(slots=True, kw_only=True)
+@dc.dataclass(slots=True)
 class MeterValue(ModelBase):
     """Показание прибора учета"""
 
@@ -59,7 +59,7 @@ class MeterValue(ModelBase):
     """Источник"""
 
 
-@dc.dataclass(slots=True, kw_only=True)
+@dc.dataclass(slots=True)
 class MeterHistory(ModelBase):
     """История показаний прибора учета"""
 

@@ -7,7 +7,7 @@ from ..errors import ErkcError
 from .base import DateAjax, DecimalString, ModelBase, ReceiptAjax
 
 
-@dc.dataclass(slots=True, kw_only=True)
+@dc.dataclass(slots=True)
 class AccrualDetalization(ModelBase):
     """Детализация услуги"""
 
@@ -40,7 +40,7 @@ class AccrualDetalization(ModelBase):
         return dict(_gen())
 
 
-@dc.dataclass(slots=True, kw_only=True)
+@dc.dataclass(slots=True)
 class Accrual(ModelBase):
     """
     Квитанция.
@@ -142,7 +142,7 @@ class Accrual(ModelBase):
         return {k: v.tariff for k, v in self.details.items()}
 
 
-@dc.dataclass(slots=True, kw_only=True)
+@dc.dataclass(slots=True)
 class MonthAccrual(ModelBase):
     """
     Начисление.
