@@ -10,13 +10,13 @@ from typing import (
     Callable,
     Concatenate,
     Coroutine,
+    Final,
     Iterable,
     Mapping,
     Self,
 )
 
 import aiohttp
-import orjson
 import yarl
 
 from .errors import (
@@ -45,6 +45,16 @@ from .parsers import (
     parse_token,
 )
 
+try:
+    import orjson
+
+    JSON_DECODER = orjson.loads
+
+except ImportError:
+    import json
+
+    JSON_DECODER = json.loads
+
 QRCODE_SUPPORT = True
 
 try:
@@ -54,12 +64,12 @@ except ImportError:
     QRCODE_SUPPORT = False
 
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER: Final = logging.getLogger(__name__)
 
-_MIN_DATE = dt.date(2018, 1, 1)
-_MAX_DATE = dt.date(2099, 12, 31)
+_MIN_DATE: Final = dt.date(2018, 1, 1)
+_MAX_DATE: Final = dt.date(2099, 12, 31)
 
-_BASE_URL = yarl.URL("https://lk.erkc63.ru")
+_BASE_URL: Final = yarl.URL("https://lk.erkc63.ru")
 
 type ClientMethod[T, **P] = Callable[
     Concatenate[ErkcClient, P], Coroutine[Any, Any, T]
@@ -165,7 +175,7 @@ class ErkcClient:
     ) -> Any:
         path = f"ajax/{self._account(account)}/{func}"
         async with self._get(path, **params) as x:
-            return await x.json(loads=orjson.loads)
+            return await x.json(loads=JSON_DECODER)
 
     def _history(
         self, what: str, account: int | str | None, start: dt.date, end: dt.date
@@ -775,7 +785,7 @@ class ErkcClient:
         assert (account := int(account)) > 0
 
         async with self._get("payment/checkLS", ls=account) as x:
-            json: dict[str, Any] = await x.json(loads=orjson.loads)
+            json: dict[str, Any] = await x.json(loads=JSON_DECODER)
 
         _LOGGER.debug("JSON ответ: %s", json)
 

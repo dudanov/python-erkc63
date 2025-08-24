@@ -1,14 +1,12 @@
 import importlib.util
-from typing import cast
+from typing import Final, cast
 
 from bs4 import BeautifulSoup, Tag
 from bs4.filter import SoupStrainer
 
-if importlib.util.find_spec("lxml") is not None:
-    HTML_PARSER = "lxml"
-
-else:
-    HTML_PARSER = "html.parser"
+HTML_PARSER: Final = (
+    "html.parser" if importlib.util.find_spec("lxml") is None else "lxml"
+)
 
 
 def _parse_tags(html: str, ss: SoupStrainer) -> list[Tag]:
