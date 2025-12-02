@@ -214,7 +214,7 @@ class ErkcClient:
         """Привязанные лицевые счета."""
 
         if self._accounts is None:
-            raise AuthenticationRequired("Аутентификация не пройдена.")
+            raise AuthenticationRequired("Требуется аутентификация.")
 
         return self._accounts
 
@@ -225,7 +225,7 @@ class ErkcClient:
         if x := self.accounts:
             return x[0]
 
-        raise AccountNotFound("Основной лицевой счет не найден.")
+        raise AccountNotFound("Отсутствует основной лицевой счет.")
 
     def _account(self, account: int | str | None) -> int:
         if account is None:
