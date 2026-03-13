@@ -43,13 +43,8 @@ classifiers = [
 "Source Code" = "https://github.com/dudanov/python-erkc63.git"
 
 [project.optional-dependencies]
-lxml = [
-  "lxml>=5.3",
-]
-qrcode = [
-  "pillow>=11.0",
-  "pymupdf>=1.25",
-]
+lxml = ["lxml>=5.3"]
+qrcode = ["pillow>=11.0","pymupdf>=1.25"]
 
 [dependency-groups]
 dev = [
