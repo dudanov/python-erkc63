@@ -51,8 +51,8 @@ qrcode = [
   "pymupdf>=1.25",
 ]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
   "isort",
   "ruff",
 ]
