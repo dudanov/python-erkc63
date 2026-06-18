@@ -135,8 +135,8 @@ class Accrual(ModelBase):
         if self.sum_payment != self.payment:
             return False
 
-        x1 = self.sum_debt + self.sum_accrued  # "долг" + "начислено"
-        x2 = self.sum_paid + self.sum_payment  # "оплачено" + "к оплате"
+        x1 = self.sum_debt + self.sum_accrued
+        x2 = self.sum_paid + self.sum_payment
 
         return x1 == x2
 
