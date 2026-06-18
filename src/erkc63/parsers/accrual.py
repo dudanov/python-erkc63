@@ -46,17 +46,17 @@ class Accrual(ModelBase):
     """
 
     account: int
-    """Лицевой счет"""
+    """Номер лицевого счета"""
     date: DateAjax
-    """Дата формирования"""
+    """Дата формирования квитанции"""
     payment: DecimalString
-    """Сумма"""
+    """Сумма к оплате"""
     peni: DecimalString
-    """Пени"""
+    """Пени к оплате"""
     payment_id: ReceiptAjax | None
-    """Идентификатор квитанции для скачивания"""
+    """Идентификатор основной квитанции на оплату"""
     peni_id: ReceiptAjax | None
-    """Идентификатор квитанции на пени для скачивания"""
+    """Идентификатор квитанции на оплату пени"""
     details: Mapping[str, AccrualDetalization] = dc.field(default_factory=dict)
     """Детализация услуг"""
 
@@ -88,54 +88,55 @@ class Accrual(ModelBase):
 
     @cached_property
     def tariffs(self) -> Mapping[str, Decimal]:
-        """Тарифы по ресурсам"""
+        """Тарифы по услугам (из детализации)"""
 
-        result = {x.name: x.tariff for x in self._it_details()}
-
-        return MappingProxyType(result)
+        return MappingProxyType({x.name: x.tariff for x in self._it_details()})
 
     @cached_property
-    def details_debt(self) -> Decimal:
-        """Долг на начало расчетного периода"""
+    def sum_debt(self) -> Decimal:
+        """Долг на начало расчетного периода (из детализации)"""
 
         return self._sum_attr("debt")
 
     @cached_property
-    def details_accrued(self) -> Decimal:
-        """Начислено за расчетный период"""
+    def sum_accrued(self) -> Decimal:
+        """Начислено за расчетный период (из детализации)"""
 
         return self._sum_attr("accrued")
 
     @cached_property
-    def details_recalculation(self) -> Decimal:
-        """Перерасчет"""
+    def sum_recalculation(self) -> Decimal:
+        """Перерасчет (из детализации)"""
 
         return self._sum_attr("recalculation")
 
     @cached_property
-    def details_quality(self) -> Decimal:
-        """Снято за качество"""
+    def sum_quality(self) -> Decimal:
+        """Снято за качество (из детализации)"""
 
         return self._sum_attr("quality")
 
     @cached_property
-    def details_paid(self) -> Decimal:
-        """Оплачено"""
+    def sum_paid(self) -> Decimal:
+        """Оплачено (из детализации)"""
 
         return self._sum_attr("paid")
 
     @cached_property
-    def details_payment(self) -> Decimal:
-        """К оплате"""
+    def sum_payment(self) -> Decimal:
+        """Сумма к оплате (из детализации)"""
 
         return self._sum_attr("payment")
 
     @cached_property
     def is_correct(self) -> bool:
-        """Корректен (сумма счета совпадает с суммой начислений по услугам)"""
+        """Корректен (сверка с детализацией)"""
 
-        x1 = self.details_debt + self.details_accrued  # "долг" + "начислено"
-        x2 = self.details_paid + self.details_payment  # "оплачено" + "к оплате"
+        if self.sum_payment != self.payment:
+            return False
+
+        x1 = self.sum_debt + self.sum_accrued  # "долг" + "начислено"
+        x2 = self.sum_paid + self.sum_payment  # "оплачено" + "к оплате"
 
         return x1 == x2
 
@@ -143,7 +144,7 @@ class Accrual(ModelBase):
     def is_paid(self) -> bool:
         """Оплачен"""
 
-        return self.details_payment <= 0
+        return self.payment <= 0
 
 
 @dc.dataclass(slots=True)
