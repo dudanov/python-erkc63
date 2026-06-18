@@ -2,6 +2,7 @@ import dataclasses as dc
 import itertools as it
 from decimal import Decimal
 from functools import cached_property
+from operator import attrgetter
 from types import MappingProxyType
 from typing import Any, Iterable, Iterator, Mapping, Self
 
@@ -84,7 +85,7 @@ class Accrual(ModelBase):
         raise ErkcError("В квитанции отсутствует детализация по услугам.")
 
     def _sum_attr(self, attr: str) -> Decimal:
-        return sum((getattr(x, attr) for x in self._it_details()), Decimal())
+        return sum(map(attrgetter(attr), self._it_details()), Decimal())
 
     @cached_property
     def tariffs(self) -> Mapping[str, Decimal]:
