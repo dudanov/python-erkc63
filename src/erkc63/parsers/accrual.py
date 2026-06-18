@@ -130,7 +130,7 @@ class Accrual(ModelBase):
 
     @cached_property
     def is_correct(self) -> bool:
-        """Корректен (сверка с детализацией)"""
+        """Проверка корректности (сверка с детализацией)"""
 
         if self.sum_payment != self.payment:
             return False
