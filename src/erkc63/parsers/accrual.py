@@ -5,10 +5,12 @@ from decimal import Decimal
 from functools import cached_property
 from operator import attrgetter
 from types import MappingProxyType
-from typing import Any, Iterable, Iterator, Mapping, Self, override
+from typing import Any, Final, Iterable, Iterator, Mapping, Self, override
 
 from ..errors import ErkcError
 from .base import DateAjax, DecimalString, ModelBase, ReceiptAjax
+
+_EMPTY_MAPPING: Final = MappingProxyType({})
 
 
 @dc.dataclass(slots=True)
@@ -161,7 +163,7 @@ class Accrual(AccrualBase):
             x, y = next(group), next(group, None)
 
             yield cls.from_args(
-                account, x[0], x[1], {}, x[2], x[-1], y and y[-1]
+                account, x[0], x[1], _EMPTY_MAPPING, x[2], x[-1], y and y[-1]
             )
 
 
@@ -184,7 +186,9 @@ class MonthAccrual(AccrualBase):
     @override
     def _it(cls, data, account) -> Iterator[Self]:
         for x in data:
-            accrual = cls.from_args(account, x[0], x[4], {}, x[1], x[2], x[3])
+            accrual = cls.from_args(
+                account, x[0], x[4], _EMPTY_MAPPING, x[1], x[2], x[3]
+            )
 
             # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
             # при первом нулевом начислении прерываем цикл, так как далее все начисления тоже нулевые.
