@@ -82,10 +82,12 @@ class Accrual(ModelBase):
 
         return list(it.islice(_items(), limit))
 
-    def _sum_attr(self, attr: str) -> Decimal:
+    def _ensure_details(self) -> None:
         if not self.details:
             raise ErkcError("Отсутствует детализация по услугам.")
 
+    def _sum_attr(self, attr: str) -> Decimal:
+        self._ensure_details()
         return sum((getattr(x, attr) for x in self.details.values()), Decimal())
 
     @property
@@ -137,11 +139,13 @@ class Accrual(ModelBase):
         return self.details_payment <= 0
 
     @property
-    def tariffs(self):
+    def tariffs(self) -> Mapping[str, Decimal]:
         """Тарифы по ресурсам"""
 
-        assert self.details
-        return {k: v.tariff for k, v in self.details.items()}
+        self._ensure_details()
+        result = {x.name: x.tariff for x in self.details.values()}
+
+        return MappingProxyType(result)
 
 
 @dc.dataclass(slots=True)
