@@ -26,7 +26,9 @@ async def main():
         dd = await cli.year_accruals(include_details=True)
         for payment in dd:
             print(payment)
-            # print(payment.peni_id)
+            print(payment.details_debt)
+            print(payment.is_correct)
+            print(payment.details_paid)
 
 
 #        for x in await cli.accruals_history():

@@ -1,6 +1,7 @@
 import dataclasses as dc
 import itertools as it
 from decimal import Decimal
+from functools import cached_property
 from types import MappingProxyType
 from typing import Any, Iterable, Iterator, Mapping, Self
 
@@ -36,7 +37,7 @@ class AccrualDetalization(ModelBase):
         return MappingProxyType({x[0]: cls.from_args(*x) for x in data})
 
 
-@dc.dataclass(slots=True)
+@dc.dataclass
 class Accrual(ModelBase):
     """
     Квитанция.
@@ -85,7 +86,7 @@ class Accrual(ModelBase):
     def _sum_attr(self, attr: str) -> Decimal:
         return sum((getattr(x, attr) for x in self._it_details()), Decimal())
 
-    @property
+    @cached_property
     def tariffs(self) -> Mapping[str, Decimal]:
         """Тарифы по ресурсам"""
 
@@ -93,49 +94,52 @@ class Accrual(ModelBase):
 
         return MappingProxyType(result)
 
-    @property
+    @cached_property
     def details_debt(self) -> Decimal:
         """Долг на начало расчетного периода"""
 
         return self._sum_attr("debt")
 
-    @property
+    @cached_property
     def details_accrued(self) -> Decimal:
         """Начислено за расчетный период"""
 
         return self._sum_attr("accrued")
 
-    @property
+    @cached_property
     def details_recalculation(self) -> Decimal:
         """Перерасчет"""
 
         return self._sum_attr("recalculation")
 
-    @property
+    @cached_property
     def details_quality(self) -> Decimal:
         """Снято за качество"""
 
         return self._sum_attr("quality")
 
-    @property
+    @cached_property
     def details_paid(self) -> Decimal:
         """Оплачено"""
 
         return self._sum_attr("paid")
 
-    @property
+    @cached_property
     def details_payment(self) -> Decimal:
         """К оплате"""
 
         return self._sum_attr("payment")
 
-    @property
+    @cached_property
     def is_correct(self) -> bool:
         """Корректен (сумма счета совпадает с суммой начислений по услугам)"""
 
-        return self.payment == self.details_accrued
+        x1 = self.details_debt + self.details_accrued  # "долг" + "начислено"
+        x2 = self.details_paid + self.details_payment  # "оплачено" + "к оплате"
 
-    @property
+        return x1 == x2
+
+    @cached_property
     def is_paid(self) -> bool:
         """Оплачен"""
 
