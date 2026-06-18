@@ -86,7 +86,7 @@ class Accrual(ModelBase):
         if self.details:
             return self.details.values()
 
-        raise ErkcError("Отсутствует детализация по услугам.")
+        raise ErkcError("В квитанции отсутствует детализация по услугам.")
 
     def _sum_attr(self, attr: str) -> Decimal:
         return sum((getattr(x, attr) for x in self._it_details()), Decimal())
