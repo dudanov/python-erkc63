@@ -2,7 +2,7 @@ import dataclasses as dc
 import itertools as it
 from decimal import Decimal
 from types import MappingProxyType
-from typing import Any, Iterator, Mapping, Self, cast
+from typing import Any, Iterable, Iterator, Mapping, Self
 
 from ..errors import ErkcError
 from .base import DateAjax, DecimalString, ModelBase, ReceiptAjax
@@ -82,13 +82,14 @@ class Accrual(ModelBase):
 
         return list(it.islice(_items(), limit))
 
-    def _ensure_details(self) -> None:
-        if not self.details:
-            raise ErkcError("Отсутствует детализация по услугам.")
+    def _it_details(self) -> Iterable[AccrualDetalization]:
+        if self.details:
+            return self.details.values()
+
+        raise ErkcError("Отсутствует детализация по услугам.")
 
     def _sum_attr(self, attr: str) -> Decimal:
-        self._ensure_details()
-        return sum((getattr(x, attr) for x in self.details.values()), Decimal())
+        return sum((getattr(x, attr) for x in self._it_details()), Decimal())
 
     @property
     def details_debt(self) -> Decimal:
@@ -142,8 +143,7 @@ class Accrual(ModelBase):
     def tariffs(self) -> Mapping[str, Decimal]:
         """Тарифы по ресурсам"""
 
-        self._ensure_details()
-        result = {x.name: x.tariff for x in self.details.values()}
+        result = {x.name: x.tariff for x in self._it_details()}
 
         return MappingProxyType(result)
 
