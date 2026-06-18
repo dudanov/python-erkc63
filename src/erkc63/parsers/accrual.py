@@ -39,44 +39,15 @@ class AccrualDetalization(ModelBase):
 
 
 @dc.dataclass
-class Accrual(ModelBase):
-    """
-    Квитанция.
-
-    Объект ответа на запрос `getReceipts`.
-    """
-
+class AccrualBase(ModelBase):
     account: int
     """Номер лицевого счета"""
     date: DateAjax
     """Дата формирования квитанции"""
     payment: DecimalString
     """Сумма к оплате"""
-    peni: DecimalString
-    """Пени к оплате"""
-    payment_id: ReceiptAjax | None
-    """Идентификатор основной квитанции на оплату"""
-    peni_id: ReceiptAjax | None
-    """Идентификатор квитанции на оплату пени"""
-    details: Mapping[str, AccrualDetalization] = dc.field(default_factory=dict)
+    details: Mapping[str, AccrualDetalization]
     """Детализация услуг"""
-
-    @classmethod
-    def from_json(
-        cls,
-        data: list[list[Any]],
-        account: int,
-        limit: int | None = None,
-    ) -> list[Self]:
-        def _items() -> Iterator[Self]:
-            # группируем результат запроса по дате (поле 0)
-            for _, group in it.groupby(data, lambda k: k[0]):
-                # основная запись и опциональная запись пени
-                x, y = next(group), next(group, None)
-
-                yield cls.from_args(account, *x[:3], x[-1], y and y[-1])
-
-        return list(it.islice(_items(), limit))
 
     def _it_details(self) -> Iterable[AccrualDetalization]:
         if self.details:
@@ -148,28 +119,55 @@ class Accrual(ModelBase):
         return self.payment <= 0
 
 
-@dc.dataclass(slots=True)
-class MonthAccrual(ModelBase):
+@dc.dataclass
+class Accrual(AccrualBase):
+    """
+    Квитанция.
+
+    Объект ответа на запрос `getReceipts`.
+    """
+
+    peni: DecimalString
+    """Пени к оплате"""
+    payment_id: ReceiptAjax | None
+    """Идентификатор основной квитанции на оплату"""
+    peni_id: ReceiptAjax | None
+    """Идентификатор квитанции на оплату пени"""
+
+    @classmethod
+    def from_json(
+        cls,
+        data: list[list[Any]],
+        account: int,
+        limit: int | None = None,
+    ) -> list[Self]:
+        def _items() -> Iterator[Self]:
+            # группируем результат запроса по дате (поле 0)
+            for _, group in it.groupby(data, lambda k: k[0]):
+                # основная запись и опциональная запись пени
+                x, y = next(group), next(group, None)
+
+                yield cls.from_args(
+                    account, x[0], x[1], {}, x[2], x[-1], y and y[-1]
+                )
+
+        return list(it.islice(_items(), limit))
+
+
+@dc.dataclass
+class MonthAccrual(AccrualBase):
     """
     Начисление.
 
     Объект ответа на запрос `accrualsHistory`.
     """
 
-    account: int
-    """Лицевой счет"""
-    date: DateAjax
-    """Дата"""
     debt: DecimalString
     """Долг на начало расчетного периода"""
     accrued: DecimalString
     """Начислено"""
     paid: DecimalString
     """Оплачено"""
-    payment: DecimalString
-    """К оплате"""
-    details: Mapping[str, AccrualDetalization] = dc.field(default_factory=dict)
-    """Детализация услуг"""
 
     @classmethod
     def from_json(
@@ -180,7 +178,9 @@ class MonthAccrual(ModelBase):
     ) -> list[Self]:
         def _items() -> Iterator[Self]:
             for args in json:
-                accrual = cls.from_args(account, *args)
+                accrual = cls.from_args(
+                    account, args[0], args[4], {}, args[1], args[2], args[3]
+                )
 
                 # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
                 # при первом нулевом начислении прерываем цикл, так как далее все начисления тоже нулевые.
@@ -192,4 +192,4 @@ class MonthAccrual(ModelBase):
         return list(it.islice(_items(), limit))
 
 
-Accruals = Accrual | MonthAccrual
+type Accruals = Accrual | MonthAccrual
