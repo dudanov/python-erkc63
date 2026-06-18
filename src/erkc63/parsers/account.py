@@ -23,13 +23,13 @@ class PublicAccountInfo(ModelBase):
     """Пени"""
 
     @classmethod
-    def from_json(cls, json: dict[str, Any], account: int) -> Self | None:
+    def from_json(cls, data: dict[str, Any], account: int) -> Self | None:
         """Конструктор из JSON-ответа публичного API."""
 
-        if json["checkLS"]:
-            json["account"] = account
+        if data["checkLS"]:
+            data["account"] = account
 
-            return cls.from_dict(json)
+            return cls.from_dict(data)
 
 
 @dc.dataclass(slots=True)
