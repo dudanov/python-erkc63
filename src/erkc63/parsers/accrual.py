@@ -1,10 +1,11 @@
 import dataclasses as dc
 import itertools as it
+from abc import ABC, abstractmethod
 from decimal import Decimal
 from functools import cached_property
 from operator import attrgetter
 from types import MappingProxyType
-from typing import Any, Iterable, Iterator, Mapping, Self
+from typing import Any, Iterable, Iterator, Mapping, Self, override
 
 from ..errors import ErkcError
 from .base import DateAjax, DecimalString, ModelBase, ReceiptAjax
@@ -39,7 +40,7 @@ class AccrualDetalization(ModelBase):
 
 
 @dc.dataclass
-class AccrualBase(ModelBase):
+class AccrualBase(ABC, ModelBase):
     account: int
     """Номер лицевого счета"""
     date: DateAjax
@@ -118,6 +119,23 @@ class AccrualBase(ModelBase):
 
         return self.payment <= 0
 
+    @classmethod
+    @abstractmethod
+    def _it(
+        cls,
+        data: list[list[Any]],
+        account: int,
+    ) -> Iterator[Self]: ...
+
+    @classmethod
+    def from_json(
+        cls,
+        data: list[list[Any]],
+        account: int,
+        limit: int | None = None,
+    ) -> list[Self]:
+        return list(it.islice(cls._it(data, account), limit))
+
 
 @dc.dataclass
 class Accrual(AccrualBase):
@@ -135,23 +153,16 @@ class Accrual(AccrualBase):
     """Идентификатор квитанции на оплату пени"""
 
     @classmethod
-    def from_json(
-        cls,
-        data: list[list[Any]],
-        account: int,
-        limit: int | None = None,
-    ) -> list[Self]:
-        def _items() -> Iterator[Self]:
-            # группируем результат запроса по дате (поле 0)
-            for _, group in it.groupby(data, lambda k: k[0]):
-                # основная запись и опциональная запись пени
-                x, y = next(group), next(group, None)
+    @override
+    def _it(cls, data, account) -> Iterator[Self]:
+        # группируем результат запроса по дате (поле 0)
+        for _, group in it.groupby(data, lambda k: k[0]):
+            # основная запись и опциональная запись пени
+            x, y = next(group), next(group, None)
 
-                yield cls.from_args(
-                    account, x[0], x[1], {}, x[2], x[-1], y and y[-1]
-                )
-
-        return list(it.islice(_items(), limit))
+            yield cls.from_args(
+                account, x[0], x[1], {}, x[2], x[-1], y and y[-1]
+            )
 
 
 @dc.dataclass
@@ -170,26 +181,17 @@ class MonthAccrual(AccrualBase):
     """Оплачено"""
 
     @classmethod
-    def from_json(
-        cls,
-        json: list[list[Any]],
-        account: int,
-        limit: int | None = None,
-    ) -> list[Self]:
-        def _items() -> Iterator[Self]:
-            for args in json:
-                accrual = cls.from_args(
-                    account, args[0], args[4], {}, args[1], args[2], args[3]
-                )
+    @override
+    def _it(cls, data, account) -> Iterator[Self]:
+        for x in data:
+            accrual = cls.from_args(account, x[0], x[4], {}, x[1], x[2], x[3])
 
-                # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
-                # при первом нулевом начислении прерываем цикл, так как далее все начисления тоже нулевые.
-                if not accrual.accrued:
-                    break
+            # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
+            # при первом нулевом начислении прерываем цикл, так как далее все начисления тоже нулевые.
+            if not accrual.accrued:
+                break
 
-                yield accrual
-
-        return list(it.islice(_items(), limit))
+            yield accrual
 
 
 type Accruals = Accrual | MonthAccrual
