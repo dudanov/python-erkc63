@@ -23,13 +23,9 @@ async def main():
         # x = await cli.year_accruals(include_details=True)
 
         # await cli.qr_codes(x[1])
-        dd = await cli.year_accruals()
+        dd = await cli.year_accruals(include_details=True)
         for payment in dd:
-            rr = await cli.qr_codes(payment)
-            rr.qr_erkc(paid=True)
-
-            # print(payment.details)
-            # print(payment.payment_id)
+            print(payment)
             # print(payment.peni_id)
 
 

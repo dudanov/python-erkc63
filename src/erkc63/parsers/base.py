@@ -28,10 +28,8 @@ def dmy_to_date(value: str) -> dt.date:
     return dt.date(2000 + y, m, d)
 
 
-def decimal(value: str) -> Decimal:
-    value = value.replace(" ", "")
-    value = value.replace(",", ".")
-    return Decimal(value)
+def str_decimal(value: str) -> Decimal:
+    return Decimal(value.replace(" ", "").replace(",", "."))
 
 
 def normalize(value: str) -> str:
@@ -39,8 +37,11 @@ def normalize(value: str) -> str:
 
 
 class DecimalStrategy(SerializationStrategy):
-    def deserialize(self, value: str) -> Decimal:
-        return decimal(value)
+    def deserialize(self, value: str | float) -> Decimal:
+        if isinstance(value, str):
+            return str_decimal(value)
+
+        return Decimal(str(value))
 
 
 class MeterSerialStrategy(SerializationStrategy):

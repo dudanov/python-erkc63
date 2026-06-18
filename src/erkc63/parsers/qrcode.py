@@ -9,7 +9,7 @@ from PIL import Image as PILImage
 from PIL.Image import Image, Palette
 from pymupdf import Document, Identity, Matrix, Page, Pixmap
 
-from .base import decimal, normalize
+from .base import normalize, str_decimal
 
 PdfSupported = Literal["erkc", "peni"]
 QrSupported = Literal["erkc", "kapremont", "peni"]
@@ -116,11 +116,11 @@ class QrCodes:
             )
 
             # сумма начисления за капремонт
-            dd = decimal(page.get_textbox((680, 460, 720, 470)))
+            dd = str_decimal(page.get_textbox((680, 460, 720, 470)))
             print(dd)
 
             # сумма начисления за капремонт
-            dd = decimal(page.get_textbox((786, 460, 820, 470)))
+            dd = str_decimal(page.get_textbox((786, 460, 820, 470)))
             print(dd)
 
             # ЕЛС
@@ -128,7 +128,7 @@ class QrCodes:
             print(dd)
 
             # к оплате
-            dd = decimal(page.get_textbox((150, 165, 225, 177)))
+            dd = str_decimal(page.get_textbox((150, 165, 225, 177)))
             print(dd)
 
         if pdf_peni:

@@ -28,7 +28,7 @@ class AccrualDetalization(ModelBase):
     """Оплачено"""
     payment: DecimalString
     """К оплате"""
-    consumption: Decimal
+    consumption: DecimalString
     """Потребление"""
 
     @classmethod
