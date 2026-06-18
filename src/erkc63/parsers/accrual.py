@@ -33,13 +33,7 @@ class AccrualDetalization(ModelBase):
 
     @classmethod
     def from_json(cls, data: list[list[Any]]) -> Mapping[str, Self]:
-        def _items() -> Iterator[tuple[str, Self]]:
-            for args in data:
-                details = cls.from_args(*args)
-
-                yield details.name, details
-
-        return MappingProxyType(dict(_items()))
+        return MappingProxyType({x[0]: cls.from_args(*x) for x in data})
 
 
 @dc.dataclass(slots=True)
