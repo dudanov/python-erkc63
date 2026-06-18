@@ -92,6 +92,14 @@ class Accrual(ModelBase):
         return sum((getattr(x, attr) for x in self._it_details()), Decimal())
 
     @property
+    def tariffs(self) -> Mapping[str, Decimal]:
+        """Тарифы по ресурсам"""
+
+        result = {x.name: x.tariff for x in self._it_details()}
+
+        return MappingProxyType(result)
+
+    @property
     def details_debt(self) -> Decimal:
         """Долг на начало расчетного периода"""
 
@@ -138,14 +146,6 @@ class Accrual(ModelBase):
         """Оплачен"""
 
         return self.details_payment <= 0
-
-    @property
-    def tariffs(self) -> Mapping[str, Decimal]:
-        """Тарифы по ресурсам"""
-
-        result = {x.name: x.tariff for x in self._it_details()}
-
-        return MappingProxyType(result)
 
 
 @dc.dataclass(slots=True)
