@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup, Tag
 from bs4.filter import SoupStrainer
 
 HTML_PARSER: Final = (
-    "html.parser" if importlib.util.find_spec("lxml") is None else "lxml"
+    "lxml" if importlib.util.find_spec("lxml") else "html.parser"
 )
 
 
@@ -19,8 +19,9 @@ def parse_html_divclass(html: str, cls_prefix: str) -> list[Tag]:
 
     ss = SoupStrainer(
         name="div",
-        class_=lambda x: x is not None
-        and any(x.startswith(cls_prefix) for x in x.split()),
+        class_=lambda x: (
+            x is not None and any(x.startswith(cls_prefix) for x in x.split())
+        ),
     )
 
     return _parse_tags(html, ss)

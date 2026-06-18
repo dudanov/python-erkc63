@@ -28,6 +28,7 @@ class PublicAccountInfo(ModelBase):
 
         if json["checkLS"]:
             json["account"] = account
+
             return cls.from_dict(json)
 
 

@@ -1,6 +1,7 @@
 import dataclasses as dc
 import itertools as it
 from decimal import Decimal
+from types import MappingProxyType
 from typing import Any, Iterator, Mapping, Self, cast
 
 from ..errors import ErkcError
@@ -31,13 +32,14 @@ class AccrualDetalization(ModelBase):
     """Потребление"""
 
     @classmethod
-    def from_json(cls, json: list[list[Any]]) -> Mapping[str, Self]:
-        def _gen() -> Iterator[tuple[str, Self]]:
-            for args in json:
+    def from_json(cls, data: list[list[Any]]) -> Mapping[str, Self]:
+        def _items() -> Iterator[tuple[str, Self]]:
+            for args in data:
                 details = cls.from_args(*args)
+
                 yield details.name, details
 
-        return dict(_gen())
+        return MappingProxyType(dict(_items()))
 
 
 @dc.dataclass(slots=True)
@@ -66,61 +68,61 @@ class Accrual(ModelBase):
     @classmethod
     def from_json(
         cls,
-        json: list[list[Any]],
+        data: list[list[Any]],
         account: int,
         limit: int | None = None,
     ) -> list[Self]:
-        def _gen() -> Iterator[Self]:
+        def _items() -> Iterator[Self]:
             # группируем результат запроса по дате (поле 0)
-            for _, group in it.groupby(json, lambda k: k[0]):
+            for _, group in it.groupby(data, lambda k: k[0]):
                 # основная запись и опциональная запись пени
-                a, b = next(group), next(group, None)
-                yield cls.from_args(account, *a[:3], a[-1], b and b[-1])
+                x, y = next(group), next(group, None)
 
-        return list(it.islice(_gen(), limit))
+                yield cls.from_args(account, *x[:3], x[-1], y and y[-1])
 
-    def _sum(self, attr: str) -> Decimal:
+        return list(it.islice(_items(), limit))
+
+    def _sum_attr(self, attr: str) -> Decimal:
         if not self.details:
             raise ErkcError("Отсутствует детализация по услугам.")
 
-        x = sum(getattr(x, attr) for x in self.details.values())
-        return cast(Decimal, x)
+        return sum((getattr(x, attr) for x in self.details.values()), Decimal())
 
     @property
     def details_debt(self) -> Decimal:
         """Долг на начало расчетного периода"""
 
-        return self._sum("debt")
+        return self._sum_attr("debt")
 
     @property
     def details_accrued(self) -> Decimal:
         """Начислено за расчетный период"""
 
-        return self._sum("accrued")
+        return self._sum_attr("accrued")
 
     @property
     def details_recalculation(self) -> Decimal:
         """Перерасчет"""
 
-        return self._sum("recalculation")
+        return self._sum_attr("recalculation")
 
     @property
     def details_quality(self) -> Decimal:
         """Снято за качество"""
 
-        return self._sum("quality")
+        return self._sum_attr("quality")
 
     @property
     def details_paid(self) -> Decimal:
         """Оплачено"""
 
-        return self._sum("paid")
+        return self._sum_attr("paid")
 
     @property
     def details_payment(self) -> Decimal:
         """К оплате"""
 
-        return self._sum("payment")
+        return self._sum_attr("payment")
 
     @property
     def is_correct(self) -> bool:
@@ -172,7 +174,7 @@ class MonthAccrual(ModelBase):
         account: int,
         limit: int | None = None,
     ) -> list[Self]:
-        def _gen() -> Iterator[Self]:
+        def _items() -> Iterator[Self]:
             for args in json:
                 accrual = cls.from_args(account, *args)
 
@@ -183,7 +185,7 @@ class MonthAccrual(ModelBase):
 
                 yield accrual
 
-        return list(it.islice(_gen(), limit))
+        return list(it.islice(_items(), limit))
 
 
 Accruals = Accrual | MonthAccrual
