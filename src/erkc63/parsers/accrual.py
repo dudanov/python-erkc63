@@ -140,7 +140,7 @@ class Accrual(ModelBase):
 
         return x1 == x2
 
-    @cached_property
+    @property
     def is_paid(self) -> bool:
         """Оплачен"""
 
