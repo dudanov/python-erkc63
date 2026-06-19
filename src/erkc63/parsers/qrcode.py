@@ -16,15 +16,9 @@ class AccrualImages:
 def pix_save(pix: pymupdf.Pixmap, max_rect: tuple[int, int]) -> bytes:
     """Сохраняет Pixmap в 8-битный оптимизированный `PNG` с палитрой `WEB`."""
 
-    try:
-        img = pix.pil_image()
-        img = img.copy()
-
-    finally:
-        pix = None  # type: ignore[assignment]
-
     bio = io.BytesIO()
 
+    img = pix.pil_image()
     img.thumbnail(max_rect)
     img = img.convert(mode="P", palette=Image.Palette.WEB)
     img.save(bio, format="png", optimize=True)

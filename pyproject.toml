@@ -12,11 +12,9 @@ license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 dependencies = [
-  "aiofiles>=24.0",
   "aiohttp>=3.10",
   "beautifulsoup4>=4.13",
   "mashumaro>=3.16",
-  "orjson>=3.10",
 ]
 keywords = [
   "erkc63",
@@ -44,6 +42,7 @@ classifiers = [
 
 [project.optional-dependencies]
 lxml = ["lxml>=5.3"]
+orjson=["orjson>=3.10"]
 qrcode = ["pillow>=11.0","pymupdf>=1.25"]
 
 [dependency-groups]
