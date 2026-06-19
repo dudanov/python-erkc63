@@ -255,7 +255,7 @@ class ErkcClient:
             account = int(account)
 
         except ValueError as e:
-            raise ValueError(f"Строка '{account}' не является числом.") from e
+            raise ValueError(f"Строка {account!r} не является числом.") from e
 
         if account <= 0:
             raise ValueError("Лицевой счет должен быть больше нуля.")
@@ -263,7 +263,7 @@ class ErkcClient:
         if account in self.accounts:
             return account
 
-        raise AccountNotFound(f"Лицевой счет {account} не найден.")
+        raise AccountNotFound(f"Лицевой счет {account!r} не найден.")
 
     async def open(
         self,
@@ -384,7 +384,7 @@ class ErkcClient:
 
             async with self._get(path, kvit=filename) as x:
                 _LOGGER.debug(
-                    "Загрузка квитанции '%s', размер %d байт",
+                    "Загрузка квитанции %r, размер %d байт",
                     filename,
                     x.content_length,
                 )
