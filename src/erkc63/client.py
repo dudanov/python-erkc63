@@ -264,45 +264,48 @@ class ErkcClient:
 
         if not self.opened:
             _LOGGER.debug("Открытие сессии.")
-
-            async with self._get("login") as x:
-                html = await x.text()
-
-            self._update_token(html)
+            # "Открытие сессии" происходит с помощью захвата CSRF-токена со страницы аутентификации
+            async with self._get("login") as resp:
+                self._update_token(await resp.text())
 
         if auth is None:
             auth = self._auth
 
         if not auth or self.authenticated:
+            # Аутентификация не требуется или уже выполнена
             return
 
-        _LOGGER.debug("Аутентификация.")
-
+        # Параметры аутентификации либо из параметров метода, либо из клиента
         login, password = login or self._login, password or self._password
 
         if not (login and password):
             raise AuthenticationError("Не указаны параметры входа.")
 
-        _LOGGER.debug("Аутентификация в личном кабинете %s", login)
+        _LOGGER.debug("Аутентификация в личном кабинете %r", login)
 
-        async with self._post("login", login=login, password=password) as x:
-            if x.url == x.history[0].url:
+        # POST-запрос аутентификации
+        async with self._post("login", login=login, password=password) as resp:
+            # При успешной аутентификации происходит редирект на страницу личного кабинета,
+            # иначе - на ту же страницу (URL идентичен)
+            if resp.url == resp.history[0].url:
                 raise AuthenticationError(
                     "Ошибка аутентификации. Проверьте данные входа."
                 )
 
-            self._update_accounts(await x.text())
+            # Аутентификация успешна. Читаем доступные лицевые счета.
+            self._update_accounts(await resp.text())
 
-        _LOGGER.debug("Аутентификация в личном кабинете %s успешна.", login)
+        _LOGGER.debug("Аутентификация в личном кабинете %r успешна.", login)
 
         # Сохраняем актуальную пару логин-пароль
         self._login, self._password = login, password
 
     async def close(self, close_connector: bool | None = None) -> None:
-        """Выход из личного кабинета и закрытие клиентской сессии.
+        """
+        Выход из личного кабинета и закрытие сессии.
 
         Parameters:
-            close_connector: Закрыть коннектор. Если не указан, параметр берется из клиента.
+            close_connector: Закрыть сессию и коннектор. Если не указан, параметр берется из клиента.
         """
 
         if close_connector is None:
@@ -310,20 +313,19 @@ class ErkcClient:
 
         try:
             if self.authenticated:
-                _LOGGER.debug("Выход из личного кабинета %s.", self._login)
+                _LOGGER.debug("Выход из личного кабинета %r.", self._login)
 
-                async with self._get("logout") as x:
-                    # выход из аккаунта выполняет редирект на
-                    # страницу входа с новым токеном сессии
-                    html = await x.text()
+                async with self._get("logout") as resp:
+                    # Выход из аккаунта выполняет редирект на страницу аутентификации
+                    # с обновленным CSRF-токеном. Обновляем его.
+                    self._update_token(await resp.text())
 
-                self._update_token(html)
                 self._accounts = None
 
         finally:
             if close_connector:
-                _LOGGER.debug("Закрытие коннектора сессии.")
-
+                _LOGGER.debug("Закрытие сессии.")
+                # Если коннектор требуется закрыть, то закрываем и удаляем CSRF-токен.
                 await self._session.close()
                 self._token = None
 
