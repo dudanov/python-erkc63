@@ -59,7 +59,7 @@ except ImportError:
 QRCODE_SUPPORT = True
 
 try:
-    from .parsers.qrcode import QrCodes
+    from .parsers.qrcode import AccrualImages, erkc_images, peni_images
 
 except ImportError:
     QRCODE_SUPPORT = False
@@ -399,7 +399,7 @@ class ErkcClient:
         accrual: Accrual,
         *,
         max_rect: tuple[int, int] = (3840, 2160),
-    ) -> QrCodes:
+    ) -> tuple[AccrualImages | None]:
         """Загружает PDF квитанции и извлекает QR коды оплаты.
 
         Parameters:

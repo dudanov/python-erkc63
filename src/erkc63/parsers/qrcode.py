@@ -1,10 +1,15 @@
 import dataclasses as dc
 import io
+import itertools as it
+from typing import Final
 
 import pymupdf
 from PIL import Image
 
 type PilImage = Image.Image
+
+QR_ERKC: Final = ("img2", "img4")
+QR_PENI: Final = ("img0",)
 
 
 @dc.dataclass(slots=True)
@@ -13,9 +18,8 @@ class AccrualImages:
     codes: list[bytes]
 
 
-def pix_save(pix: pymupdf.Pixmap, rect: tuple[int, int]) -> bytes:
-    """Сохраняет Pixmap в 8-битный оптимизированный `PNG` с палитрой `WEB`."""
-
+# Сохраняет Pixmap в 8-битный оптимизированный PNG в палитре WEB
+def _png(pix: pymupdf.Pixmap, rect: tuple[int, int]) -> bytes:
     bio = io.BytesIO()
 
     img = pix.pil_image()
@@ -26,9 +30,8 @@ def pix_save(pix: pymupdf.Pixmap, rect: tuple[int, int]) -> bytes:
     return bio.getvalue()
 
 
-def img_png(page: pymupdf.Page, name: str, rect: tuple[int, int]) -> bytes:
-    """Извлекает изображение со страницы `PDF` в данные `PNG` формата."""
-
+# Извлекает изображение со страницы в данные PNG
+def _img(page: pymupdf.Page, name: str, rect: tuple[int, int]) -> bytes:
     for item in page.get_images():
         img_xref, img_name = item[0], item[7]
 
@@ -37,40 +40,40 @@ def img_png(page: pymupdf.Page, name: str, rect: tuple[int, int]) -> bytes:
 
         pix = pymupdf.Pixmap(page.parent, img_xref)
 
-        return pix_save(pix, rect)
+        return _png(pix, rect)
 
     raise FileNotFoundError("Изображение на странице не найдено.")
 
 
-def page_png(page: pymupdf.Page, rect: tuple[int, int]) -> bytes:
-    """
-    Рендерит страницу `PDF` в данные изображения `PNG` формата.
-    Итоговый размер пропорционально вписывается в указанные ограничения, по умолчанию 4К (3840 x 2160).
-    """
-
+# Рендерит страницу в данные PNG вписывающегося в указанное разрешение
+def _page(page: pymupdf.Page, rect: tuple[int, int]) -> bytes:
     factor = min(x / y for x, y in zip(rect, page.rect[2:]))
     pix = page.get_pixmap(matrix=pymupdf.Matrix(factor, factor))
 
-    return pix_save(pix, rect)
+    return _png(pix, rect)
 
 
-# 'img2', 'img4' - основной счет
-# 'img0' - счет пени
 def accrual_images(
     data: bytes | None,
-    images: list[str],
-    rect: tuple[int, int] = (3840, 2160),
-):
-    if not data:
-        return
-
-    if not all(x > 0 for x in rect):
-        raise ValueError("Ограничения max_rect должны быть больше нуля.")
-
+    rect: tuple[int, int],
+    images: tuple[str, ...],
+) -> tuple[bytes, ...]:
     with pymupdf.open(stream=data) as doc:
         page = doc[0]
 
-        return AccrualImages(
-            page=page_png(page, rect),
-            codes=[img_png(page, x, rect) for x in images],
-        )
+        return _page(page, rect), *map(lambda x: _img(page, x, rect), images)
+
+
+def erkc_images(
+    data: bytes | None, rect: tuple[int, int]
+) -> AccrualImages | None:
+    if not all(x > 0 for x in rect):
+        raise ValueError("Ограничения max_rect должны быть больше нуля.")
+
+    return accrual_images(data, rect, QR_ERKC)
+
+
+def peni_images(
+    data: bytes | None, rect: tuple[int, int]
+) -> AccrualImages | None:
+    return accrual_images(data, rect, QR_PENI)
