@@ -7,6 +7,7 @@ import logging
 from decimal import Decimal
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Concatenate,
     Coroutine,
@@ -161,35 +162,54 @@ class ErkcClient:
         self._auth = auth
         return self
 
-    def _post(self, path: str, **data: Any):
+    def _post(
+        self,
+        path: str,
+        **data: Any,
+    ):
         data["_token"] = self._token
-        _LOGGER.debug("POST: path='%s', data=%s", path, data)
+        _LOGGER.debug("POST: path=%r, data=%r", path, data)
+
         return self._session.post(_BASE_URL.joinpath(path), data=data)
 
-    def _get(self, path: str, **params: Any):
-        _LOGGER.debug("GET: path='%s', params=%s", path, params)
+    def _get(
+        self,
+        path: str,
+        **params: Any,
+    ):
+        _LOGGER.debug("GET: path=%r, params=%r", path, params)
+
         return self._session.get(_BASE_URL.joinpath(path), params=params)
 
     async def _ajax(
-        self, func: str, account: int | str | None, **params: Any
+        self,
+        func: str,
+        account: int | str | None,
+        **params: Any,
     ) -> Any:
         path = f"ajax/{self._account(account)}/{func}"
-        async with self._get(path, **params) as x:
-            return await x.json(loads=JSON_DECODER)
+
+        async with self._get(path, **params) as resp:
+            return await resp.json(loads=JSON_DECODER)
 
     def _history(
-        self, what: str, account: int | str | None, start: dt.date, end: dt.date
-    ) -> Coroutine[Any, Any, list[list[Any]]]:
+        self,
+        what: str,
+        account: int | str | None,
+        start: dt.date,
+        end: dt.date,
+    ) -> Awaitable[list[list[Any]]]:
         params = {"from": date_to_dmy(start), "to": date_to_dmy(end)}
+
         return self._ajax(f"{what}History", account, **params)
 
     def _update_token(self, html: str) -> None:
         self._token = parse_token(html)
-        _LOGGER.debug("CSRF токен: %s", self._token)
+        _LOGGER.debug("CSRF токен: %r", self._token)
 
     def _update_accounts(self, html: str) -> None:
         self._accounts = parse_accounts(html)
-        _LOGGER.debug("Привязанные лицевые счета: %s", self._accounts)
+        _LOGGER.debug("Привязанные лицевые счета: %r", self._accounts)
 
     @property
     def connector_closed(self) -> bool:
@@ -263,7 +283,7 @@ class ErkcClient:
         """
 
         if not self.opened:
-            _LOGGER.debug("Открытие сессии.")
+            _LOGGER.debug("Открытие сессии")
             # "Открытие сессии" происходит с помощью захвата CSRF-токена со страницы аутентификации
             async with self._get("login") as resp:
                 self._update_token(await resp.text())
@@ -288,14 +308,12 @@ class ErkcClient:
             # При успешной аутентификации происходит редирект на страницу личного кабинета,
             # иначе - на ту же страницу (URL идентичен)
             if resp.url == resp.history[0].url:
-                raise AuthenticationError(
-                    "Ошибка аутентификации. Проверьте данные входа."
-                )
+                raise AuthenticationError("Неверные параметры входа.")
 
             # Аутентификация успешна. Читаем доступные лицевые счета.
             self._update_accounts(await resp.text())
 
-        _LOGGER.debug("Аутентификация в личном кабинете %r успешна.", login)
+        _LOGGER.debug("Аутентификация в личном кабинете %r выполнена", login)
 
         # Сохраняем актуальную пару логин-пароль
         self._login, self._password = login, password
@@ -313,7 +331,7 @@ class ErkcClient:
 
         try:
             if self.authenticated:
-                _LOGGER.debug("Выход из личного кабинета %r.", self._login)
+                _LOGGER.debug("Выход из личного кабинета %r", self._login)
 
                 async with self._get("logout") as resp:
                     # Выход из аккаунта выполняет редирект на страницу аутентификации
@@ -324,7 +342,7 @@ class ErkcClient:
 
         finally:
             if close_connector:
-                _LOGGER.debug("Закрытие сессии.")
+                _LOGGER.debug("Закрытие сессии")
                 # Если коннектор требуется закрыть, то закрываем и удаляем CSRF-токен.
                 await self._session.close()
                 self._token = None
@@ -348,14 +366,14 @@ class ErkcClient:
 
         if peni:
             id = accrual.peni_id
-            _LOGGER.debug("Запрос квитанции пени.")
+            _LOGGER.debug("Запрос квитанции пени")
 
         else:
             id = accrual.payment_id
-            _LOGGER.debug("Запрос основной квитанции.")
+            _LOGGER.debug("Запрос основной квитанции")
 
         if id is None:
-            _LOGGER.debug("Идентификатор квитанции отсутствует.")
+            _LOGGER.debug("Идентификатор квитанции отсутствует")
             return
 
         try:
@@ -366,7 +384,7 @@ class ErkcClient:
 
             async with self._get(path, kvit=filename) as x:
                 _LOGGER.debug(
-                    "Загрузка квитанции '%s', размер %d байт.",
+                    "Загрузка квитанции '%s', размер %d байт",
                     filename,
                     x.content_length,
                 )
@@ -374,7 +392,7 @@ class ErkcClient:
                 return await x.read()
 
         except aiohttp.ClientResponseError:
-            _LOGGER.debug("Ошибка загрузки квитанции.")
+            _LOGGER.debug("Ошибка загрузки квитанции")
             return
 
     @api(auth_required=True)
@@ -651,7 +669,7 @@ class ErkcClient:
         assert (account := int(account)) > 0
 
         if account not in self.accounts:
-            _LOGGER.debug("Лицевой счет %d не привязан.", account)
+            _LOGGER.debug("Лицевой счет %d не привязан", account)
             return
 
         async with self._post(f"account/{account}/remove") as x:
