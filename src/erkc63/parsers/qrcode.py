@@ -31,7 +31,7 @@ def _png(pix: pymupdf.Pixmap, rect: tuple[int, int]) -> bytes:
 
 
 # Извлекает изображение со страницы в данные PNG
-def _img(page: pymupdf.Page, name: str, rect: tuple[int, int]) -> bytes:
+def _img(page: pymupdf.Page, rect: tuple[int, int], name: str) -> bytes:
     for item in page.get_images():
         img_xref, img_name = item[0], item[7]
 
@@ -61,7 +61,7 @@ def accrual_images(
     with pymupdf.open(stream=data) as doc:
         page = doc[0]
 
-        return _page(page, rect), *map(lambda x: _img(page, x, rect), images)
+        return _page(page, rect), *map(lambda x: _img(page, rect, x), images)
 
 
 def erkc_images(
