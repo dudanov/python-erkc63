@@ -1,11 +1,8 @@
 import io
-from functools import partial
 from typing import Literal
 
 import pymupdf
 from PIL import Image
-
-from .base import normalize, str_decimal
 
 type PilImage = Image.Image
 
@@ -13,83 +10,61 @@ type PdfSupported = Literal["erkc", "peni"]
 type QrSupported = Literal["erkc", "kapremont", "peni"]
 
 
-image_convert = partial(
-    Image.Image.convert, mode="P", palette=Image.Palette.WEB
-)
-"""Конвертирует изображение в 8-битное с палитрой `WEB`."""
+def pix_save(pix: pymupdf.Pixmap, max_rect: tuple[int, int]) -> bytes:
+    """Сохраняет Pixmap в 8-битный оптимизированный `PNG` с палитрой `WEB`."""
 
+    try:
+        img = pix.pil_image()
+        img = img.copy()
 
-def image_save(image: PilImage) -> bytes:
-    """Сохраняет изображение в 8-битный оптимизированный `PNG` с палитрой `WEB`."""
+    finally:
+        pix = None  # type: ignore[assignment]
 
     bio = io.BytesIO()
-    image.save(bio, format="png", optimize=True)
-    data = bio.getvalue()
 
-    return data
+    img.thumbnail(max_rect)
+    img = img.convert(mode="P", palette=Image.Palette.WEB)
+    img.save(bio, format="png", optimize=True)
+
+    return bio.getvalue()
 
 
-def get_image_from_page(
-    page: pymupdf.Page,
-    image_name: str,
-    max_rect: tuple[int, int] = (3840, 2160),
-) -> PilImage:
+def pdf_img_to_png(
+    page: pymupdf.Page, img_name: str, max_rect: tuple[int, int]
+) -> bytes:
     """Извлекает изображение со страницы `PDF` в `Image`."""
 
-    if not image_name:
+    if not img_name:
         raise ValueError("Имя изображения не может быть пустой строкой.")
 
     for img_info in page.get_images():
-        name = img_info[7]
+        xref, name = img_info[0], img_info[7]
 
-        if name != image_name:
+        if name != img_name:
             continue
 
-        xref = img_info[0]
         pix = pymupdf.Pixmap(page.parent, xref)
 
-        try:
-            image = pix.pil_image()
-            image = image.copy()
+        return pix_save(pix, max_rect)
 
-        finally:
-            pix = None
-
-        image.thumbnail(max_rect)
-
-        return image_convert(image)
-
-    raise FileNotFoundError(f"Изображение '{image_name}' не найдено.")
+    raise FileNotFoundError(f"Изображение '{img_name}' не найдено.")
 
 
-def page_to_png(
-    page: pymupdf.Page,
-    max_rect: tuple[int, int] = (3840, 2160),
-) -> bytes:
+def pdf_page_to_png(page: pymupdf.Page, max_rect: tuple[int, int]) -> bytes:
     """
     Рендерит страницу `PDF` в `Image`.
-    Размер изображения пропорционально вписывается в указанные ограничения, по-умолчанию 4К (3840 x 2160).
+    Размер изображения пропорционально вписывается в указанные ограничения, по умолчанию 4К (3840 x 2160).
     """
-
-    if not all(x > 0 for x in max_rect):
-        raise ValueError("Ограничения max_rect должны быть больше нуля.")
 
     factor = min(x / y for x, y in zip(max_rect, page.rect[2:]))
     pix = page.get_pixmap(matrix=pymupdf.Matrix(factor, factor))
 
-    try:
-        image: PilImage = pix.pil_image()
-        image = image.copy()
-
-    finally:
-        pix = None
-
-    return image_save(image_convert(image))
+    return pix_save(pix, max_rect)
 
 
 class QrCodes:
-    _pdf: dict[PdfSupported, bytes]
-    _qrcode: dict[QrSupported, PilImage]
+    _pdf_data: dict[PdfSupported, bytes]
+    _qr_png: dict[QrSupported, bytes]
 
     def __init__(
         self,
@@ -98,69 +73,57 @@ class QrCodes:
         *,
         max_rect: tuple[int, int] = (3840, 2160),
     ):
-        self._pdf, self._qrcode = {}, {}
+        if not all(x > 0 for x in max_rect):
+            raise ValueError("Ограничения max_rect должны быть больше нуля.")
+
+        self._pdf_data = {}
+        self._qr_png = {}
 
         if pdf_erkc:
             page = pymupdf.Document(stream=pdf_erkc)[0]
-            self._pdf["erkc"] = page_to_png(page, max_rect)
-            self._qrcode["erkc"] = get_image_from_page(page, "img2", max_rect)
-            self._qrcode["kapremont"] = get_image_from_page(
-                page, "img4", max_rect
-            )
-
-            # сумма начисления за капремонт
-            dd = str_decimal(page.get_textbox((680, 460, 720, 470)))
-            print(dd)
-
-            # сумма начисления за капремонт
-            dd = str_decimal(page.get_textbox((786, 460, 820, 470)))
-            print(dd)
-
-            # ЕЛС
-            dd = normalize(page.get_textbox((375, 75, 420, 81)))
-            print(dd)
-
-            # к оплате
-            dd = str_decimal(page.get_textbox((150, 165, 225, 177)))
-            print(dd)
+            self._pdf_data["erkc"] = pdf_page_to_png(page, max_rect)
+            self._qr_png["erkc"] = pdf_img_to_png(page, "img2", max_rect)
+            self._qr_png["kapremont"] = pdf_img_to_png(page, "img4", max_rect)
 
         if pdf_peni:
             page = pymupdf.Document(stream=pdf_peni)[0]
-            self._pdf["peni"] = page_to_png(page, max_rect)
-            self._qrcode["peni"] = get_image_from_page(page, "img0", max_rect)
+            self._pdf_data["peni"] = pdf_page_to_png(page, max_rect)
+            self._qr_png["peni"] = pdf_img_to_png(page, "img0", max_rect)
 
-    def qr(self, qr: QrSupported) -> bytes | None:
-        if (image := self._qrcode.get(qr)) is None:
-            return
+    def _qr(self, qr: QrSupported) -> bytes | None:
+        return self._qr_png.get(qr)
 
-        return image_save(image)
+    def _pdf(self, pdf: PdfSupported) -> bytes | None:
+        """Возвращает указанный счет в формате `PNG`."""
 
+        return self._pdf_data.get(pdf)
+
+    @property
     def qr_erkc(self) -> bytes | None:
         """QR-код оплаты коммунальных услуг."""
 
-        return self.qr("erkc")
+        return self._qr("erkc")
 
+    @property
     def qr_kapremont(self) -> bytes | None:
         """QR-код оплаты капитального ремонта."""
 
-        return self.qr("kapremont")
+        return self._qr("kapremont")
 
+    @property
     def qr_peni(self) -> bytes | None:
         """QR-код оплаты пени."""
 
-        return self.qr("peni")
+        return self._qr("peni")
 
-    def pdf(self, pdf: PdfSupported) -> bytes | None:
-        """Возвращает указанный счет в формате `PNG`."""
-
-        return self._pdf.get(pdf)
-
+    @property
     def pdf_erkc(self) -> bytes | None:
         """Счет основной в формате `PNG`."""
 
-        return self.pdf("erkc")
+        return self._pdf("erkc")
 
+    @property
     def pdf_peni(self) -> bytes | None:
         """Счет на пени в формате `PNG`."""
 
-        return self.pdf("peni")
+        return self._pdf("peni")
