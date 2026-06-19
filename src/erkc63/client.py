@@ -254,8 +254,8 @@ class ErkcClient:
         try:
             account = int(account)
 
-        except ValueError as e:
-            raise ValueError(f"Строка {account!r} не является числом.") from e
+        except ValueError:
+            raise ValueError("Лицевой счет не является целым числом.") from None
 
         if account <= 0:
             raise ValueError("Лицевой счет должен быть больше нуля.")
@@ -263,7 +263,7 @@ class ErkcClient:
         if account in self.accounts:
             return account
 
-        raise AccountNotFound(f"Лицевой счет {account!r} не найден.")
+        raise AccountNotFound(f"Лицевой счет {account} не найден.")
 
     async def open(
         self,
@@ -520,7 +520,7 @@ class ErkcClient:
         db: dict[str, list[MeterValue]] = {}
 
         while True:
-            _LOGGER.debug("Запрос истории счетчиков с %s по %s", start, end)
+            _LOGGER.debug("Запрос истории счетчиков с %r по %r", start, end)
 
             history = await self._history("counters", account, start, end)
 
@@ -807,7 +807,7 @@ class ErkcClient:
         async with self._get("payment/checkLS", ls=account) as x:
             json: dict[str, Any] = await x.json(loads=JSON_DECODER)
 
-        _LOGGER.debug("JSON ответ: %s", json)
+        _LOGGER.debug("JSON ответ: %r", json)
 
         return PublicAccountInfo.from_json(json, account)
 
