@@ -413,8 +413,9 @@ class ErkcClient:
         """
 
         if not QRCODE_SUPPORT:
-            raise RuntimeError(
-                "Для поддержки QR-кодов установите с опцией 'qrcode'."
+            raise ImportError(
+                "Для поддержки QR-кодов установите пакет с опцией 'qrcode': "
+                "pip install erkc63[qrcode]."
             )
 
         async with asyncio.TaskGroup() as tg:
