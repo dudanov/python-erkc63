@@ -365,35 +365,33 @@ class ErkcClient:
         """
 
         if peni:
-            id = accrual.peni_id
             _LOGGER.debug("Запрос квитанции пени")
+            id = accrual.peni_id
 
         else:
-            id = accrual.payment_id
             _LOGGER.debug("Запрос основной квитанции")
+            id = accrual.payment_id
 
         if id is None:
             _LOGGER.debug("Идентификатор квитанции отсутствует")
             return
 
         try:
-            account = accrual.account
-            json = await self._ajax("getReceipt", account, receiptId=id)
-            filename: str = json["fileName"]
-            path = f"account/{account}/receipts/download"
+            resp = await self._ajax("getReceipt", accrual.account, receiptId=id)
+            filename: str = resp["fileName"]
+            path = f"account/{accrual.account}/receipts/download"
 
-            async with self._get(path, kvit=filename) as x:
+            async with self._get(path, kvit=filename) as resp:
                 _LOGGER.debug(
                     "Загрузка квитанции %r, размер %d байт",
                     filename,
-                    x.content_length,
+                    resp.content_length,
                 )
 
-                return await x.read()
+                return await resp.read()
 
         except aiohttp.ClientResponseError:
             _LOGGER.debug("Ошибка загрузки квитанции")
-            return
 
     @api(auth_required=True)
     async def qr_codes(
