@@ -32,14 +32,28 @@ def get_image_from_page(
 ) -> Image:
     """Извлекает изображение со страницы `PDF` в `Image`."""
 
-    assert image_name
+    if not image_name:
+        raise ValueError("Имя изображения не может быть пустой строкой.")
 
-    for image in page.get_images():
-        if image[7] == image_name:
-            image = Pixmap(page.parent, image[0]).pil_image()
-            image.thumbnail(max_rect)
+    for img_info in page.get_images():
+        name = img_info[7]
 
-            return image_convert(image)
+        if name != image_name:
+            continue
+
+        xref = img_info[0]
+        pix = Pixmap(page.parent, xref)
+
+        try:
+            image = pix.pil_image()
+            image = image.copy()
+
+        finally:
+            pix = None
+
+        image.thumbnail(max_rect)
+
+        return image_convert(image)
 
     raise FileNotFoundError(f"Изображение '{image_name}' не найдено.")
 
