@@ -422,9 +422,9 @@ class ErkcClient:
                 tg.create_task(self.download_pdf(accrual, peni=True)),
             ]
 
-        result = (x.result() for x in tasks)
+        result = [x.result() for x in tasks]
 
-        return QrCodes(*result, max_rect=max_rect)
+        return await asyncio.to_thread(QrCodes, *result, max_rect=max_rect)
 
     @api(auth_required=True)
     async def year_accruals(

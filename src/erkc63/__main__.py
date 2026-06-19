@@ -30,6 +30,9 @@ async def main():
             print(payment.is_correct)
             print(payment.sum_paid)
 
+            ff = await cli.qr_codes(payment)
+            print(ff)
+
 
 #        for x in await cli.accruals_history():
 #            print(x)

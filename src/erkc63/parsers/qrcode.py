@@ -29,10 +29,12 @@ def pix_save(pix: pymupdf.Pixmap, max_rect: tuple[int, int]) -> bytes:
     return bio.getvalue()
 
 
-def pdf_img_to_png(
-    page: pymupdf.Page, img_name: str, max_rect: tuple[int, int]
+def qr_png(
+    page: pymupdf.Page,
+    img_name: str,
+    max_rect: tuple[int, int],
 ) -> bytes:
-    """Извлекает изображение со страницы `PDF` в `Image`."""
+    """Извлекает изображение со страницы `PDF` в данные `PNG` формата."""
 
     if not img_name:
         raise ValueError("Имя изображения не может быть пустой строкой.")
@@ -47,13 +49,13 @@ def pdf_img_to_png(
 
         return pix_save(pix, max_rect)
 
-    raise FileNotFoundError(f"Изображение '{img_name}' не найдено.")
+    raise FileNotFoundError("QR код на странице PDF не найден.")
 
 
-def pdf_page_to_png(page: pymupdf.Page, max_rect: tuple[int, int]) -> bytes:
+def page_png(page: pymupdf.Page, max_rect: tuple[int, int]) -> bytes:
     """
-    Рендерит страницу `PDF` в `Image`.
-    Размер изображения пропорционально вписывается в указанные ограничения, по умолчанию 4К (3840 x 2160).
+    Рендерит страницу `PDF` в данные изображения `PNG` формата.
+    Итоговый размер пропорционально вписывается в указанные ограничения, по умолчанию 4К (3840 x 2160).
     """
 
     factor = min(x / y for x, y in zip(max_rect, page.rect[2:]))
@@ -80,15 +82,17 @@ class QrCodes:
         self._qr_png = {}
 
         if pdf_erkc:
-            page = pymupdf.Document(stream=pdf_erkc)[0]
-            self._pdf_data["erkc"] = pdf_page_to_png(page, max_rect)
-            self._qr_png["erkc"] = pdf_img_to_png(page, "img2", max_rect)
-            self._qr_png["kapremont"] = pdf_img_to_png(page, "img4", max_rect)
+            with pymupdf.open(stream=pdf_erkc) as doc:
+                page = doc[0]
+                self._pdf_data["erkc"] = page_png(page, max_rect)
+                self._qr_png["erkc"] = qr_png(page, "img2", max_rect)
+                self._qr_png["kapremont"] = qr_png(page, "img4", max_rect)
 
         if pdf_peni:
-            page = pymupdf.Document(stream=pdf_peni)[0]
-            self._pdf_data["peni"] = pdf_page_to_png(page, max_rect)
-            self._qr_png["peni"] = pdf_img_to_png(page, "img0", max_rect)
+            with pymupdf.open(stream=pdf_peni) as doc:
+                page = doc[0]
+                self._pdf_data["peni"] = page_png(page, max_rect)
+                self._qr_png["peni"] = qr_png(page, "img0", max_rect)
 
     def _qr(self, qr: QrSupported) -> bytes | None:
         return self._qr_png.get(qr)
