@@ -2,20 +2,24 @@ import io
 from functools import partial
 from typing import Literal
 
-from PIL.Image import Image, Palette
-from pymupdf import Document, Identity, Matrix, Page, Pixmap
+import pymupdf
+from PIL import Image
 
 from .base import normalize, str_decimal
 
-PdfSupported = Literal["erkc", "peni"]
-QrSupported = Literal["erkc", "kapremont", "peni"]
+type PilImage = Image.Image
+
+type PdfSupported = Literal["erkc", "peni"]
+type QrSupported = Literal["erkc", "kapremont", "peni"]
 
 
-image_convert = partial(Image.convert, mode="P", palette=Palette.WEB)
+image_convert = partial(
+    Image.Image.convert, mode="P", palette=Image.Palette.WEB
+)
 """Конвертирует изображение в 8-битное с палитрой `WEB`."""
 
 
-def image_save(image: Image) -> bytes:
+def image_save(image: PilImage) -> bytes:
     """Сохраняет изображение в 8-битный оптимизированный `PNG` с палитрой `WEB`."""
 
     bio = io.BytesIO()
@@ -26,10 +30,10 @@ def image_save(image: Image) -> bytes:
 
 
 def get_image_from_page(
-    page: Page,
+    page: pymupdf.Page,
     image_name: str,
     max_rect: tuple[int, int] = (3840, 2160),
-) -> Image:
+) -> PilImage:
     """Извлекает изображение со страницы `PDF` в `Image`."""
 
     if not image_name:
@@ -42,7 +46,7 @@ def get_image_from_page(
             continue
 
         xref = img_info[0]
-        pix = Pixmap(page.parent, xref)
+        pix = pymupdf.Pixmap(page.parent, xref)
 
         try:
             image = pix.pil_image()
@@ -59,7 +63,7 @@ def get_image_from_page(
 
 
 def page_to_png(
-    page: Page,
+    page: pymupdf.Page,
     max_rect: tuple[int, int] = (3840, 2160),
 ) -> bytes:
     """
@@ -70,15 +74,15 @@ def page_to_png(
     assert all(x > 0 for x in max_rect)
 
     factor: float = min(x / y for x, y in zip(max_rect, page.rect[2:]))
-    matrix = Matrix(Identity).prescale(factor, factor)
-    image: Image = page.get_pixmap(matrix=matrix).pil_image()  # type: ignore
+    matrix = pymupdf.Matrix(pymupdf.Identity).prescale(factor, factor)
+    image: PilImage = page.get_pixmap(matrix=matrix).pil_image()  # type: ignore
 
     return image_save(image_convert(image))
 
 
 class QrCodes:
     _pdf: dict[PdfSupported, bytes]
-    _qrcode: dict[QrSupported, Image]
+    _qrcode: dict[QrSupported, PilImage]
 
     def __init__(
         self,
@@ -90,7 +94,7 @@ class QrCodes:
         self._pdf, self._qrcode = {}, {}
 
         if pdf_erkc:
-            page = Document(stream=pdf_erkc)[0]
+            page = pymupdf.Document(stream=pdf_erkc)[0]
             self._pdf["erkc"] = page_to_png(page, max_rect)
             self._qrcode["erkc"] = get_image_from_page(page, "img2", max_rect)
             self._qrcode["kapremont"] = get_image_from_page(
@@ -114,7 +118,7 @@ class QrCodes:
             print(dd)
 
         if pdf_peni:
-            page = Document(stream=pdf_peni)[0]
+            page = pymupdf.Document(stream=pdf_peni)[0]
             self._pdf["peni"] = page_to_png(page, max_rect)
             self._qrcode["peni"] = get_image_from_page(page, "img0", max_rect)
 
