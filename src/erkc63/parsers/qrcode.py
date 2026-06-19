@@ -1,11 +1,7 @@
-import asyncio
 import io
 from functools import partial
-from importlib import resources
 from typing import Literal
 
-import aiofiles
-from PIL import Image as PILImage
 from PIL.Image import Image, Palette
 from pymupdf import Document, Identity, Matrix, Page, Pixmap
 
@@ -14,15 +10,6 @@ from .base import normalize, str_decimal
 PdfSupported = Literal["erkc", "peni"]
 QrSupported = Literal["erkc", "kapremont", "peni"]
 
-
-async def read_logo() -> Image:
-    png = resources.files("erkc63.images").joinpath("paid.png")
-
-    async with aiofiles.open(str(png)) as f:
-        return PILImage.open(f.buffer).convert("RGBA")
-
-
-PAID_LOGO = asyncio.run(read_logo())
 
 image_convert = partial(Image.convert, mode="P", palette=Palette.WEB)
 """Конвертирует изображение в 8-битное с палитрой `WEB`."""
@@ -36,21 +23,6 @@ def image_save(image: Image) -> bytes:
     data = bio.getvalue()
 
     return data
-
-
-def image_set_paid(image: Image, paid_scale: float) -> Image:
-    """Ставит штамп `ОПЛАЧЕН` на изображении."""
-
-    assert 0 < paid_scale <= 1
-
-    image = image.convert("RGB")
-    px = int(min(image.width, image.height) * paid_scale)
-    box = (image.width - px) // 2, (image.height - px) // 2
-
-    logo = PAID_LOGO.resize((px, px))
-    image.paste(logo, box, logo)
-
-    return image_convert(image)
 
 
 def get_image_from_page(
@@ -93,7 +65,6 @@ def page_to_png(
 class QrCodes:
     _pdf: dict[PdfSupported, bytes]
     _qrcode: dict[QrSupported, Image]
-    _paid_scale: float
 
     def __init__(
         self,
@@ -101,11 +72,8 @@ class QrCodes:
         pdf_peni: bytes | None,
         *,
         max_rect: tuple[int, int] = (3840, 2160),
-        paid_scale: float = 0.65,
     ):
-        assert 0 < paid_scale <= 1
         self._pdf, self._qrcode = {}, {}
-        self._paid_scale = paid_scale
 
         if pdf_erkc:
             page = Document(stream=pdf_erkc)[0]
@@ -136,29 +104,26 @@ class QrCodes:
             self._pdf["peni"] = page_to_png(page, max_rect)
             self._qrcode["peni"] = get_image_from_page(page, "img0", max_rect)
 
-    def qr(self, qr: QrSupported, *, paid: bool = False) -> bytes | None:
+    def qr(self, qr: QrSupported) -> bytes | None:
         if (image := self._qrcode.get(qr)) is None:
             return
 
-        if paid:
-            image = image_set_paid(image, self._paid_scale)
-
         return image_save(image)
 
-    def qr_erkc(self, *, paid: bool = False) -> bytes | None:
+    def qr_erkc(self) -> bytes | None:
         """QR-код оплаты коммунальных услуг."""
 
-        return self.qr("erkc", paid=paid)
+        return self.qr("erkc")
 
-    def qr_kapremont(self, *, paid: bool = False) -> bytes | None:
+    def qr_kapremont(self) -> bytes | None:
         """QR-код оплаты капитального ремонта."""
 
-        return self.qr("kapremont", paid=paid)
+        return self.qr("kapremont")
 
-    def qr_peni(self, *, paid: bool = False) -> bytes | None:
+    def qr_peni(self) -> bytes | None:
         """QR-код оплаты пени."""
 
-        return self.qr("peni", paid=paid)
+        return self.qr("peni")
 
     def pdf(self, pdf: PdfSupported) -> bytes | None:
         """Возвращает указанный счет в формате `PNG`."""

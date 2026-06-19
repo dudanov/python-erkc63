@@ -399,14 +399,12 @@ class ErkcClient:
         accrual: Accrual,
         *,
         max_rect: tuple[int, int] = (3840, 2160),
-        paid_scale: float = 0.65,
     ) -> QrCodes:
         """Загружает PDF квитанции и извлекает QR коды оплаты.
 
         Parameters:
             accrual: квитанция.
             max_rect: максимальные размеры изображений.
-            paid_scale: масштаб штампа `ОПЛАЧЕН` на QR-кодах.
 
         Returns:
             Возвращает объект `QrCodes`.
@@ -426,7 +424,7 @@ class ErkcClient:
 
         result = (x.result() for x in tasks)
 
-        return QrCodes(*result, max_rect=max_rect, paid_scale=paid_scale)
+        return QrCodes(*result, max_rect=max_rect)
 
     @api(auth_required=True)
     async def year_accruals(
