@@ -71,11 +71,18 @@ def page_to_png(
     Размер изображения пропорционально вписывается в указанные ограничения, по-умолчанию 4К (3840 x 2160).
     """
 
-    assert all(x > 0 for x in max_rect)
+    if not all(x > 0 for x in max_rect):
+        raise ValueError("Ограничения max_rect должны быть больше нуля.")
 
-    factor: float = min(x / y for x, y in zip(max_rect, page.rect[2:]))
-    matrix = pymupdf.Matrix(pymupdf.Identity).prescale(factor, factor)
-    image: PilImage = page.get_pixmap(matrix=matrix).pil_image()  # type: ignore
+    factor = min(x / y for x, y in zip(max_rect, page.rect[2:]))
+    pix = page.get_pixmap(matrix=pymupdf.Matrix(factor, factor))
+
+    try:
+        image: PilImage = pix.pil_image()
+        image = image.copy()
+
+    finally:
+        pix = None
 
     return image_save(image_convert(image))
 
