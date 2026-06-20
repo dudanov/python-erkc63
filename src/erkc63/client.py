@@ -59,7 +59,7 @@ except ImportError:
 QRCODE_SUPPORT = True
 
 try:
-    from .parsers.qrcode import AccrualImages, erkc_images, peni_images
+    from .parsers.qrcode import ErkcImages, PeniImages, erkc_images, peni_images
 
 except ImportError:
     QRCODE_SUPPORT = False
@@ -350,36 +350,18 @@ class ErkcClient:
     @api(auth_required=True)
     async def download_pdf(
         self,
-        accrual: Accrual,
-        *,
-        peni: bool = False,
+        account: int | str | None,
+        receipt_id: str | None,
     ) -> bytes | None:
-        """Загрузка квитанции в формате PDF.
-
-        Parameters:
-            accrual: Объект квитанции.
-            peni: Загрузить квитанцию для оплаты пени.
-
-        Returns:
-            Данные в формате `PDF` при успехе или `None` при неудаче.
-        """
-
-        if peni:
-            _LOGGER.debug("Запрос квитанции пени")
-            id = accrual.peni_id
-
-        else:
-            _LOGGER.debug("Запрос основной квитанции")
-            id = accrual.payment_id
-
-        if id is None:
-            _LOGGER.debug("Идентификатор квитанции отсутствует")
+        if receipt_id is None:
             return
 
+        account = self._account(account)
+
         try:
-            resp = await self._ajax("getReceipt", accrual.account, receiptId=id)
+            resp = await self._ajax("getReceipt", account, receiptId=receipt_id)
             filename: str = resp["fileName"]
-            path = f"account/{accrual.account}/receipts/download"
+            path = f"account/{account}/receipts/download"
 
             async with self._get(path, kvit=filename) as resp:
                 _LOGGER.debug(
@@ -393,38 +375,33 @@ class ErkcClient:
         except aiohttp.ClientResponseError:
             _LOGGER.debug("Ошибка загрузки квитанции")
 
-    @api(auth_required=True)
-    async def qr_codes(
+    def download_erkc_pdf(self, accrual: Accrual) -> Awaitable[bytes | None]:
+        return self.download_pdf(accrual.account, accrual.payment_id)
+
+    async def download_erkc_images(
         self,
         accrual: Accrual,
         *,
         max_rect: tuple[int, int] = (3840, 2160),
-    ) -> tuple[AccrualImages | None]:
-        """Загружает PDF квитанции и извлекает QR коды оплаты.
+    ) -> ErkcImages | None:
+        pdf = await self.download_erkc_pdf(accrual)
 
-        Parameters:
-            accrual: квитанция.
-            max_rect: максимальные размеры изображений.
+        if pdf:
+            return await erkc_images(pdf, max_rect)
 
-        Returns:
-            Возвращает объект `QrCodes`.
-        """
+    def download_peni_pdf(self, accrual: Accrual) -> Awaitable[bytes | None]:
+        return self.download_pdf(accrual.account, accrual.peni_id)
 
-        if not QRCODE_SUPPORT:
-            raise ImportError(
-                "Для поддержки QR-кодов установите пакет с опцией 'qrcode': "
-                "pip install erkc63[qrcode]."
-            )
+    async def download_peni_images(
+        self,
+        accrual: Accrual,
+        *,
+        max_rect: tuple[int, int] = (3840, 2160),
+    ) -> PeniImages | None:
+        pdf = await self.download_peni_pdf(accrual)
 
-        async with asyncio.TaskGroup() as tg:
-            tasks = [
-                tg.create_task(self.download_pdf(accrual, peni=False)),
-                tg.create_task(self.download_pdf(accrual, peni=True)),
-            ]
-
-        result = [x.result() for x in tasks]
-
-        return await asyncio.to_thread(QrCodes, *result, max_rect=max_rect)
+        if pdf:
+            return await peni_images(pdf, max_rect)
 
     @api(auth_required=True)
     async def year_accruals(

@@ -30,8 +30,21 @@ async def main():
             print(payment.is_correct)
             print(payment.sum_paid)
 
-            ff = await cli.qr_codes(payment)
-            print(ff)
+            ff = await cli.download_erkc_images(payment)
+            if not ff:
+                return
+
+            with open(f"pdf_{payment.date.strftime("%m.%Y")}.pdf", "wb") as f:
+                f.write(ff.source)
+
+            with open(f"page_{payment.date.strftime("%m.%Y")}.png", "wb") as f:
+                f.write(ff.page)
+
+            with open(f"qr1_{payment.date.strftime("%m.%Y")}.png", "wb") as f:
+                f.write(ff.code)
+
+            with open(f"kap_{payment.date.strftime("%m.%Y")}.png", "wb") as f:
+                f.write(ff.kap_code)
 
 
 #        for x in await cli.accruals_history():

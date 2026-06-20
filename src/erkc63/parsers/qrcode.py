@@ -1,21 +1,37 @@
+import asyncio
 import dataclasses as dc
 import io
-import itertools as it
-from typing import Final
 
 import pymupdf
 from PIL import Image
 
 type PilImage = Image.Image
 
-QR_ERKC: Final = ("img2", "img4")
-QR_PENI: Final = ("img0",)
+
+@dc.dataclass(slots=True)
+class ErkcImages:
+    """Изображения счета ЕРКЦ"""
+
+    source: bytes
+    """Исходный PDF"""
+    page: bytes
+    """Страница счета"""
+    code: bytes
+    """Основной QR-код"""
+    kap_code: bytes
+    """QR-код капремонта"""
 
 
 @dc.dataclass(slots=True)
-class AccrualImages:
+class PeniImages:
+    """Изображения счета пени"""
+
+    source: bytes
+    """Исходный PDF"""
     page: bytes
-    codes: list[bytes]
+    """Страница счета"""
+    code: bytes
+    """Основной QR-код"""
 
 
 # Сохраняет Pixmap в 8-битный оптимизированный PNG в палитре WEB
@@ -28,6 +44,14 @@ def _png(pix: pymupdf.Pixmap, rect: tuple[int, int]) -> bytes:
     img.save(bio, format="png", optimize=True)
 
     return bio.getvalue()
+
+
+# Рендерит страницу в данные PNG вписывающегося в указанное разрешение
+def _page(page: pymupdf.Page, rect: tuple[int, int]) -> bytes:
+    factor = min(x / y for x, y in zip(rect, page.rect[2:]))
+    pix = page.get_pixmap(matrix=pymupdf.Matrix(factor, factor))
+
+    return _png(pix, rect)
 
 
 # Извлекает изображение со страницы в данные PNG
@@ -45,35 +69,35 @@ def _img(page: pymupdf.Page, rect: tuple[int, int], name: str) -> bytes:
     raise FileNotFoundError("Изображение на странице не найдено.")
 
 
-# Рендерит страницу в данные PNG вписывающегося в указанное разрешение
-def _page(page: pymupdf.Page, rect: tuple[int, int]) -> bytes:
-    factor = min(x / y for x, y in zip(rect, page.rect[2:]))
-    pix = page.get_pixmap(matrix=pymupdf.Matrix(factor, factor))
-
-    return _png(pix, rect)
-
-
-def accrual_images(
-    data: bytes | None,
-    rect: tuple[int, int],
-    images: tuple[str, ...],
-) -> tuple[bytes, ...]:
-    with pymupdf.open(stream=data) as doc:
-        page = doc[0]
-
-        return _page(page, rect), *map(lambda x: _img(page, rect, x), images)
-
-
-def erkc_images(
-    data: bytes | None, rect: tuple[int, int]
-) -> AccrualImages | None:
+def _accrual(data: bytes, rect: tuple[int, int], *images: str) -> list[bytes]:
     if not all(x > 0 for x in rect):
-        raise ValueError("Ограничения max_rect должны быть больше нуля.")
+        raise ValueError("Ограничения должны быть больше нуля.")
 
-    return accrual_images(data, rect, QR_ERKC)
+    def _items():
+        with pymupdf.open(stream=data) as doc:
+            page = doc[0]
+            width, height = page.rect[2:]
+
+            if height > width:
+                # Только у счета на пени портретная ориентация.
+                # Заполнен только в начале. Обрежем пополам.
+                page.set_cropbox(pymupdf.Rect(0, 0, width, height / 2))
+
+            yield _page(page, rect)
+
+            for name in images:
+                yield _img(page, rect, name)
+
+    return list(_items())
 
 
-def peni_images(
-    data: bytes | None, rect: tuple[int, int]
-) -> AccrualImages | None:
-    return accrual_images(data, rect, QR_PENI)
+async def erkc_images(data: bytes, rect: tuple[int, int]) -> ErkcImages:
+    return ErkcImages(
+        data, *await asyncio.to_thread(_accrual, data, rect, "img2", "img4")
+    )
+
+
+async def peni_images(data: bytes, rect: tuple[int, int]) -> PeniImages:
+    return PeniImages(
+        data, *await asyncio.to_thread(_accrual, data, rect, "img0")
+    )
