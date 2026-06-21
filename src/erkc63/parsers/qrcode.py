@@ -35,11 +35,11 @@ class PeniImages:
 
 
 # Сохраняет Pixmap в 8-битный оптимизированный PNG в палитре WEB
-def _png(pix: pymupdf.Pixmap, rect: tuple[int, int]) -> bytes:
+def _png(pix: pymupdf.Pixmap, xy: tuple[int, int]) -> bytes:
     bio = io.BytesIO()
 
     img = pix.pil_image()
-    img.thumbnail(rect)
+    img.thumbnail(xy)
     img = img.convert(mode="P", palette=Image.Palette.WEB)
     img.save(bio, format="png", optimize=True)
 
@@ -47,30 +47,30 @@ def _png(pix: pymupdf.Pixmap, rect: tuple[int, int]) -> bytes:
 
 
 # Рендерит страницу в данные PNG вписывающегося в указанное разрешение
-def _page(page: pymupdf.Page, rect: tuple[int, int]) -> bytes:
-    factor = min(x / y for x, y in zip(rect, page.rect[2:]))
+def _page(page: pymupdf.Page, xy: tuple[int, int]) -> bytes:
+    factor = min(x / y for x, y in zip(xy, page.rect[2:]))
     pix = page.get_pixmap(matrix=pymupdf.Matrix(factor, factor))
 
-    return _png(pix, rect)
+    return _png(pix, xy)
 
 
 # Извлекает изображение со страницы в данные PNG
-def _img(page: pymupdf.Page, rect: tuple[int, int], name: str) -> bytes:
+def _img(page: pymupdf.Page, xy: tuple[int, int], img_name: str) -> bytes:
     for item in page.get_images():
-        img_xref, img_name = item[0], item[7]
+        xref, name = item[0], item[7]
 
-        if img_name != name:
+        if name != img_name:
             continue
 
-        pix = pymupdf.Pixmap(page.parent, img_xref)
+        pix = pymupdf.Pixmap(page.parent, xref)
 
-        return _png(pix, rect)
+        return _png(pix, xy)
 
     raise FileNotFoundError("Изображение на странице не найдено.")
 
 
-def _accrual(data: bytes, rect: tuple[int, int], *images: str) -> tuple[bytes, ...]:
-    if not all(x > 0 for x in rect):
+def _accrual(data: bytes, xy: tuple[int, int], *images: str) -> tuple[bytes, ...]:
+    if not all(x > 0 for x in xy):
         raise ValueError("Ограничения должны быть больше нуля.")
 
     with pymupdf.open(stream=data) as doc:
@@ -82,12 +82,12 @@ def _accrual(data: bytes, rect: tuple[int, int], *images: str) -> tuple[bytes, .
             # Заполнен только в начале. Обрежем пополам.
             page.set_cropbox(pymupdf.Rect(0, 0, width, height / 2))
 
-        return data, _page(page, rect), *map(lambda x: _img(page, rect, x), images)
+        return data, _page(page, xy), *map(lambda x: _img(page, xy, x), images)
 
 
-async def erkc_images(data: bytes, rect: tuple[int, int]) -> ErkcImages:
-    return ErkcImages(*await asyncio.to_thread(_accrual, data, rect, "img2", "img4"))
+async def erkc_images(pdf: bytes, xy: tuple[int, int]) -> ErkcImages:
+    return ErkcImages(*await asyncio.to_thread(_accrual, pdf, xy, "img2", "img4"))
 
 
-async def peni_images(data: bytes, rect: tuple[int, int]) -> PeniImages:
-    return PeniImages(*await asyncio.to_thread(_accrual, data, rect, "img0"))
+async def peni_images(pdf: bytes, xy: tuple[int, int]) -> PeniImages:
+    return PeniImages(*await asyncio.to_thread(_accrual, pdf, xy, "img0"))
