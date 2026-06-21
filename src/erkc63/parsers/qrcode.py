@@ -8,7 +8,7 @@ from PIL import Image
 type PilImage = Image.Image
 
 
-@dc.dataclass(slots=True)
+@dc.dataclass(slots=True, frozen=True)
 class AccrualFiles:
     """Изображения счета ЕРКЦ"""
 
