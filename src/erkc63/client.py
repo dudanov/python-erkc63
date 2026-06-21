@@ -582,8 +582,8 @@ class ErkcClient:
             account: номер лицевого счета. Если `None` - используется основной счет.
         """
 
-        async with self._get(f"account/{self._account(account)}") as x:
-            return AccountInfo.from_html(await x.text())
+        async with self._get(f"account/{self._account(account)}") as resp:
+            return AccountInfo.from_html(await resp.text())
 
     @api(auth_required=True)
     async def account_add(
@@ -617,8 +617,8 @@ class ErkcClient:
             "account/add",
             account=account,
             summ=last_payment,
-        ) as x:
-            self._update_accounts(await x.text())
+        ) as resp:
+            self._update_accounts(await resp.text())
 
         if account not in self.accounts:
             raise AccountBindingError(f"Не удалось привязать лицевой счет {account}.")
@@ -637,8 +637,8 @@ class ErkcClient:
             _LOGGER.debug("Лицевой счет %d не привязан", account)
             return
 
-        async with self._post(f"account/{account}/remove") as x:
-            self._update_accounts(await x.text())
+        async with self._post(f"account/{account}/remove") as resp:
+            self._update_accounts(await resp.text())
 
         if account in self.accounts:
             raise AccountBindingError(f"Не удалось отвязать лицевой счет {account}.")
@@ -651,8 +651,8 @@ class ErkcClient:
         if not values:
             return
 
-        async with self._get(path) as x:
-            meters = MeterInfo.meters_from_html(await x.text())
+        async with self._get(path) as resp:
+            meters = MeterInfo.meters_from_html(await resp.text())
 
         data: dict[str, Any] = {}
 
@@ -676,8 +676,8 @@ class ErkcClient:
 
             raise ValueError(f"Счетчик {id} не найден.")
 
-        async with self._post(path, **data) as x:
-            await x.text()
+        async with self._post(path, **data) as resp:
+            await resp.text()
 
     @api(auth_required=True)
     async def meters_info(
@@ -694,8 +694,8 @@ class ErkcClient:
         - Последнее показание
         """
 
-        async with self._get(f"account/{self._account(account)}/counters") as x:
-            return MeterInfo.meters_from_html(await x.text())
+        async with self._get(f"account/{self._account(account)}/counters") as resp:
+            return MeterInfo.meters_from_html(await resp.text())
 
     @api(auth_required=True)
     async def set_meters_values(
@@ -733,8 +733,8 @@ class ErkcClient:
 
         assert (account := int(account)) > 0
 
-        async with self._get(f"counters/{account}") as x:
-            return MeterInfo.meters_from_html(await x.text())
+        async with self._get(f"counters/{account}") as resp:
+            return MeterInfo.meters_from_html(await resp.text())
 
     @api(public=True)
     async def pub_set_meters_values(
@@ -763,8 +763,8 @@ class ErkcClient:
 
         assert (account := int(account)) > 0
 
-        async with self._get("payment/checkLS", ls=account) as x:
-            json: dict[str, Any] = await x.json(loads=JSON_DECODER)
+        async with self._get("payment/checkLS", ls=account) as resp:
+            json: dict[str, Any] = await resp.json(loads=JSON_DECODER)
 
         _LOGGER.debug("JSON ответ: %r", json)
 
