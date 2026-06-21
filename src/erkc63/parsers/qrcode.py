@@ -69,26 +69,22 @@ def _img(page: pymupdf.Page, rect: tuple[int, int], name: str) -> bytes:
     raise FileNotFoundError("Изображение на странице не найдено.")
 
 
-def _accrual(data: bytes, rect: tuple[int, int], *images: str) -> list[bytes]:
+def _accrual(
+    data: bytes, rect: tuple[int, int], *images: str
+) -> tuple[bytes, ...]:
     if not all(x > 0 for x in rect):
         raise ValueError("Ограничения должны быть больше нуля.")
 
-    def _items():
-        with pymupdf.open(stream=data) as doc:
-            page = doc[0]
-            width, height = page.rect[2:]
+    with pymupdf.open(stream=data) as doc:
+        page = doc[0]
+        width, height = page.rect[2:]
 
-            if height > width:
-                # Только у счета на пени портретная ориентация.
-                # Заполнен только в начале. Обрежем пополам.
-                page.set_cropbox(pymupdf.Rect(0, 0, width, height / 2))
+        if height > width:
+            # Только у счета на пени портретная ориентация.
+            # Заполнен только в начале. Обрежем пополам.
+            page.set_cropbox(pymupdf.Rect(0, 0, width, height / 2))
 
-            yield _page(page, rect)
-
-            for name in images:
-                yield _img(page, rect, name)
-
-    return list(_items())
+        return _page(page, rect), *map(lambda x: _img(page, rect, x), images)
 
 
 async def erkc_images(data: bytes, rect: tuple[int, int]) -> ErkcImages:
