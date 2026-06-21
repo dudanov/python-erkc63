@@ -34,8 +34,9 @@ def _png(pix: pymupdf.Pixmap, xy: tuple[int, int]) -> bytes:
 
 # Рендерит страницу в данные PNG вписывающегося в указанное разрешение
 def _page(page: pymupdf.Page, xy: tuple[int, int]) -> bytes:
-    factor = min(x / y for x, y in zip(xy, page.rect[2:]))
-    pix = page.get_pixmap(matrix=pymupdf.Matrix(factor, factor))
+    width, height = page.rect.width, page.rect.height
+    scale = min(xy[0] / width, xy[1] / height)
+    pix = page.get_pixmap(matrix=pymupdf.Matrix(scale, scale))
 
     return _png(pix, xy)
 
@@ -58,7 +59,7 @@ def _img(page: pymupdf.Page, xy: tuple[int, int], img_name: str) -> bytes:
 def _accrual(data: bytes, xy: tuple[int, int], *images: str):
     with pymupdf.open(stream=data) as doc:
         page = doc[0]
-        width, height = page.rect[2:]
+        width, height = page.rect.width, page.rect.height
 
         if height > width:
             # Только у счета на пени портретная ориентация.
