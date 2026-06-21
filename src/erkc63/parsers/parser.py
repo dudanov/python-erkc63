@@ -4,9 +4,7 @@ from typing import Final, cast
 from bs4 import BeautifulSoup, Tag
 from bs4.filter import SoupStrainer
 
-HTML_PARSER: Final = (
-    "lxml" if importlib.util.find_spec("lxml") else "html.parser"
-)
+HTML_PARSER: Final = "lxml" if importlib.util.find_spec("lxml") else "html.parser"
 
 
 def _parse_tags(html: str, ss: SoupStrainer) -> list[Tag]:

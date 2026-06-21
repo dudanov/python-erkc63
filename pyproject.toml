@@ -53,7 +53,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.ruff]
-line-length = 80
+line-length = 90
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -61,5 +61,5 @@ indent-style = "space"
 quote-style = "double"
 
 [tool.isort]
-line_length = 80
+line_length = 90
 profile = "black"

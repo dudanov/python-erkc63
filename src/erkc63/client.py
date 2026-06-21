@@ -72,9 +72,7 @@ _MAX_DATE: Final = dt.date(2099, 12, 31)
 
 _BASE_URL: Final = yarl.URL("https://lk.erkc63.ru")
 
-type ClientMethod[T, **P] = Callable[
-    Concatenate[ErkcClient, P], Coroutine[Any, Any, T]
-]
+type ClientMethod[T, **P] = Callable[Concatenate[ErkcClient, P], Coroutine[Any, Any, T]]
 
 
 def api[T, **P](
@@ -628,9 +626,7 @@ class ErkcClient:
             self._update_accounts(await x.text())
 
         if account not in self.accounts:
-            raise AccountBindingError(
-                f"Не удалось привязать лицевой счет {account}."
-            )
+            raise AccountBindingError(f"Не удалось привязать лицевой счет {account}.")
 
     @api(auth_required=True)
     async def account_rm(self, account: int | str) -> None:
@@ -650,9 +646,7 @@ class ErkcClient:
             self._update_accounts(await x.text())
 
         if account in self.accounts:
-            raise AccountBindingError(
-                f"Не удалось отвязать лицевой счет {account}."
-            )
+            raise AccountBindingError(f"Не удалось отвязать лицевой счет {account}.")
 
     async def _set_meters_values(
         self,
@@ -727,9 +721,7 @@ class ErkcClient:
         )
 
     @api(public=True)
-    async def pub_meters_info(
-        self, account: int | str
-    ) -> Mapping[int, MeterInfo]:
+    async def pub_meters_info(self, account: int | str) -> Mapping[int, MeterInfo]:
         """Запрос публичной информации о приборах учета по лицевому счету.
 
         Возвращает словарь `идентификатор - информация о приборе учета`.
@@ -767,9 +759,7 @@ class ErkcClient:
         await self._set_meters_values(f"counters/{account}", values)
 
     @api(public=True)
-    async def pub_account_info(
-        self, account: int | str
-    ) -> PublicAccountInfo | None:
+    async def pub_account_info(self, account: int | str) -> PublicAccountInfo | None:
         """Запрос открытой информации по лицевому счету.
 
         Parameters:

@@ -184,9 +184,7 @@ class MonthAccrual(AccrualBase):
     @override
     def _it(cls, data, account) -> Iterator[Self]:
         for x in data:
-            accrual = cls.from_args(
-                account, x[0], x[4], EMPTY_MAPPING, x[1], x[2], x[3]
-            )
+            accrual = cls.from_args(account, x[0], x[4], EMPTY_MAPPING, x[1], x[2], x[3])
 
             # запрос поломан. возвращает нулевые начисления в невалидном диапазоне дат.
             # при первом нулевом начислении прерываем цикл, так как далее все начисления тоже нулевые.

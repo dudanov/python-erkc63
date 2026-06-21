@@ -15,9 +15,7 @@ class PublicAccountInfo(ModelBase):
     """Номер лицевого счета"""
     address: NormalizedString
     """Адрес"""
-    payment: DecimalString = dc.field(
-        metadata=field_options(alias="balanceSumma")
-    )
+    payment: DecimalString = dc.field(metadata=field_options(alias="balanceSumma"))
     """К оплате"""
     peni: DecimalString = dc.field(metadata=field_options(alias="balancePeni"))
     """Пени"""
