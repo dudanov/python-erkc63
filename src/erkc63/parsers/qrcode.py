@@ -15,7 +15,7 @@ class AccrualData:
     """Исходный PDF"""
     page: bytes
     """PNG изображение страницы счета"""
-    codes: tuple[bytes, ...]
+    qrs: tuple[bytes, ...]
     """PNG изображения QR-кодов оплаты счета"""
 
 
@@ -54,8 +54,8 @@ def _img(page: pymupdf.Page, img_name: str) -> bytes:
     raise FileNotFoundError("Изображение на странице не найдено.")
 
 
-def _accrual(data: bytes, xy: tuple[int, int], *images: str):
-    with pymupdf.open(stream=data) as doc:
+def _data(pdf: bytes, xy: tuple[int, int], *images: str) -> AccrualData:
+    with pymupdf.open(stream=pdf) as doc:
         page = doc[0]
         width, height = page.rect.width, page.rect.height
 
@@ -64,12 +64,16 @@ def _accrual(data: bytes, xy: tuple[int, int], *images: str):
             # Заполнен только в начале. Обрежем пополам.
             page.set_cropbox(pymupdf.Rect(0, 0, width, height / 2))
 
-        return data, _page(page, xy), tuple(map(lambda x: _img(page, x), images))
+        return AccrualData(
+            source=pdf,
+            page=_page(page, xy),
+            qrs=tuple(map(lambda x: _img(page, x), images)),
+        )
 
 
-def erkc_files(pdf: bytes, xy: tuple[int, int]) -> AccrualData:
-    return AccrualData(*_accrual(pdf, xy, "img2", "img4"))
+def erkc_data(pdf: bytes, xy: tuple[int, int]) -> AccrualData:
+    return _data(pdf, xy, "img2", "img4")
 
 
-def peni_files(pdf: bytes, xy: tuple[int, int]) -> AccrualData:
-    return AccrualData(*_accrual(pdf, xy, "img0"))
+def peni_data(pdf: bytes, xy: tuple[int, int]) -> AccrualData:
+    return _data(pdf, xy, "img0")
