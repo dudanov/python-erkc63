@@ -30,7 +30,7 @@ async def main():
             print(payment.is_correct)
             print(payment.sum_paid)
 
-            ff = await cli.download_erkc_images(payment)
+            ff = await cli.get_accrual_erkc_files(payment)
             if not ff:
                 return
 
@@ -41,10 +41,10 @@ async def main():
                 f.write(ff.page)
 
             with open(f"qr1_{payment.date.strftime("%m.%Y")}.png", "wb") as f:
-                f.write(ff.code)
+                f.write(ff.codes[0])
 
             with open(f"kap_{payment.date.strftime("%m.%Y")}.png", "wb") as f:
-                f.write(ff.kap_code)
+                f.write(ff.codes[1])
 
 
 #        for x in await cli.accruals_history():

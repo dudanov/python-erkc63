@@ -59,7 +59,7 @@ except ImportError:
 QRCODE_SUPPORT = True
 
 try:
-    from .parsers.qrcode import ErkcImages, PeniImages, erkc_images, peni_images
+    from .parsers.qrcode import AccrualFiles, erkc_files, peni_files
 
 except ImportError:
     QRCODE_SUPPORT = False
@@ -373,33 +373,27 @@ class ErkcClient:
         except aiohttp.ClientResponseError:
             _LOGGER.debug("Ошибка загрузки квитанции")
 
-    def download_erkc_pdf(self, accrual: Accrual) -> Awaitable[bytes | None]:
-        return self.download_pdf(accrual.account, accrual.payment_id)
-
-    async def download_erkc_images(
+    async def get_accrual_erkc_files(
         self,
         accrual: Accrual,
         *,
-        max_rect: tuple[int, int] = (3840, 2160),
-    ) -> ErkcImages | None:
-        pdf = await self.download_erkc_pdf(accrual)
+        max_xy: tuple[int, int] = (3840, 2160),
+    ) -> AccrualFiles | None:
+        pdf = await self.download_pdf(accrual.account, accrual.payment_id)
 
         if pdf:
-            return await erkc_images(pdf, max_rect)
+            return await erkc_files(pdf, max_xy)
 
-    def download_peni_pdf(self, accrual: Accrual) -> Awaitable[bytes | None]:
-        return self.download_pdf(accrual.account, accrual.peni_id)
-
-    async def download_peni_images(
+    async def get_accrual_peni_files(
         self,
         accrual: Accrual,
         *,
-        max_rect: tuple[int, int] = (3840, 2160),
-    ) -> PeniImages | None:
-        pdf = await self.download_peni_pdf(accrual)
+        max_xy: tuple[int, int] = (3840, 2160),
+    ) -> AccrualFiles | None:
+        pdf = await self.download_pdf(accrual.account, accrual.peni_id)
 
         if pdf:
-            return await peni_images(pdf, max_rect)
+            return await peni_files(pdf, max_xy)
 
     @api(auth_required=True)
     async def year_accruals(

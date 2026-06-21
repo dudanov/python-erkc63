@@ -9,29 +9,15 @@ type PilImage = Image.Image
 
 
 @dc.dataclass(slots=True)
-class ErkcImages:
+class AccrualFiles:
     """Изображения счета ЕРКЦ"""
 
     source: bytes
     """Исходный PDF"""
     page: bytes
-    """Страница счета"""
-    code: bytes
-    """Основной QR-код"""
-    kap_code: bytes
-    """QR-код капремонта"""
-
-
-@dc.dataclass(slots=True)
-class PeniImages:
-    """Изображения счета пени"""
-
-    source: bytes
-    """Исходный PDF"""
-    page: bytes
-    """Страница счета"""
-    code: bytes
-    """Основной QR-код"""
+    """PNG изображение страницы счета"""
+    codes: tuple[bytes, ...]
+    """PNG изображения QR-кодов оплаты счета"""
 
 
 # Сохраняет Pixmap в 8-битный оптимизированный PNG в палитре WEB
@@ -69,7 +55,7 @@ def _img(page: pymupdf.Page, xy: tuple[int, int], img_name: str) -> bytes:
     raise FileNotFoundError("Изображение на странице не найдено.")
 
 
-def _accrual(data: bytes, xy: tuple[int, int], *images: str) -> tuple[bytes, ...]:
+def _accrual(data: bytes, xy: tuple[int, int], *images: str):
     with pymupdf.open(stream=data) as doc:
         page = doc[0]
         width, height = page.rect[2:]
@@ -79,12 +65,12 @@ def _accrual(data: bytes, xy: tuple[int, int], *images: str) -> tuple[bytes, ...
             # Заполнен только в начале. Обрежем пополам.
             page.set_cropbox(pymupdf.Rect(0, 0, width, height / 2))
 
-        return data, _page(page, xy), *map(lambda x: _img(page, xy, x), images)
+        return data, _page(page, xy), tuple(map(lambda x: _img(page, xy, x), images))
 
 
-async def erkc_images(pdf: bytes, xy: tuple[int, int]) -> ErkcImages:
-    return ErkcImages(*await asyncio.to_thread(_accrual, pdf, xy, "img2", "img4"))
+async def erkc_files(pdf: bytes, xy: tuple[int, int]) -> AccrualFiles:
+    return AccrualFiles(*await asyncio.to_thread(_accrual, pdf, xy, "img2", "img4"))
 
 
-async def peni_images(pdf: bytes, xy: tuple[int, int]) -> PeniImages:
-    return PeniImages(*await asyncio.to_thread(_accrual, pdf, xy, "img0"))
+async def peni_files(pdf: bytes, xy: tuple[int, int]) -> AccrualFiles:
+    return AccrualFiles(*await asyncio.to_thread(_accrual, pdf, xy, "img0"))
