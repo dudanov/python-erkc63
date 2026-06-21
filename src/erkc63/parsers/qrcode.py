@@ -5,8 +5,6 @@ from typing import Self
 import pymupdf
 from PIL import Image
 
-type PilImage = Image.Image
-
 
 # Сохраняет Pixmap в 8-битный оптимизированный PNG в палитре WEB
 def _png(pix: pymupdf.Pixmap) -> bytes:
