@@ -70,9 +70,6 @@ def _img(page: pymupdf.Page, xy: tuple[int, int], img_name: str) -> bytes:
 
 
 def _accrual(data: bytes, xy: tuple[int, int], *images: str) -> tuple[bytes, ...]:
-    if not all(x > 0 for x in xy):
-        raise ValueError("Ограничения должны быть больше нуля.")
-
     with pymupdf.open(stream=data) as doc:
         page = doc[0]
         width, height = page.rect[2:]
