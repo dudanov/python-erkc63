@@ -59,7 +59,7 @@ except ImportError:
 QRCODE_SUPPORT = True
 
 try:
-    from .parsers.qrcode import AccrualData, erkc_data, peni_data
+    from .parsers.qrcode import AccrualData
 
 except ImportError:
     QRCODE_SUPPORT = False
@@ -380,7 +380,7 @@ class ErkcClient:
         max_xy: tuple[int, int] = (3840, 2160),
     ) -> AccrualData | None:
         if pdf := await self.get_pdf(accrual.account, accrual.payment_id):
-            return await asyncio.to_thread(erkc_data, pdf, max_xy)
+            return await asyncio.to_thread(AccrualData.from_erkc_data, pdf, max_xy)
 
     async def get_accrual_peni_data(
         self,
@@ -389,7 +389,7 @@ class ErkcClient:
         max_xy: tuple[int, int] = (3840, 2160),
     ) -> AccrualData | None:
         if pdf := await self.get_pdf(accrual.account, accrual.peni_id):
-            return await asyncio.to_thread(peni_data, pdf, max_xy)
+            return await asyncio.to_thread(AccrualData.from_peni_data, pdf, max_xy)
 
     @api(auth_required=True)
     async def year_accruals(

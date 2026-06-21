@@ -1,22 +1,11 @@
 import dataclasses as dc
 import io
+from typing import Self
 
 import pymupdf
 from PIL import Image
 
 type PilImage = Image.Image
-
-
-@dc.dataclass(slots=True, frozen=True)
-class AccrualData:
-    """Данные счета"""
-
-    source: bytes
-    """Исходный PDF"""
-    page: bytes
-    """PNG изображение страницы счета"""
-    qrs: tuple[bytes, ...]
-    """PNG изображения QR-кодов оплаты счета"""
 
 
 # Сохраняет Pixmap в 8-битный оптимизированный PNG в палитре WEB
@@ -54,26 +43,38 @@ def _img(page: pymupdf.Page, img_name: str) -> bytes:
     raise FileNotFoundError("Изображение на странице не найдено.")
 
 
-def _data(pdf: bytes, xy: tuple[int, int], *images: str) -> AccrualData:
-    with pymupdf.open(stream=pdf) as doc:
-        page = doc[0]
-        width, height = page.rect.width, page.rect.height
+@dc.dataclass(slots=True, frozen=True)
+class AccrualData:
+    """Данные счета"""
 
-        if height > width:
-            # Только у счета на пени портретная ориентация.
-            # Заполнен только в начале. Обрежем пополам.
-            page.set_cropbox(pymupdf.Rect(0, 0, width, height / 2))
+    source: bytes
+    """Исходный PDF"""
+    page: bytes
+    """PNG изображение страницы счета"""
+    qrs: tuple[bytes, ...]
+    """PNG изображения QR-кодов оплаты счета"""
 
-        return AccrualData(
-            source=pdf,
-            page=_page(page, xy),
-            qrs=tuple(map(lambda x: _img(page, x), images)),
-        )
+    @classmethod
+    def from_data(cls, pdf: bytes, xy: tuple[int, int], *images: str) -> Self:
+        with pymupdf.open(stream=pdf) as doc:
+            page = doc[0]
+            width, height = page.rect.width, page.rect.height
 
+            if height > width:
+                # Только у счета на пени портретная ориентация.
+                # Заполнен только в начале. Обрежем пополам.
+                page.set_cropbox(pymupdf.Rect(0, 0, width, height / 2))
 
-def erkc_data(pdf: bytes, xy: tuple[int, int]) -> AccrualData:
-    return _data(pdf, xy, "img2", "img4")
+            return cls(
+                source=pdf,
+                page=_page(page, xy),
+                qrs=tuple(map(lambda x: _img(page, x), images)),
+            )
 
+    @classmethod
+    def from_erkc_data(cls, pdf: bytes, xy: tuple[int, int]) -> Self:
+        return cls.from_data(pdf, xy, "img2", "img4")
 
-def peni_data(pdf: bytes, xy: tuple[int, int]) -> AccrualData:
-    return _data(pdf, xy, "img0")
+    @classmethod
+    def from_peni_data(cls, pdf: bytes, xy: tuple[int, int]) -> Self:
+        return cls.from_data(pdf, xy, "img0")
