@@ -346,7 +346,7 @@ class ErkcClient:
                 self._token = None
 
     @api(auth_required=True)
-    async def download_pdf(
+    async def get_pdf(
         self,
         account: int | str | None,
         receipt_id: str | None,
@@ -379,10 +379,8 @@ class ErkcClient:
         *,
         max_xy: tuple[int, int] = (3840, 2160),
     ) -> AccrualFiles | None:
-        pdf = await self.download_pdf(accrual.account, accrual.payment_id)
-
-        if pdf:
-            return await erkc_files(pdf, max_xy)
+        if pdf := await self.get_pdf(accrual.account, accrual.payment_id):
+            return await asyncio.to_thread(erkc_files, pdf, max_xy)
 
     async def get_accrual_peni_files(
         self,
@@ -390,10 +388,8 @@ class ErkcClient:
         *,
         max_xy: tuple[int, int] = (3840, 2160),
     ) -> AccrualFiles | None:
-        pdf = await self.download_pdf(accrual.account, accrual.peni_id)
-
-        if pdf:
-            return await peni_files(pdf, max_xy)
+        if pdf := await self.get_pdf(accrual.account, accrual.peni_id):
+            return await asyncio.to_thread(peni_files, pdf, max_xy)
 
     @api(auth_required=True)
     async def year_accruals(

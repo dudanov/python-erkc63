@@ -1,4 +1,3 @@
-import asyncio
 import dataclasses as dc
 import io
 
@@ -68,9 +67,9 @@ def _accrual(data: bytes, xy: tuple[int, int], *images: str):
         return data, _page(page, xy), tuple(map(lambda x: _img(page, x), images))
 
 
-async def erkc_files(pdf: bytes, xy: tuple[int, int]) -> AccrualFiles:
-    return AccrualFiles(*await asyncio.to_thread(_accrual, pdf, xy, "img2", "img4"))
+def erkc_files(pdf: bytes, xy: tuple[int, int]) -> AccrualFiles:
+    return AccrualFiles(*_accrual(pdf, xy, "img2", "img4"))
 
 
-async def peni_files(pdf: bytes, xy: tuple[int, int]) -> AccrualFiles:
-    return AccrualFiles(*await asyncio.to_thread(_accrual, pdf, xy, "img0"))
+def peni_files(pdf: bytes, xy: tuple[int, int]) -> AccrualFiles:
+    return AccrualFiles(*_accrual(pdf, xy, "img0"))
