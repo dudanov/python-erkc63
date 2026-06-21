@@ -13,6 +13,7 @@ from typing import (
     Coroutine,
     Final,
     Iterable,
+    Literal,
     Mapping,
     Self,
 )
@@ -28,8 +29,10 @@ from .errors import (
     SessionRequired,
 )
 from .parsers import (
+    QRCODE_SUPPORT,
     AccountInfo,
     Accrual,
+    AccrualData,
     AccrualDetalization,
     Accruals,
     MeterHistory,
@@ -46,6 +49,8 @@ from .parsers import (
     parse_token,
 )
 
+_LOGGER: Final = logging.getLogger(__name__)
+
 try:
     import orjson
 
@@ -56,16 +61,6 @@ except ImportError:
 
     JSON_DECODER = json.loads
 
-QRCODE_SUPPORT = True
-
-try:
-    from .parsers.qrcode import AccrualData
-
-except ImportError:
-    QRCODE_SUPPORT = False
-
-
-_LOGGER: Final = logging.getLogger(__name__)
 
 _MIN_DATE: Final = dt.date(2018, 1, 1)
 _MAX_DATE: Final = dt.date(2099, 12, 31)
@@ -348,18 +343,18 @@ class ErkcClient:
     @api(auth_required=True)
     async def download_pdf(
         self,
-        account: int | str | None,
-        receipt_id: str | None,
+        accrual: Accrual,
+        id: Literal["payment", "peni"],
     ) -> bytes | None:
-        if receipt_id is None:
+        receipt_id = accrual.payment_id if id == "payment" else accrual.peni_id
+
+        if not receipt_id:
             return
 
-        account = self._account(account)
-
         try:
-            resp = await self._ajax("getReceipt", account, receiptId=receipt_id)
+            resp = await self._ajax("getReceipt", accrual.account, receiptId=receipt_id)
             filename: str = resp["fileName"]
-            path = f"account/{account}/receipts/download"
+            path = f"account/{accrual.account}/receipts/download"
 
             async with self._get(path, kvit=filename) as resp:
                 _LOGGER.debug(
@@ -379,7 +374,12 @@ class ErkcClient:
         *,
         max_xy: tuple[int, int] = (3840, 2160),
     ) -> AccrualData | None:
-        if pdf := await self.download_pdf(accrual.account, accrual.payment_id):
+        if not QRCODE_SUPPORT:
+            raise ImportError(
+                "PDF parsing is not supported. Install package with 'qrcode' option."
+            )
+
+        if pdf := await self.download_pdf(accrual, "payment"):
             return await asyncio.to_thread(AccrualData.from_payment_data, pdf, max_xy)
 
     async def download_peni_data(
@@ -388,7 +388,12 @@ class ErkcClient:
         *,
         max_xy: tuple[int, int] = (3840, 2160),
     ) -> AccrualData | None:
-        if pdf := await self.download_pdf(accrual.account, accrual.peni_id):
+        if not QRCODE_SUPPORT:
+            raise ImportError(
+                "PDF parsing is not supported. Install package with 'qrcode' option."
+            )
+
+        if pdf := await self.download_pdf(accrual, "peni"):
             return await asyncio.to_thread(AccrualData.from_peni_data, pdf, max_xy)
 
     @api(auth_required=True)

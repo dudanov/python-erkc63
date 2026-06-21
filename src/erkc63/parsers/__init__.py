@@ -7,6 +7,14 @@ from .meter import MeterHistory, MeterInfo, MeterValue
 from .parser import parse_accounts, parse_token
 from .payment import Payment
 
+try:
+    from .qrcode import AccrualData
+
+    QRCODE_SUPPORT = True
+
+except ImportError:
+    QRCODE_SUPPORT = False
+
 
 def date_last_accrual(accrual_day: int = 25) -> dt.date:
     """Возвращает дату последнего расчетного периода."""
@@ -29,6 +37,7 @@ def date_to_dmy(x: dt.date) -> str:
 __all__ = [
     "AccountInfo",
     "Accrual",
+    "AccrualData",
     "AccrualDetalization",
     "Accruals",
     "ajax_attr",
@@ -36,11 +45,12 @@ __all__ = [
     "date_to_dmy",
     "dmy_to_date",
     "MeterHistory",
+    "MeterInfo",
     "MeterValue",
     "MonthAccrual",
     "parse_accounts",
     "parse_token",
     "Payment",
     "PublicAccountInfo",
-    "MeterInfo",
+    "QRCODE_SUPPORT",
 ]

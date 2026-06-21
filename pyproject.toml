@@ -42,8 +42,8 @@ classifiers = [
 
 [project.optional-dependencies]
 lxml = ["lxml>=5.3"]
-orjson=["orjson>=3.10"]
-qrcode = ["pillow>=11.0","pymupdf>=1.25"]
+orjson = ["orjson>=3.10"]
+qrcode = ["pymupdf>=1.25","pillow>=11.0"]
 
 [dependency-groups]
 dev = ["ruff","isort"]
