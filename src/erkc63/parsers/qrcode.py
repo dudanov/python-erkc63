@@ -21,11 +21,10 @@ class AccrualFiles:
 
 
 # Сохраняет Pixmap в 8-битный оптимизированный PNG в палитре WEB
-def _png(pix: pymupdf.Pixmap, xy: tuple[int, int]) -> bytes:
+def _png(pix: pymupdf.Pixmap) -> bytes:
     bio = io.BytesIO()
 
     img = pix.pil_image()
-    img.thumbnail(xy)
     img = img.convert(mode="P", palette=Image.Palette.WEB)
     img.save(bio, format="png", optimize=True)
 
@@ -38,11 +37,11 @@ def _page(page: pymupdf.Page, xy: tuple[int, int]) -> bytes:
     scale = min(xy[0] / width, xy[1] / height)
     pix = page.get_pixmap(matrix=pymupdf.Matrix(scale, scale))
 
-    return _png(pix, xy)
+    return _png(pix)
 
 
 # Извлекает изображение со страницы в данные PNG
-def _img(page: pymupdf.Page, xy: tuple[int, int], img_name: str) -> bytes:
+def _img(page: pymupdf.Page, img_name: str) -> bytes:
     for item in page.get_images():
         xref, name = item[0], item[7]
 
@@ -51,7 +50,7 @@ def _img(page: pymupdf.Page, xy: tuple[int, int], img_name: str) -> bytes:
 
         pix = pymupdf.Pixmap(page.parent, xref)
 
-        return _png(pix, xy)
+        return _png(pix)
 
     raise FileNotFoundError("Изображение на странице не найдено.")
 
@@ -66,7 +65,7 @@ def _accrual(data: bytes, xy: tuple[int, int], *images: str):
             # Заполнен только в начале. Обрежем пополам.
             page.set_cropbox(pymupdf.Rect(0, 0, width, height / 2))
 
-        return data, _page(page, xy), tuple(map(lambda x: _img(page, xy, x), images))
+        return data, _page(page, xy), tuple(map(lambda x: _img(page, x), images))
 
 
 async def erkc_files(pdf: bytes, xy: tuple[int, int]) -> AccrualFiles:
