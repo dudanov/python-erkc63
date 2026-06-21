@@ -30,10 +30,8 @@ from .errors import (
     SessionRequired,
 )
 from .parsers import (
-    QRCODE_SUPPORT,
     AccountInfo,
     Accrual,
-    AccrualData,
     AccrualDetalization,
     Accruals,
     MeterHistory,
@@ -51,6 +49,14 @@ from .parsers import (
 )
 
 _LOGGER: Final = logging.getLogger(__name__)
+
+try:
+    from .parsers.qrcode import AccrualData
+
+    QRCODE_SUPPORT = True
+
+except ImportError:
+    QRCODE_SUPPORT = False
 
 try:
     import orjson
