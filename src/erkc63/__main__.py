@@ -13,45 +13,24 @@ with open("secrets.json") as f:
 
 async def main():
     async with ErkcClient(secrets["login"], secrets["password"]) as cli:
-        # print(await cli.account_info())
-        # print(await cli.meters_info())
+        print(await cli.account_info())
+        print(await cli.meters_info())
 
-        # for m in await cli.meters_history():
-        #    for value in m.history:
-        #        print(value)
+        for m in await cli.meters_history():
+            for value in m.values:
+                print(value)
 
-        # x = await cli.year_accruals(include_details=True)
-
-        # await cli.qr_codes(x[1])
         dd = await cli.year_accruals(include_details=True)
+
         for payment in dd:
             print(payment)
-            print(payment.sum_debt)
-            print(payment.is_correct)
-            print(payment.sum_paid)
+            await cli.get_accrual_erkc_files(payment)
 
-            ff = await cli.get_accrual_erkc_files(payment)
-            if not ff:
-                return
+        for x in await cli.accruals_history():
+            print(x)
 
-            with open(f"pdf_{payment.date.strftime("%m.%Y")}.pdf", "wb") as f:
-                f.write(ff.source)
-
-            with open(f"page_{payment.date.strftime("%m.%Y")}.png", "wb") as f:
-                f.write(ff.page)
-
-            with open(f"qr1_{payment.date.strftime("%m.%Y")}.png", "wb") as f:
-                f.write(ff.codes[0])
-
-            with open(f"kap_{payment.date.strftime("%m.%Y")}.png", "wb") as f:
-                f.write(ff.codes[1])
-
-
-#        for x in await cli.accruals_history():
-#            print(x)
-
-#        for x in await cli.payments_history():
-#            print(x)
+        for x in await cli.payments_history():
+            print(x)
 
 
 asyncio.run(main())
