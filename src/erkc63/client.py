@@ -5,6 +5,7 @@ import datetime as dt
 import functools
 import logging
 from decimal import Decimal
+from types import MappingProxyType
 from typing import (
     Any,
     Awaitable,
@@ -772,7 +773,7 @@ class ErkcClient:
 
     @api(public=True)
     async def pub_accounts_info(
-        self, accounts: Iterable[int | str]
+        self, *accounts: int | str
     ) -> Mapping[int, PublicAccountInfo]:
         """Запрос открытой информации по лицевым счетам.
 
@@ -783,4 +784,4 @@ class ErkcClient:
         async with asyncio.TaskGroup() as tg:
             tasks = [tg.create_task(self.pub_account_info(x)) for x in accounts]
 
-        return {x.account: x for task in tasks if (x := task.result())}
+        return MappingProxyType({x.account: x for task in tasks if (x := task.result())})
