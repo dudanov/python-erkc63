@@ -373,14 +373,14 @@ class ErkcClient:
         except aiohttp.ClientResponseError:
             _LOGGER.debug("Ошибка загрузки квитанции")
 
-    async def get_accrual_erkc_data(
+    async def get_accrual_payment_data(
         self,
         accrual: Accrual,
         *,
         max_xy: tuple[int, int] = (3840, 2160),
     ) -> AccrualData | None:
         if pdf := await self.get_pdf(accrual.account, accrual.payment_id):
-            return await asyncio.to_thread(AccrualData.from_erkc_data, pdf, max_xy)
+            return await asyncio.to_thread(AccrualData.from_payment_data, pdf, max_xy)
 
     async def get_accrual_peni_data(
         self,

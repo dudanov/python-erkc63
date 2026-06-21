@@ -24,7 +24,7 @@ async def main():
 
         for payment in dd:
             print(payment)
-            await cli.get_accrual_erkc_data(payment)
+            await cli.get_accrual_payment_data(payment)
 
         for x in await cli.accruals_history():
             print(x)

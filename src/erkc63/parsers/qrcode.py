@@ -51,7 +51,7 @@ class AccrualData:
     """Исходный PDF"""
     page: bytes
     """PNG изображение страницы счета"""
-    qrs: tuple[bytes, ...]
+    qr_codes: tuple[bytes, ...]
     """PNG изображения QR-кодов оплаты счета"""
 
     @classmethod
@@ -68,11 +68,11 @@ class AccrualData:
             return cls(
                 source=pdf,
                 page=_page(page, xy),
-                qrs=tuple(map(lambda x: _img(page, x), images)),
+                qr_codes=tuple(map(lambda x: _img(page, x), images)),
             )
 
     @classmethod
-    def from_erkc_data(cls, pdf: bytes, xy: tuple[int, int]) -> Self:
+    def from_payment_data(cls, pdf: bytes, xy: tuple[int, int]) -> Self:
         return cls.from_data(pdf, xy, "img2", "img4")
 
     @classmethod
