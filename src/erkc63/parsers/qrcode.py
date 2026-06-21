@@ -27,11 +27,11 @@ def _page(page: pymupdf.Page, xy: tuple[int, int]) -> bytes:
 
 
 # Извлекает изображение со страницы в данные PNG
-def _img(page: pymupdf.Page, img_name: str) -> bytes:
+def _img(page: pymupdf.Page, img: str) -> bytes:
     for item in page.get_images():
         xref, name = item[0], item[7]
 
-        if name != img_name:
+        if name != img:
             continue
 
         pix = pymupdf.Pixmap(page.parent, xref)
