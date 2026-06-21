@@ -8,8 +8,8 @@ type PilImage = Image.Image
 
 
 @dc.dataclass(slots=True, frozen=True)
-class AccrualFiles:
-    """Изображения счета ЕРКЦ"""
+class AccrualData:
+    """Данные счета"""
 
     source: bytes
     """Исходный PDF"""
@@ -67,9 +67,9 @@ def _accrual(data: bytes, xy: tuple[int, int], *images: str):
         return data, _page(page, xy), tuple(map(lambda x: _img(page, x), images))
 
 
-def erkc_files(pdf: bytes, xy: tuple[int, int]) -> AccrualFiles:
-    return AccrualFiles(*_accrual(pdf, xy, "img2", "img4"))
+def erkc_files(pdf: bytes, xy: tuple[int, int]) -> AccrualData:
+    return AccrualData(*_accrual(pdf, xy, "img2", "img4"))
 
 
-def peni_files(pdf: bytes, xy: tuple[int, int]) -> AccrualFiles:
-    return AccrualFiles(*_accrual(pdf, xy, "img0"))
+def peni_files(pdf: bytes, xy: tuple[int, int]) -> AccrualData:
+    return AccrualData(*_accrual(pdf, xy, "img0"))

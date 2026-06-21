@@ -59,7 +59,7 @@ except ImportError:
 QRCODE_SUPPORT = True
 
 try:
-    from .parsers.qrcode import AccrualFiles, erkc_files, peni_files
+    from .parsers.qrcode import AccrualData, erkc_files, peni_files
 
 except ImportError:
     QRCODE_SUPPORT = False
@@ -373,21 +373,21 @@ class ErkcClient:
         except aiohttp.ClientResponseError:
             _LOGGER.debug("Ошибка загрузки квитанции")
 
-    async def get_accrual_erkc_files(
+    async def get_accrual_erkc_data(
         self,
         accrual: Accrual,
         *,
         max_xy: tuple[int, int] = (3840, 2160),
-    ) -> AccrualFiles | None:
+    ) -> AccrualData | None:
         if pdf := await self.get_pdf(accrual.account, accrual.payment_id):
             return await asyncio.to_thread(erkc_files, pdf, max_xy)
 
-    async def get_accrual_peni_files(
+    async def get_accrual_peni_data(
         self,
         accrual: Accrual,
         *,
         max_xy: tuple[int, int] = (3840, 2160),
-    ) -> AccrualFiles | None:
+    ) -> AccrualData | None:
         if pdf := await self.get_pdf(accrual.account, accrual.peni_id):
             return await asyncio.to_thread(peni_files, pdf, max_xy)
 
