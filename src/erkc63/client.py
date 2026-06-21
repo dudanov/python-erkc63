@@ -346,7 +346,7 @@ class ErkcClient:
                 self._token = None
 
     @api(auth_required=True)
-    async def get_pdf(
+    async def download_pdf(
         self,
         account: int | str | None,
         receipt_id: str | None,
@@ -373,22 +373,22 @@ class ErkcClient:
         except aiohttp.ClientResponseError:
             _LOGGER.debug("Ошибка загрузки квитанции")
 
-    async def get_accrual_payment_data(
+    async def download_payment_data(
         self,
         accrual: Accrual,
         *,
         max_xy: tuple[int, int] = (3840, 2160),
     ) -> AccrualData | None:
-        if pdf := await self.get_pdf(accrual.account, accrual.payment_id):
+        if pdf := await self.download_pdf(accrual.account, accrual.payment_id):
             return await asyncio.to_thread(AccrualData.from_payment_data, pdf, max_xy)
 
-    async def get_accrual_peni_data(
+    async def download_peni_data(
         self,
         accrual: Accrual,
         *,
         max_xy: tuple[int, int] = (3840, 2160),
     ) -> AccrualData | None:
-        if pdf := await self.get_pdf(accrual.account, accrual.peni_id):
+        if pdf := await self.download_pdf(accrual.account, accrual.peni_id):
             return await asyncio.to_thread(AccrualData.from_peni_data, pdf, max_xy)
 
     @api(auth_required=True)
