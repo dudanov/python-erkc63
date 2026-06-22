@@ -1,0 +1,67 @@
+[project]
+name = "erkc63"
+version = "1.0.0"
+description = "Клиент личного кабинета ЕРКЦ."
+authors = [
+  { name = "Sergey Dudanov", email = "sergey.dudanov@gmail.com" },
+]
+maintainers = [
+  { name = "Sergey Dudanov", email = "sergey.dudanov@gmail.com" },
+]
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+readme = "README.md"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+  "aiohttp>=3.14",
+  "beautifulsoup4>=4.13",
+  "mashumaro>=3.16",
+]
+keywords = [
+  "erkc63",
+  "async",
+  "client",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Framework :: AsyncIO",
+  "Intended Audience :: Developers",
+  "Natural Language :: Russian",
+  "Operating System :: OS Independent",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+
+[project.urls]
+"Documentation" = "https://github.com/dudanov/python-erkc63"
+"Home Page" = "https://github.com/dudanov/python-erkc63"
+"Issue Tracker" = "https://github.com/dudanov/python-erkc63/issues"
+"Source Code" = "https://github.com/dudanov/python-erkc63.git"
+
+[project.optional-dependencies]
+lxml = ["lxml>=5.3"]
+orjson = ["orjson>=3.11.6"]
+qrcode = ["pymupdf>=1.25","pillow>=12.2"]
+
+[dependency-groups]
+dev = ["ruff","isort"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 90
+
+[tool.ruff.format]
+docstring-code-format = true
+indent-style = "space"
+quote-style = "double"
+
+[tool.isort]
+line_length = 90
+profile = "black"
