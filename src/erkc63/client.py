@@ -362,15 +362,23 @@ class ErkcClient:
     async def download_pdf(
         self,
         accrual: Accrual,
-        id: Literal["payment", "peni"],
+        type_id: Literal["payment", "peni"],
     ) -> bytes | None:
-        receipt_id = accrual.payment_id if id == "payment" else accrual.peni_id
+        """
+        Загружает счет на оплату в формате PDF.
 
-        if not receipt_id:
+        Parameters:
+            accrual: объект начисления.
+            type_id: идентификатор типа счета (основной или пени).
+        """
+
+        id = accrual.payment_id if type_id == "payment" else accrual.peni_id
+
+        if not id:
             return
 
         try:
-            resp = await self._ajax("getReceipt", accrual.account, receiptId=receipt_id)
+            resp = await self._ajax("getReceipt", accrual.account, receiptId=id)
             filename: str = resp["fileName"]
             path = f"account/{accrual.account}/receipts/download"
 
@@ -392,6 +400,17 @@ class ErkcClient:
         *,
         max_xy: tuple[int, int] = (3840, 2160),
     ) -> AccrualData | None:
+        """
+        Загружает счет в формате PDF на оплату. Преобразует его и QR-коды оплаты
+        (основной и капремонт) в изображения PNG и возвращает данные в объекте `AccrualData`.
+
+        ***Внимание:*** требует установки пакета с опцией `qrcode`.
+
+        Parameters:
+            accrual: объект начисления.
+            max_xy: ограничение разрешения файлов PNG в пикселях (по-умолчанию: 3840x2160).
+        """
+
         if not QRCODE_SUPPORT:
             raise ImportError(
                 "PDF parsing is not supported. Install package with 'qrcode' option."
@@ -406,6 +425,17 @@ class ErkcClient:
         *,
         max_xy: tuple[int, int] = (3840, 2160),
     ) -> AccrualData | None:
+        """
+        Загружает счет в формате PDF на оплату пени. Преобразует его и QR-код оплаты
+        в изображения PNG и возвращает данные в объекте `AccrualData`.
+
+        ***Внимание:*** требует установки пакета с опцией `qrcode`.
+
+        Parameters:
+            accrual: объект начисления.
+            max_xy: ограничение разрешения файлов PNG в пикселях (по-умолчанию: 3840x2160).
+        """
+
         if not QRCODE_SUPPORT:
             raise ImportError(
                 "PDF parsing is not supported. Install package with 'qrcode' option."
@@ -423,7 +453,8 @@ class ErkcClient:
         limit: int | None = None,
         include_details: bool = False,
     ) -> list[Accrual]:
-        """Запрос квитанций лицевого счета за год.
+        """
+        Запрос квитанций лицевого счета за год.
 
         Если год не уточняется - используется текущий.
 
