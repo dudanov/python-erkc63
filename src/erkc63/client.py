@@ -5,7 +5,6 @@ import datetime as dt
 import functools
 import logging
 from decimal import Decimal
-from types import MappingProxyType
 from typing import (
     Any,
     Awaitable,
@@ -29,24 +28,12 @@ from .errors import (
     AuthenticationRequired,
     SessionRequired,
 )
-from .parsers import (
-    AccountInfo,
-    Accrual,
-    AccrualDetalization,
-    Accruals,
-    MeterHistory,
-    MeterInfo,
-    MeterValue,
-    MonthAccrual,
-    Payment,
-    PublicAccountInfo,
-    ajax_attr,
-    date_last_accrual,
-    date_to_dmy,
-    dmy_to_date,
-    parse_accounts,
-    parse_token,
-)
+from .parsers.account import AccountInfo, PublicAccountInfo
+from .parsers.accrual import Accrual, AccrualDetalization, Accruals, MonthAccrual
+from .parsers.base import ajax_attr, dmy_to_date
+from .parsers.meter import MeterHistory, MeterInfo, MeterValue
+from .parsers.parser import parse_accounts, parse_token
+from .parsers.payment import Payment
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -105,6 +92,24 @@ def api[T, **P](
         return _wrapper
 
     return decorator
+
+
+def date_last_accrual(accrual_day: int = 25) -> dt.date:
+    """Возвращает дату последнего расчетного периода."""
+
+    if (today := dt.date.today()).day > accrual_day:
+        return dt.date(today.year, today.month, 1)
+
+    if today.month != 1:
+        return dt.date(today.year, today.month - 1, 1)
+
+    return dt.date(today.year - 1, 12, 1)
+
+
+def date_to_dmy(x: dt.date) -> str:
+    """Преобразует дату в строку вида `dd.mm.YYYY`."""
+
+    return f"{x.day:02}.{x.month:02}.{x.year}"
 
 
 def _validate_account(account: int | str) -> int:
@@ -784,7 +789,7 @@ class ErkcClient:
     @api(public=True)
     async def pub_accounts_info(
         self, *accounts: int | str
-    ) -> Mapping[int, PublicAccountInfo]:
+    ) -> dict[int, PublicAccountInfo]:
         """Запрос открытой информации по лицевым счетам.
 
         Parameters:
@@ -794,4 +799,4 @@ class ErkcClient:
         async with asyncio.TaskGroup() as tg:
             tasks = [tg.create_task(self.pub_account_info(x)) for x in accounts]
 
-        return MappingProxyType({x.account: x for task in tasks if (x := task.result())})
+        return {x.account: x for task in tasks if (x := task.result())}
