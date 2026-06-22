@@ -176,12 +176,12 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiohttp", specifier = ">=3.10" },
+    { name = "aiohttp", specifier = ">=3.14" },
     { name = "beautifulsoup4", specifier = ">=4.13" },
     { name = "lxml", marker = "extra == 'lxml'", specifier = ">=5.3" },
     { name = "mashumaro", specifier = ">=3.16" },
-    { name = "orjson", marker = "extra == 'orjson'", specifier = ">=3.10" },
-    { name = "pillow", marker = "extra == 'qrcode'", specifier = ">=11.0" },
+    { name = "orjson", marker = "extra == 'orjson'", specifier = ">=3.11.6" },
+    { name = "pillow", marker = "extra == 'qrcode'", specifier = ">=12.2" },
     { name = "pymupdf", marker = "extra == 'qrcode'", specifier = ">=1.25" },
 ]
 provides-extras = ["lxml", "orjson", "qrcode"]

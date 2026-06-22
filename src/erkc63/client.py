@@ -30,6 +30,7 @@ from .errors import (
     AccountNotFound,
     AuthenticationError,
     AuthenticationRequired,
+    ErkcApiError,
     SessionRequired,
 )
 from .parsers.account import AccountInfo, PublicAccountInfo
@@ -536,7 +537,9 @@ class ErkcClient:
         API_LIMIT = 25  # лимит записей ответа сервера
 
         start, end = start or _MIN_DATE, end or _MAX_DATE
-        assert start <= end
+
+        if start > end:
+            raise ValueError("Дата начала архива старше конца.")
 
         db: dict[str, list[MeterValue]] = defaultdict(list)
 
@@ -545,10 +548,11 @@ class ErkcClient:
 
             history = await self._history("counters", account, start, end)
 
-            assert (num := len(history)) <= API_LIMIT, (
-                f"Превышен лимит в {API_LIMIT} записей ответа сервера. "
-                f"Получено {num}. Возможно изменен API."
-            )
+            if (num := len(history)) > API_LIMIT:
+                raise ErkcApiError(
+                    f"Превышен лимит в {API_LIMIT} записей ответа сервера. "
+                    f"Получено {num}. Возможно изменен API."
+                )
 
             for x in history:
                 end = dmy_to_date(ajax_attr(x[2], "sort"))
@@ -584,7 +588,8 @@ class ErkcClient:
         account = self._account(account)
         start, end = start or _MIN_DATE, end or _MAX_DATE
 
-        assert start <= end
+        if start > end:
+            raise ValueError("Дата начала архива старше конца.")
 
         history = await self._history("accruals", account, start, end)
 
@@ -616,7 +621,8 @@ class ErkcClient:
 
         start, end = start or _MIN_DATE, end or _MAX_DATE
 
-        assert start <= end
+        if start > end:
+            raise ValueError("Дата начала архива старше конца.")
 
         history = await self._history("payments", account, start, end)
         result = (Payment.from_args(*x) for x in history)
@@ -656,7 +662,7 @@ class ErkcClient:
             last_payment = last_payment or account.payment
             account = account.account
 
-        assert (account := int(account)) > 0
+        account = _validate_account(account)
 
         if account in self.accounts:
             return
@@ -684,7 +690,7 @@ class ErkcClient:
             account: номер лицевого счета.
         """
 
-        assert (account := int(account)) > 0
+        account = _validate_account(account)
 
         if account not in self.accounts:
             _LOGGER.debug("Лицевой счет %d не привязан", account)

@@ -5,9 +5,9 @@ from .client import ErkcClient
 from .errors import (
     AccountBindingError,
     AccountNotFound,
-    ApiError,
     AuthenticationError,
     AuthenticationRequired,
+    ErkcApiError,
     ErkcError,
     ParsingError,
     SessionRequired,
@@ -16,7 +16,7 @@ from .errors import (
 __all__ = [
     "AccountBindingError",
     "AccountNotFound",
-    "ApiError",
+    "ErkcApiError",
     "AuthenticationError",
     "AuthenticationRequired",
     "ErkcClient",
