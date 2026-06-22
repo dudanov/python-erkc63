@@ -1,30 +1,30 @@
 class ErkcError(Exception):
-    pass
+    """Базовое исключение"""
 
 
 class ParsingError(ErkcError):
-    pass
+    """Ошибка обработки данных"""
 
 
 class ApiError(ErkcError):
-    pass
+    """Базовая ошибка API"""
 
 
 class AccountBindingError(ApiError):
-    pass
+    """Ошибка привязки/отвязки лицевого счета"""
 
 
 class AuthenticationError(ApiError):
-    pass
+    """Ошибка аутентификации"""
 
 
 class AuthenticationRequired(ApiError):
-    pass
+    """Ошибка отсутствия аутентификации"""
 
 
 class AccountNotFound(ApiError):
-    pass
+    """Лицевой счет не найден"""
 
 
 class SessionRequired(ApiError):
-    pass
+    """Ошибка отсутствия открытой сессии"""

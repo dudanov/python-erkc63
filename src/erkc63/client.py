@@ -76,12 +76,12 @@ def api[T, **P](
         @functools.wraps(func)
         def _wrapper(self: ErkcClient, *args: P.args, **kwargs: P.kwargs):
             if not self.opened:
-                raise SessionRequired("Сессия не открыта.")
+                raise SessionRequired("Требуется открытая сессия.")
 
             if public:
                 if self.authenticated:
                     raise AuthenticationRequired(
-                        "Публичный API работает без аутентификации."
+                        "Публичный API требует выхода из личного кабинета."
                     )
 
             elif auth_required:
