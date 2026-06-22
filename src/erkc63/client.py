@@ -107,6 +107,19 @@ def api[T, **P](
     return decorator
 
 
+def _validate_account(account: int | str) -> int:
+    try:
+        account = int(account)
+
+    except ValueError:
+        raise ValueError("Лицевой счет не является целым числом.") from None
+
+    if account <= 0:
+        raise ValueError("Лицевой счет должен быть больше нуля.")
+
+    return account
+
+
 class ErkcClient:
     """Клиент личного кабинета ЕРКЦ."""
 
@@ -251,14 +264,7 @@ class ErkcClient:
         if account is None:
             return self.account
 
-        try:
-            account = int(account)
-
-        except ValueError:
-            raise ValueError("Лицевой счет не является целым числом.") from None
-
-        if account <= 0:
-            raise ValueError("Лицевой счет должен быть больше нуля.")
+        account = _validate_account(account)
 
         if account in self.accounts:
             return account
@@ -738,7 +744,7 @@ class ErkcClient:
             account: номер лицевого счета.
         """
 
-        assert (account := int(account)) > 0
+        account = _validate_account(account)
 
         async with self._get(f"counters/{account}") as resp:
             return MeterInfo.meters_from_html(await resp.text())
@@ -756,7 +762,7 @@ class ErkcClient:
             values: словарь `идентификатор прибора - новое показание`.
         """
 
-        assert (account := int(account)) > 0
+        account = _validate_account(account)
 
         await self._set_meters_values(f"counters/{account}", values)
 
@@ -768,12 +774,10 @@ class ErkcClient:
             account: номер лицевого счета.
         """
 
-        assert (account := int(account)) > 0
+        account = _validate_account(account)
 
         async with self._get("payment/checkLS", ls=account) as resp:
             json: dict[str, Any] = await resp.json(loads=JSON_DECODER)
-
-        _LOGGER.debug("JSON ответ: %r", json)
 
         return PublicAccountInfo.from_json(json, account)
 
