@@ -4,6 +4,7 @@ import asyncio
 import datetime as dt
 import functools
 import logging
+from collections import defaultdict
 from decimal import Decimal
 from typing import (
     Any,
@@ -414,7 +415,7 @@ class ErkcClient:
 
         if not QRCODE_SUPPORT:
             raise ImportError(
-                "PDF parsing is not supported. Install package with 'qrcode' option."
+                "Обработка PDF не поддерживается. Переустановите пакет с опцией 'qrcode'."
             )
 
         if pdf := await self.download_pdf(accrual, "payment"):
@@ -439,7 +440,7 @@ class ErkcClient:
 
         if not QRCODE_SUPPORT:
             raise ImportError(
-                "PDF parsing is not supported. Install package with 'qrcode' option."
+                "Обработка PDF не поддерживается. Переустановите пакет с опцией 'qrcode'."
             )
 
         if pdf := await self.download_pdf(accrual, "peni"):
@@ -534,7 +535,7 @@ class ErkcClient:
         start, end = start or _MIN_DATE, end or _MAX_DATE
         assert start <= end
 
-        db: dict[str, list[MeterValue]] = {}
+        db: dict[str, list[MeterValue]] = defaultdict(list)
 
         while True:
             _LOGGER.debug("Запрос истории счетчиков с %r по %r", start, end)
@@ -547,9 +548,8 @@ class ErkcClient:
             )
 
             for x in history:
-                lst = db.setdefault(x[1], [])
                 end = dmy_to_date(ajax_attr(x[2], "sort"))
-                lst.append(MeterValue.from_args(end, *x[3:]))
+                db[x[1]].append(MeterValue.from_args(end, *x[3:]))
 
             if num != API_LIMIT:
                 return list(map(MeterHistory.from_tuple, db.items()))
